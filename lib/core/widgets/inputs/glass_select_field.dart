@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -26,36 +27,40 @@ class GlassSelectField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: enabled ? onTap : () {
-            if (!enabled && errorText != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    errorText!,
-                    style: GoogleFonts.poppins(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.black87,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          },
+          onTap: enabled
+              ? onTap
+              : () {
+                  if (!enabled && errorText != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          errorText!,
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.black87,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(AppRadius.control),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
+                duration: AppMotion.duration(context),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(AppRadius.control),
                   color: Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: enabled ? 0.20 : 0.05),
+                    color: Colors.white.withValues(
+                      alpha: enabled ? 0.20 : 0.05,
+                    ),
                     width: 1,
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.all(AppSpace.field),
                 child: Row(
                   children: [
                     Expanded(
@@ -72,10 +77,18 @@ class GlassSelectField extends StatelessWidget {
                               ),
                             ),
                           Text(
-                            (value != null && value!.isNotEmpty) ? value! : (placeholder ?? label),
+                            (value != null && value!.isNotEmpty)
+                                ? value!
+                                : (placeholder ?? label),
                             style: GoogleFonts.poppins(
-                              color: Colors.white.withValues(alpha: enabled ? ((value != null && value!.isNotEmpty) ? 1.0 : 0.5) : 0.3),
-                              fontSize: 16,
+                              color: Colors.white.withValues(
+                                alpha: enabled
+                                    ? ((value != null && value!.isNotEmpty)
+                                          ? 1.0
+                                          : 0.5)
+                                    : 0.3,
+                              ),
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -83,7 +96,9 @@ class GlassSelectField extends StatelessWidget {
                     ),
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: Colors.white.withValues(alpha: enabled ? 0.6 : 0.3),
+                      color: Colors.white.withValues(
+                        alpha: enabled ? 0.6 : 0.3,
+                      ),
                     ),
                   ],
                 ),

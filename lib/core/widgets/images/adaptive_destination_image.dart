@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
 
 /// Imagen de destino que resuelve automáticamente la fuente:
 /// - URL http(s) → Image.network (imágenes del backend / Wikimedia)
@@ -39,7 +40,7 @@ class AdaptiveDestinationImage extends StatelessWidget {
           if (wasSynchronouslyLoaded) return child;
           return AnimatedOpacity(
             opacity: frame == null ? 0 : 1,
-            duration: const Duration(milliseconds: 300),
+            duration: AppMotion.duration(context),
             curve: Curves.easeOut,
             child: child,
           );
@@ -50,7 +51,11 @@ class AdaptiveDestinationImage extends StatelessWidget {
         },
         errorBuilder: (context, error, stack) => _placeholder(
           child: const Center(
-            child: Icon(Icons.broken_image_rounded, size: 40, color: Color(0xFFB0BEC5)),
+            child: Icon(
+              Icons.broken_image_rounded,
+              size: 40,
+              color: Color(0xFFB0BEC5),
+            ),
           ),
         ),
       );
@@ -64,22 +69,30 @@ class AdaptiveDestinationImage extends StatelessWidget {
       alignment: alignment,
       errorBuilder: (context, error, stack) => _placeholder(
         child: const Center(
-          child: Icon(Icons.broken_image_rounded, size: 40, color: Color(0xFFB0BEC5)),
+          child: Icon(
+            Icons.broken_image_rounded,
+            size: 40,
+            color: Color(0xFFB0BEC5),
+          ),
         ),
       ),
     );
   }
 
   Widget _placeholder({Widget? child}) => SizedBox(
-        width: width,
-        height: height,
-        child: Container(
-          color: const Color(0xFFE8ECEF),
-          child: child ??
-              const Center(
-                child: Icon(Icons.landscape_outlined,
-                    size: 40, color: Color(0xFFB0BEC5)),
-              ),
-        ),
-      );
+    width: width,
+    height: height,
+    child: Container(
+      color: const Color(0xFFE8ECEF),
+      child:
+          child ??
+          const Center(
+            child: Icon(
+              Icons.landscape_outlined,
+              size: 40,
+              color: Color(0xFFB0BEC5),
+            ),
+          ),
+    ),
+  );
 }

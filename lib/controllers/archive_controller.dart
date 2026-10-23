@@ -38,21 +38,26 @@ class ArchiveController extends ChangeNotifier {
   /// Archiva/desarchiva. Optimista en UI, persiste en backend.
   Future<void> toggleArchive(String id, [DestinationModel? model]) async {
     final isArc = isArchived(id);
+    final previousArchive = isArc
+        ? archives.where((a) => a.destinationId == id).firstOrNull
+        : null;
     if (isArc) {
       archivedDestinationIds.remove(id);
       archives.removeWhere((a) => a.destinationId == id);
     } else {
       archivedDestinationIds.add(id);
       if (model != null && !archives.any((a) => a.destinationId == id)) {
-        archives.add(ArchiveModel(
-          destinationId: model.id,
-          name: model.name,
-          city: model.city,
-          region: model.region,
-          category: model.category,
-          coverImageUrl: model.imageUrl,
-          createdAt: DateTime.now(),
-        ));
+        archives.add(
+          ArchiveModel(
+            destinationId: model.id,
+            name: model.name,
+            city: model.city,
+            region: model.region,
+            category: model.category,
+            coverImageUrl: model.imageUrl,
+            createdAt: DateTime.now(),
+          ),
+        );
       }
     }
     notifyListeners();
@@ -67,21 +72,12 @@ class ArchiveController extends ChangeNotifier {
       // Revertir cambio optimista
       if (isArc) {
         archivedDestinationIds.add(id);
-        if (model != null) {
-          archives.add(ArchiveModel(
-            destinationId: model.id,
-            name: model.name,
-            city: model.city,
-            region: model.region,
-            category: model.category,
-            coverImageUrl: model.imageUrl,
-            createdAt: DateTime.now(),
-          ));
-        }
+        if (previousArchive != null) archives.add(previousArchive);
       } else {
         archivedDestinationIds.remove(id);
         archives.removeWhere((a) => a.destinationId == id);
       }
+      error = 'No pudimos actualizar tus archivados. Intenta nuevamente.';
       notifyListeners();
     }
   }

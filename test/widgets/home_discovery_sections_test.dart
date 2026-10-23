@@ -1,0 +1,85 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:proxvell_app/models/destination_model.dart';
+import 'package:proxvell_app/models/recommendation_result_model.dart';
+import 'package:proxvell_app/views/home/widgets/home_discovery_sections.dart';
+
+void main() {
+  testWidgets('las secciones usan destinos reales y abren su categoría', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final nature = DestinationModel.fromApiCatalog({
+      'destination_id': 'paracas',
+      'destination': 'Reserva Nacional de Paracas',
+      'city': 'Paracas',
+      'region': 'Ica',
+      'category': 'Naturaleza',
+    });
+    final archaeology = DestinationModel.fromApiCatalog({
+      'destination_id': 'huaca',
+      'destination': 'Huaca de la Luna',
+      'city': 'Trujillo',
+      'region': 'La Libertad',
+      'category': 'Arqueología',
+    });
+    final recommendation = RecommendationResultModel(
+      id: nature.id,
+      destination: nature,
+      compatibilityPercentage: 82,
+      finalScore: .82,
+      label: 'Recomendado',
+      reasons: const [],
+      aspectScores: const [],
+      contextSignals: const [],
+    );
+    String? selectedCategory;
+    String? selectedDestination;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: HomeDiscoverySections(
+              destinations: [nature, archaeology],
+              recommendations: [recommendation],
+              onOpenForYou: () {},
+              onOpenDestination: (destination) =>
+                  selectedDestination = destination.id,
+              onOpenCategory: (category) => selectedCategory = category,
+              onOpenCatalog: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recomendado para ti'), findsOneWidget);
+    expect(find.text('Reserva Nacional de Paracas'), findsWidgets);
+    expect(find.text('Para descubrir'), findsOneWidget);
+    expect(find.text('Tendencias del momento'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('home-category-Arqueología')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Reserva Nacional de Paracas').first);
+    expect(selectedDestination, 'paracas');
+
+    await tester.ensureVisible(find.text('Arqueología').last);
+    await tester.pumpAndSettle();
+    final archaeologyHeader = find
+        .ancestor(of: find.text('Arqueología').last, matching: find.byType(Row))
+        .last;
+    await tester.tap(
+      find.descendant(of: archaeologyHeader, matching: find.text('Ver más  →')),
+    );
+    expect(selectedCategory, 'Arqueología');
+  });
+}

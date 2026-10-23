@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +9,6 @@ import '../../controllers/auth_controller.dart';
 import '../../models/feedback_model.dart';
 import '../../core/theme/app_colors.dart';
 import 'widgets/rating_selector.dart';
-import 'widgets/feedback_option_chip.dart';
 
 class FeedbackScreen extends StatefulWidget {
   final String destinationId;
@@ -19,18 +20,9 @@ class FeedbackScreen extends StatefulWidget {
 
 class _FeedbackScreenState extends State<FeedbackScreen> {
   double _rating = 0;
-  String _selectedType = '';
   final _commentController = TextEditingController();
   bool _submitted = false;
 
-  static const _experienceTypes = [
-    {'label': 'Visita', 'icon': Icons.location_on_outlined},
-    {'label': 'Alojamiento', 'icon': Icons.hotel_outlined},
-    {'label': 'Gastronomía', 'icon': Icons.restaurant_outlined},
-    {'label': 'Aventura', 'icon': Icons.hiking_rounded},
-    {'label': 'Cultural', 'icon': Icons.museum_outlined},
-    {'label': 'Familiar', 'icon': Icons.family_restroom_rounded},
-  ];
 
   @override
   void dispose() {
@@ -59,44 +51,23 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ? _buildSuccessState()
                 : SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                    padding: const EdgeInsets.fromLTRB(AppSpace.screen, 24, AppSpace.screen, 32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ═══ RATING ═══
                         _sectionTitle('¿Cómo fue tu experiencia?'),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpace.field),
                         RatingSelector(
                           rating: _rating,
                           onChanged: (v) => setState(() => _rating = v),
                         ),
 
-                        const SizedBox(height: 32),
-
-                        // ═══ EXPERIENCE TYPE ═══
-                        _sectionTitle('Tipo de experiencia'),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: _experienceTypes.map((t) {
-                            final label = t['label'] as String;
-                            final icon = t['icon'] as IconData;
-                            return FeedbackOptionChip(
-                              label: label,
-                              icon: icon,
-                              isSelected: _selectedType == label,
-                              onTap: () =>
-                                  setState(() => _selectedType = label),
-                            );
-                          }).toList(),
-                        ),
-
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 28),
 
                         // ═══ COMMENT ═══
                         _sectionTitle('Comentario breve'),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpace.content),
                         Container(
                           decoration: BoxDecoration(
                             color: AppColors.surface,
@@ -113,21 +84,21 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             decoration: const InputDecoration(
                               hintText:
                                   'Escribe un comentario breve para enviar tu reseña...',
-                              hintStyle: TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 14,
-                              ),
+                              hintStyle: AppTextStyles.bodyMuted,
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.all(16),
                             ),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: AppTextStyles.body1,
                           ),
                         ),
 
-                        const SizedBox(height: 36),
+                        const SizedBox(height: AppSpace.related),
+                        const Text(
+                          'Tu reseña será visible con tu nombre y la inicial de tu apellido. Sin tu nombre, podemos usarla para mejorar las recomendaciones.',
+                          style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.textMuted),
+                        ),
+
+                        const SizedBox(height: 28),
 
                         // ═══ SUBMIT BUTTON ═══
                         SizedBox(
@@ -190,7 +161,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   bool get _canSubmit =>
       _rating > 0 &&
-      _selectedType.isNotEmpty &&
       _commentController.text.trim().isNotEmpty;
 
   Future<void> _submit() async {
@@ -218,7 +188,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       destinationId: widget.destinationId,
       rating: _rating,
       comment: _commentController.text.trim(),
-      interactionType: _selectedType,
     );
 
     final success = await context.read<FeedbackController>().submitFeedback(
@@ -274,7 +243,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpace.micro),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +258,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Tu opinión mejora las recomendaciones',
+                      'Tu opinión ayuda a otros viajeros',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textOnDark.withValues(alpha: 0.6),
@@ -350,15 +319,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Tu opinión ayuda a mejorar las\nrecomendaciones para todos.',
+              'Tu opinión ayuda a otros viajeros\ny puede apoyar futuras mejoras del modelo.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+              style: AppTextStyles.bodySecondary,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpace.group),
             GestureDetector(
               onTap: () => context.pop(),
               child: Container(
@@ -389,11 +354,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   Widget _sectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 17,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
+      style: AppTextStyles.sectionTitle,
     );
   }
 }

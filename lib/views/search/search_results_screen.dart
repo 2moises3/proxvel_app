@@ -1,8 +1,13 @@
+import '../../models/seasonality_model.dart';
+import '../../core/navigation/destination_opening.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/search_controller.dart' show SearchController, SearchFilters;
+import '../../controllers/search_controller.dart'
+    show SearchController, SearchFilters;
 import '../../controllers/profile_controller.dart';
 import '../../controllers/archive_controller.dart' as import_archive_controller;
 import '../../core/theme/app_colors.dart';
@@ -13,8 +18,13 @@ import 'widgets/search_filter_sheet.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String initialQuery;
+  final String? initialCategory;
 
-  const SearchResultsScreen({super.key, this.initialQuery = ''});
+  const SearchResultsScreen({
+    super.key,
+    this.initialQuery = '',
+    this.initialCategory,
+  });
 
   @override
   State<SearchResultsScreen> createState() => _SearchResultsScreenState();
@@ -27,16 +37,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   void initState() {
     super.initState();
     _queryCtrl = TextEditingController(text: widget.initialQuery);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Asegura que el perfil esté cargado para poder gatear el orden IA.
       final profileCtrl = context.read<ProfileController>();
-      if (profileCtrl.profile == null) profileCtrl.loadProfileData();
+      if (profileCtrl.profile == null) await profileCtrl.loadProfileData();
+      if (!mounted) return;
 
       final ctrl = context.read<SearchController>();
       ctrl.search(
-        newFilters: SearchFilters(query: widget.initialQuery),
-        aiSort: false,
-        hasProfile: profileCtrl.profile != null,
+        newFilters: SearchFilters(
+          query: widget.initialQuery,
+          category: widget.initialCategory,
+        ),
+        aiSort: profileCtrl.profile?.applyAiGlobally ?? false,
+        hasProfile: profileCtrl.profile?.isRecommendationReady == true,
       );
     });
   }
@@ -47,7 +61,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     super.dispose();
   }
 
-  bool get _hasProfile => context.read<ProfileController>().profile != null;
+  bool get _hasProfile =>
+      context.read<ProfileController>().profile?.isRecommendationReady == true;
 
   void _onSearch() {
     final ctrl = context.read<SearchController>();
@@ -84,13 +99,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
 
     final ctrl = context.watch<SearchController>();
-    final archiveCtrl = context.watch<import_archive_controller.ArchiveController>();
+    final archiveCtrl = context
+        .watch<import_archive_controller.ArchiveController>();
 
     final filteredResults = ctrl.results
         .where((r) => !archiveCtrl.isArchived(r.destination.id))
@@ -104,20 +122,32 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           Expanded(
             child: ctrl.isLoading
                 ? const LoadingView()
+                : ctrl.error != null
+                ? ProxvelEmptyState(
+                    icon: Icons.wifi_off_rounded,
+                    title: 'No pudimos cargar los destinos',
+                    subtitle: ctrl.error!,
+                    actionLabel: 'Reintentar',
+                    onAction: () => ctrl.search(
+                      hasProfile: _hasProfile,
+                      aiSort: ctrl.aiSortEnabled,
+                    ),
+                  )
                 : filteredResults.isEmpty
-                    ? ProxvelEmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'Sin resultados',
-                        subtitle: ctrl.filters.hasActiveFilters
-                            ? 'Prueba ajustando tus filtros\npara encontrar más destinos.'
-                            : 'No encontramos destinos que\ncoincidan con tu búsqueda.',
-                        actionLabel:
-                            ctrl.filters.hasActiveFilters ? 'Limpiar filtros' : null,
-                        onAction: ctrl.filters.hasActiveFilters
-                            ? () => ctrl.clearFilters()
-                            : null,
-                      )
-                    : _buildResultsList(ctrl, filteredResults),
+                ? ProxvelEmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'Sin resultados',
+                    subtitle: ctrl.filters.hasActiveFilters
+                        ? 'Prueba ajustando tus filtros\npara encontrar más destinos.'
+                        : 'No encontramos destinos que\ncoincidan con tu búsqueda.',
+                    actionLabel: ctrl.filters.hasActiveFilters
+                        ? 'Limpiar filtros'
+                        : null,
+                    onAction: ctrl.filters.hasActiveFilters
+                        ? () => ctrl.clearFilters()
+                        : null,
+                  )
+                : _buildResultsList(ctrl, filteredResults),
           ),
         ],
       ),
@@ -148,22 +178,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                   const Expanded(
                     child: Text(
                       'Buscar destinos',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textOnDark,
-                      ),
+                      style: AppTextStyles.sectionOnDark,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpace.content),
 
               // ── Search field + filter button ──
               Padding(
@@ -188,19 +217,31 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             fontSize: 15,
                           ),
                           decoration: InputDecoration(
+                            filled: false,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
                             hintText: '¿A dónde viajas hoy?',
                             hintStyle: TextStyle(
-                              color: AppColors.textOnDark.withValues(alpha: 0.4),
+                              color: AppColors.textOnDark.withValues(
+                                alpha: 0.65,
+                              ),
                               fontSize: 15,
                             ),
-                            prefixIcon: Icon(Icons.search_rounded,
-                                color: AppColors.accent, size: 22),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: AppColors.accent,
+                              size: 22,
+                            ),
                             suffixIcon: _queryCtrl.text.isNotEmpty
                                 ? IconButton(
-                                    icon: Icon(Icons.clear_rounded,
-                                        color: AppColors.textOnDark
-                                            .withValues(alpha: 0.5),
-                                        size: 20),
+                                    icon: Icon(
+                                      Icons.clear_rounded,
+                                      color: AppColors.textOnDark.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      size: 20,
+                                    ),
                                     onPressed: () {
                                       _queryCtrl.clear();
                                       _onSearch();
@@ -208,8 +249,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                                   )
                                 : null,
                             border: InputBorder.none,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -229,11 +271,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Icon(Icons.tune_rounded,
-                                color: filterCount > 0
-                                    ? AppColors.primary
-                                    : AppColors.textOnDark,
-                                size: 22),
+                            Icon(
+                              Icons.tune_rounded,
+                              color: filterCount > 0
+                                  ? AppColors.primary
+                                  : AppColors.textOnDark,
+                              size: 22,
+                            ),
                             if (filterCount > 0)
                               Positioned(
                                 top: 6,
@@ -265,17 +309,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 ),
               ),
 
-              // ── Toggle: Ordenar por recomendación IA ──
+              // ── Toggle: Ordenar para mí ──
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome_rounded,
-                        color: AppColors.accent, size: 18),
-                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: AppColors.accent,
+                      size: 18,
+                    ),
+                    const SizedBox(width: AppSpace.related),
                     const Expanded(
                       child: Text(
-                        'Ordenar por recomendación IA',
+                        'Ordenar para mí',
                         style: TextStyle(
                           color: AppColors.textOnDark,
                           fontSize: 13,
@@ -298,29 +345,41 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.accent.withValues(alpha: 0.4)),
+                        color: AppColors.accent.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded,
-                            color: AppColors.accent, size: 18),
-                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.accent,
+                          size: 18,
+                        ),
+                        const SizedBox(width: AppSpace.related),
                         Expanded(
                           child: Text(
-                            'Completa tu perfil viajero para ordenar resultados con IA.',
+                            'Elige tus preferencias para ordenar los destinos según tu forma de viajar.',
                             style: TextStyle(
-                              color: AppColors.textOnDark.withValues(alpha: 0.9),
+                              color: AppColors.textOnDark.withValues(
+                                alpha: 0.9,
+                              ),
                               fontSize: 12,
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => context.push('/profile/preferences'),
+                        TextButton(
+                          onPressed: () => context.push('/profile/preferences'),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 44),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                          ),
                           child: const Text(
                             'Completar',
                             style: TextStyle(
@@ -335,27 +394,49 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   ),
                 ),
 
+              if (ctrl.contextError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    ctrl.contextError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+
               // ── Active filters summary ──
               if (ctrl.filters.hasActiveFilters) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpace.content),
                 SizedBox(
-                  height: 30,
+                  height: 40,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     children: [
-                      if (ctrl.filters.city != null)
-                        _activeFilterChip(ctrl.filters.city!),
+                      if (ctrl.filters.region != null)
+                        _activeFilterChip(ctrl.filters.region!),
                       if (ctrl.filters.category != null)
                         _activeFilterChip(ctrl.filters.category!),
                       if (ctrl.filters.climate != null)
-                        _activeFilterChip(ctrl.filters.climate!),
-                      if (ctrl.filters.maxBudget != null)
                         _activeFilterChip(
-                            '≤ S/ ${ctrl.filters.maxBudget!.toStringAsFixed(0)}'),
+                          'Clima ${kClimateOptions[ctrl.filters.climate!] ?? ctrl.filters.climate!} · ${kMonthShort[(ctrl.filters.month ?? DateTime.now().month) - 1]}',
+                        ),
+                      if (ctrl.filters.crowd != null)
+                        _activeFilterChip(
+                          kCrowdOptions[ctrl.filters.crowd!] ??
+                              ctrl.filters.crowd!,
+                        ),
+                      if (ctrl.filters.costLevel != null)
+                        _activeFilterChip(
+                          'Costo ${kCostOptions[ctrl.filters.costLevel!] ?? ctrl.filters.costLevel!}',
+                        ),
                       if (ctrl.filters.minCompatibility != null)
                         _activeFilterChip(
-                            '≥ ${ctrl.filters.minCompatibility}%'),
+                          '≥ ${ctrl.filters.minCompatibility}%',
+                        ),
                     ],
                   ),
                 ),
@@ -371,7 +452,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.accent.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
@@ -388,13 +469,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     );
   }
 
-  Widget _buildResultsList(SearchController ctrl, List<dynamic> filteredResults) {
+  Widget _buildResultsList(
+    SearchController ctrl,
+    List<dynamic> filteredResults,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Results count
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen,
+            16,
+            AppSpace.screen,
+            8,
+          ),
           child: Text(
             '${filteredResults.length} destino${filteredResults.length != 1 ? 's' : ''} encontrado${filteredResults.length != 1 ? 's' : ''}',
             style: const TextStyle(
@@ -406,7 +495,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.screen,
+              4,
+              AppSpace.screen,
+              24,
+            ),
             physics: const BouncingScrollPhysics(),
             itemCount: filteredResults.length,
             itemBuilder: (_, i) {
@@ -415,7 +509,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               return SearchResultCard(
                 item: item,
                 onTap: () => context.push(
-                    '/destination/${item.destination.id}?source=$source'),
+                  '/destination/${item.destination.id}?source=$source&month=${ctrl.filters.month ?? DateTime.now().month}',
+                  extra: DestinationOpening(item.destination, 'search'),
+                ),
               );
             },
           ),

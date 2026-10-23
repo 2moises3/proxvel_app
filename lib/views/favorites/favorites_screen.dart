@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -52,6 +54,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Expanded(
             child: controller.isLoading
                 ? const LoadingView()
+                : controller.error != null
+                ? ProxvelEmptyState(
+                    icon: Icons.wifi_off_rounded,
+                    title: 'No pudimos cargar tus favoritos',
+                    subtitle: controller.error!,
+                    actionLabel: 'Reintentar',
+                    onAction: controller.loadFavorites,
+                  )
                 : filteredFavorites.isEmpty
                 ? ProxvelEmptyState(
                     icon: Icons.favorite_border_rounded,
@@ -93,7 +103,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: Padding(
         padding: EdgeInsets.only(top: topPadding),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpace.screen, 24, AppSpace.screen, 24),
           child: Row(
             children: [
               Expanded(
@@ -108,7 +118,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         color: AppColors.textOnDark,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpace.micro),
                     Text(
                       count > 0
                           ? '$count destino${count > 1 ? 's' : ''} guardado${count > 1 ? 's' : ''}'
@@ -170,8 +180,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: GestureDetector(
                 onTap: () => _confirmRemove(controller, dest.id, dest.name),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                   width: 44,
+                   height: 44,
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
@@ -195,10 +205,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        padding: const EdgeInsets.fromLTRB(AppSpace.screen, 16, AppSpace.screen, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -210,29 +220,25 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpace.section),
             const Icon(
               Icons.favorite_rounded,
               color: AppColors.error,
               size: 40,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             Text(
               '¿Quitar "$name" de favoritos?',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.sectionTitle,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.related),
             const Text(
               'Podrás volver a agregarlo cuando quieras.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: AppTextStyles.bodySecondary,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpace.section),
             Row(
               children: [
                 Expanded(
@@ -256,7 +262,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpace.content),
                 Expanded(
                   child: GestureDetector(
                     onTap: () {

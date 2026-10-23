@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../models/aspect_score_model.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -22,7 +23,7 @@ class AspectScoreBar extends StatelessWidget {
             children: [
               Icon(_iconForAspect(aspect.aspect),
                   size: 16, color: AppColors.textSecondary),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpace.related),
               Expanded(
                 child: Text(
                   aspect.aspect,

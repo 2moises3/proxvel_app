@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/images/adaptive_destination_image.dart';
 import '../../../models/destination_model.dart';
@@ -27,13 +29,9 @@ class DestinationGalleryPreview extends StatelessWidget {
         children: [
           const Text(
             'Galería',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+            style: AppTextStyles.sectionTitle,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.content),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: AdaptiveDestinationImage(
@@ -57,11 +55,7 @@ class DestinationGalleryPreview extends StatelessWidget {
           children: [
             const Text(
               'Galería',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.sectionTitle,
             ),
             GestureDetector(
               onTap: () {
@@ -78,13 +72,13 @@ class DestinationGalleryPreview extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpace.content),
         SizedBox(
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: AppSpace.content),
             itemBuilder: (context, index) {
               return ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -97,7 +91,7 @@ class DestinationGalleryPreview extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(

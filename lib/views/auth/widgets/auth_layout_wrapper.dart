@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/images/proxvel_enhanced_image.dart';
@@ -138,13 +139,13 @@ class AuthLayoutWrapper extends StatelessWidget {
               const Spacer(),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     titleWidget,
                     if (subtitle != null) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpace.related),
                       Text(
                         subtitle!,
                         style: TextStyle(
@@ -153,7 +154,7 @@ class AuthLayoutWrapper extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                   ],
                 ),
               ),

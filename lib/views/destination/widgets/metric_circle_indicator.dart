@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import 'dart:math' as math;
 import '../../../core/theme/app_colors.dart';
 
@@ -35,7 +36,7 @@ class MetricCircleIndicator extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpace.related),
         // Circular progress with icon
         SizedBox(
           width: 64,
@@ -66,7 +67,7 @@ class MetricCircleIndicator extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpace.related),
         // Percentage
         Text(
           percentage != null ? '$percentage%' : 'N/D',

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -29,9 +30,9 @@ class FeaturedDestinationCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -41,7 +42,7 @@ class FeaturedDestinationCard extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Stack(
             children: [
               Positioned.fill(
@@ -74,7 +75,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                   children: [
                     if (destination.category.trim().isNotEmpty)
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                           child: Container(
@@ -96,14 +97,14 @@ class FeaturedDestinationCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpace.related),
                     Consumer<FavoritesController>(
                       builder: (context, favCtrl, child) {
                         final isFav = favCtrl.isFavorite(destination.id);
                         return GestureDetector(
                           onTap: () => favCtrl.toggleFavorite(destination.id, destination),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                               child: Container(
@@ -150,12 +151,12 @@ class FeaturedDestinationCard extends StatelessWidget {
                       ),
                     ),
                     if (location.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpace.related),
                       Row(
                         children: [
                           const Icon(Icons.location_on,
                               color: AppColors.accent, size: 16),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpace.micro),
                           Expanded(
                             child: Text(
                               location,

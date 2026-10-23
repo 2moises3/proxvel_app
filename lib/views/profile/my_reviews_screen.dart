@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/my_reviews_controller.dart';
@@ -34,11 +36,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
         centerTitle: true,
         title: const Text(
           'Mis reseñas',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+          style: AppTextStyles.sectionTitle,
         ),
         leading: IconButton(
           icon: const Icon(
@@ -59,7 +57,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircularProgressIndicator(color: AppColors.accent),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             Text(
               'Cargando tus reseñas...',
               style: TextStyle(
@@ -84,7 +82,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 color: AppColors.error,
                 size: 48,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.field),
               Text(
                 controller.error!,
                 textAlign: TextAlign.center,
@@ -94,7 +92,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpace.section),
               ElevatedButton(
                 onPressed: () {
                   final auth = context.read<AuthController>();
@@ -102,22 +100,9 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                     auth.currentUser,
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 child: const Text(
                   'Reintentar',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTextStyles.button,
                 ),
               ),
             ],
@@ -138,7 +123,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 color: AppColors.textMuted,
                 size: 56,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.field),
               const Text(
                 'Aún no has enviado reseñas.\nCuando comentes un destino, aparecerá aquí.',
                 textAlign: TextAlign.center,
@@ -158,7 +143,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
       padding: const EdgeInsets.all(20),
       physics: const BouncingScrollPhysics(),
       itemCount: controller.reviews.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpace.field),
       itemBuilder: (context, index) {
         return MyReviewCard(review: controller.reviews[index]);
       },

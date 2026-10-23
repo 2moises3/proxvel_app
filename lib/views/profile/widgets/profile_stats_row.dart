@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../core/widgets/cards/stats_card.dart';
 
 /// Fila de estadísticas del perfil: favoritos, reseñas y recomendaciones.
@@ -17,7 +18,7 @@ class ProfileStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(AppSpace.screen, 20, AppSpace.screen, 0),
       child: Row(
         children: [
           StatsCard(
@@ -25,13 +26,13 @@ class ProfileStatsRow extends StatelessWidget {
             value: '$favoritesCount',
             label: 'Favoritos',
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpace.content),
           StatsCard(
             icon: Icons.rate_review_rounded,
             value: '$reviewsCount',
             label: 'Reseñas',
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpace.content),
           StatsCard(
             icon: Icons.auto_awesome_rounded,
             value: '$recommendationsCount',

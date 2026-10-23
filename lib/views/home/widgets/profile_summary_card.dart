@@ -1,3 +1,8 @@
+import 'package:provider/provider.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../controllers/profile_controller.dart';
+import '../../../models/traveler_types.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -15,15 +20,19 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
 
   @override
   Widget build(BuildContext context) {
-    final String initial = widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'M';
+    final profile = context.watch<ProfileController>().profile;
+    final style = travelerTypes[profile?.perfilTuristico];
+    final String initial = widget.userName.isNotEmpty
+        ? widget.userName[0].toUpperCase()
+        : 'M';
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      duration: AppMotion.duration(context),
+      curve: AppMotion.curve,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         boxShadow: [
           BoxShadow(
             color: AppColors.cardShadow,
@@ -33,7 +42,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Column(
           children: [
             // ── Header (Always Visible) ──
@@ -56,8 +65,12 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                         ),
                         child: Row(
                           children: [
-                            const Text('🌍', style: TextStyle(fontSize: 24)),
-                            const SizedBox(width: 12),
+                            const Icon(
+                              Icons.explore_outlined,
+                              size: 24,
+                              color: AppColors.textPrimary,
+                            ),
+                            const SizedBox(width: AppSpace.content),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +84,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                                       color: AppColors.textPrimary,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  SizedBox(height: AppSpace.micro),
                                   Text(
                                     'PROXVEL',
                                     style: TextStyle(
@@ -110,14 +123,10 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                               alignment: Alignment.center,
                               child: Text(
                                 initial,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                                style: AppTextStyles.cardTitleOnDark,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpace.content),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +152,9 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                               ),
                             ),
                             Icon(
-                              _isExpanded ? Icons.arrow_upward : Icons.arrow_forward,
+                              _isExpanded
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_forward,
                               size: 16,
                               color: AppColors.textSecondary,
                             ),
@@ -155,7 +166,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                 ),
               ),
             ),
-            
+
             // ── Expanded Content ──
             if (_isExpanded)
               Padding(
@@ -163,16 +174,14 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Completa tu perfil viajero para mejorar tus recomendaciones.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
+                    const SizedBox(height: AppSpace.field),
+                    Text(
+                      style == null
+                          ? 'Elige tu estilo de viajero para activar las recomendaciones.'
+                          : 'Estilo $style. El orden considera tus intereses, clima y tolerancia para el mes elegido.',
+                      style: AppTextStyles.body2,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpace.card),
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -191,8 +200,12 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
-                                Icon(Icons.tune_rounded, size: 16, color: AppColors.textPrimary),
-                                SizedBox(width: 8),
+                                Icon(
+                                  Icons.tune_rounded,
+                                  size: 16,
+                                  color: AppColors.textPrimary,
+                                ),
+                                SizedBox(width: AppSpace.related),
                                 Text(
                                   'Editar preferencias',
                                   style: TextStyle(
@@ -215,5 +228,4 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
       ),
     );
   }
-
 }

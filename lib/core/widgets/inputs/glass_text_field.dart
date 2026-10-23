@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../theme/app_layout.dart';
+import '../../theme/app_colors.dart';
 
 class GlassTextField extends StatefulWidget {
   final String label;
@@ -58,22 +60,28 @@ class _GlassTextFieldState extends State<GlassTextField> {
       children: [
         // Pill container with glassmorphism
         ClipRRect(
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
+              duration: AppMotion.duration(context),
+              curve: AppMotion.curve,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
+                borderRadius: BorderRadius.circular(AppRadius.control),
                 color: Colors.white.withValues(alpha: _isFocused ? 0.20 : 0.12),
                 border: Border.all(
                   color: widget.errorText != null
-                      ? Colors.red.withValues(alpha: 0.8)
-                      : Colors.white.withValues(alpha: _isFocused ? 0.35 : 0.15),
+                      ? AppColors.error.withValues(alpha: 0.8)
+                      : _isFocused
+                      ? AppColors.accent
+                      : Colors.white.withValues(alpha: 0.15),
                   width: 1,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.field,
+                vertical: AppSpace.micro,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -87,21 +95,24 @@ class _GlassTextFieldState extends State<GlassTextField> {
                       textCapitalization: widget.textCapitalization,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                       cursorColor: Colors.white,
                       decoration: InputDecoration(
+                        filled: false,
                         hintText: widget.label,
                         hintStyle: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          fontSize: 16,
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 14,
                         ),
                         border: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         errorBorder: InputBorder.none,
                         disabledBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: AppSpace.field,
+                        ),
                       ),
                     ),
                   ),
@@ -123,7 +134,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
           ),
         ),
         if (widget.errorText != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.related),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(

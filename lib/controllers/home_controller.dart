@@ -66,7 +66,7 @@ class HomeController extends ChangeNotifier {
       }
       recentSearches = loadedRecents;
     } catch (e) {
-      error = e.toString().replaceAll('Exception: ', '');
+      error = 'No pudimos cargar los destinos. Revisa tu conexión e intenta de nuevo.';
       destinations = [];
     }
     isLoading = false;

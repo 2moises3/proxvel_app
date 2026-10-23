@@ -7,6 +7,13 @@ class ReviewService {
 
   ReviewService({ApiClient? apiClient}) : _api = apiClient;
 
+  /// Reporta una reseña (ofensiva, falsa, spam, datos personales u otro).
+  Future<void> reportReview(String reviewId, String reason) async {
+    final api = _api;
+    if (api == null) throw Exception('Servicio no disponible.');
+    await api.post('/reviews/$reviewId/report', {'reason': reason});
+  }
+
   Future<List<ReviewModel>> getReviewsForDestination(String destinationId) async {
     if (_api == null) return [];
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart' hide SearchController;
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../controllers/search_controller.dart' show SearchController, SearchFilters;
 import '../../../core/theme/app_colors.dart';
+import '../../../models/seasonality_model.dart';
 
 /// Bottom sheet with visual filter chips for search refinement.
 class SearchFilterSheet extends StatefulWidget {
@@ -13,21 +16,25 @@ class SearchFilterSheet extends StatefulWidget {
 }
 
 class _SearchFilterSheetState extends State<SearchFilterSheet> {
-  late String? _city;
+  late String? _region;
   late String? _category;
-  late String? _climate;
-  late double? _maxBudget;
   late int? _minCompat;
+  late String? _climate;
+  late String? _crowd;
+  late int? _month;
+  late String? _cost;
 
   @override
   void initState() {
     super.initState();
     final f = widget.controller.filters;
-    _city = f.city;
+    _region = f.region;
     _category = f.category;
-    _climate = f.climate;
-    _maxBudget = f.maxBudget;
     _minCompat = f.minCompatibility;
+    _climate = f.climate;
+    _crowd = f.crowd;
+    _month = f.month;
+    _cost = f.costLevel;
   }
 
   @override
@@ -37,7 +44,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: SingleChildScrollView(
         padding: EdgeInsets.only(
@@ -61,28 +68,30 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpace.card),
 
             // Title row
             Row(
               children: [
                 const Text(
                   'Filtrar resultados',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppTextStyles.sectionTitle,
                 ),
                 const Spacer(),
-                GestureDetector(
-                  onTap: () => setState(() {
-                    _city = null;
+                TextButton(
+                  onPressed: () => setState(() {
+                    _region = null;
                     _category = null;
-                    _climate = null;
-                    _maxBudget = null;
                     _minCompat = null;
+                    _climate = null;
+                    _crowd = null;
+                    _month = null;
+                    _cost = null;
                   }),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                   child: const Text(
                     'Limpiar',
                     style: TextStyle(
@@ -94,77 +103,117 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpace.section),
 
-            // ── Ciudad ──
-            _sectionLabel('Ciudad / Región'),
+            // Solo se muestran los filtros que tienen datos reales detrás: no hay
+            // costos ni clima por destino en el backend, y regiones/categorías
+            // aparecen únicamente si ya están cargadas.
+            if (ctrl.availableRegions.isNotEmpty) ...[
+              _sectionLabel('Región'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ctrl.availableRegions
+                    .map((r) => _filterChip(r, _region == r, () {
+                          setState(() => _region = _region == r ? null : r);
+                        }))
+                    .toList(),
+              ),
+              const SizedBox(height: AppSpace.card),
+            ],
+
+            if (ctrl.availableCategories.isNotEmpty) ...[
+              _sectionLabel('Categoría'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ctrl.availableCategories
+                    .map((c) => _filterChip(c, _category == c, () {
+                          setState(() => _category = _category == c ? null : c);
+                        }))
+                    .toList(),
+              ),
+              const SizedBox(height: AppSpace.card),
+            ],
+
+            // ── Clima y afluencia del mes (datos de la tesis: clima 1991-2020 y llegadas históricas) ──
+            _sectionLabel('Mes de viaje'),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ctrl.availableCities
-                  .map((c) => _filterChip(c, _city == c, () {
-                        setState(() => _city = _city == c ? null : c);
+              children: [
+                for (var m = 1; m <= 12; m++)
+                  _filterChip(kMonthShort[m - 1], (_month ?? DateTime.now().month) == m, () {
+                    setState(() => _month = m);
+                  }),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Se usa para los filtros de clima y afluencia.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpace.card),
+
+            _sectionLabel('Clima favorable para'),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: kClimateOptions.entries
+                  .map((e) => _filterChip(e.value, _climate == e.key, () {
+                        setState(() => _climate = _climate == e.key ? null : e.key);
                       }))
                   .toList(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpace.card),
 
-            // ── Categoría ──
-            _sectionLabel('Categoría'),
+            _sectionLabel('Afluencia'),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ctrl.availableCategories
-                  .map((c) => _filterChip(c, _category == c, () {
-                        setState(() => _category = _category == c ? null : c);
+              children: kCrowdOptions.entries
+                  .map((e) => _filterChip(e.value, _crowd == e.key, () {
+                        setState(() => _crowd = _crowd == e.key ? null : e.key);
                       }))
                   .toList(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpace.card),
 
-            // ── Clima ──
-            _sectionLabel('Clima'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ctrl.availableClimates
-                  .map((c) => _filterChip(c, _climate == c, () {
-                        setState(() => _climate = _climate == c ? null : c);
-                      }))
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
+            // El costo solo aparece cuando ya hay destinos con nivel de costo cargado.
+            if (ctrl.availableCostLevels.isNotEmpty) ...[
+              _sectionLabel('Gasto de visita (estimado)'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ctrl.availableCostLevels
+                    .map((c) => _filterChip(kCostOptions[c] ?? c, _cost == c, () {
+                          setState(() => _cost = _cost == c ? null : c);
+                        }))
+                    .toList(),
+              ),
+              const SizedBox(height: AppSpace.card),
+            ],
 
-            // ── Presupuesto ──
-            _sectionLabel('Presupuesto máximo'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [100, 200, 500, 1000]
-                  .map((v) => _filterChip(
-                      'S/ $v',
-                      _maxBudget == v.toDouble(),
-                      () => setState(() => _maxBudget =
-                          _maxBudget == v.toDouble() ? null : v.toDouble())))
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Compatibilidad mínima ──
-            _sectionLabel('Compatibilidad mínima'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [60, 70, 80, 90]
-                  .map((v) => _filterChip('≥ $v%', _minCompat == v,
-                      () => setState(() => _minCompat = _minCompat == v ? null : v)))
-                  .toList(),
-            ),
+            // La compatibilidad solo existe con el orden por IA activado.
+            if (ctrl.aiSortEnabled) ...[
+              // ── Afinidad mínima ──
+              _sectionLabel('Afinidad mínima'),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [60, 70, 80, 90]
+                    .map((v) => _filterChip('≥ $v%', _minCompat == v,
+                        () => setState(() => _minCompat = _minCompat == v ? null : v)))
+                    .toList(),
+              ),
+            ],
             const SizedBox(height: 28),
 
             // ── Apply button ──
@@ -175,11 +224,13 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 onTap: () {
                   final newFilters = SearchFilters(
                     query: ctrl.filters.query,
-                    city: _city,
+                    region: _region,
                     category: _category,
-                    climate: _climate,
-                    maxBudget: _maxBudget,
                     minCompatibility: _minCompat,
+                    climate: _climate,
+                    crowd: _crowd,
+                    month: _month,
+                    costLevel: _cost,
                   );
                   ctrl.search(newFilters: newFilters);
                   Navigator.pop(context);
@@ -199,11 +250,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                   alignment: Alignment.center,
                   child: const Text(
                     'Aplicar filtros',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.cardTitleOnDark,
                   ),
                 ),
               ),
@@ -230,6 +277,8 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : AppColors.background,

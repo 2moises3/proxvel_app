@@ -1,3 +1,5 @@
+import 'controllers/notifications_controller.dart';
+import 'integration/services/notification_service.dart';
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:provider/provider.dart';
 import 'core/router/app_router.dart';
@@ -8,7 +10,6 @@ import 'integration/local/secure_token_storage.dart';
 import 'integration/services/profile_service.dart';
 import 'integration/services/destination_service.dart';
 import 'integration/services/recommendation_service.dart';
-import 'integration/services/route_service.dart';
 import 'integration/services/feedback_service.dart';
 import 'integration/services/tourism_service.dart';
 import 'integration/services/review_service.dart';
@@ -27,7 +28,6 @@ import 'controllers/search_controller.dart';
 import 'controllers/recommendation_controller.dart';
 import 'controllers/destination_controller.dart';
 import 'controllers/favorites_controller.dart';
-import 'controllers/routes_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/feedback_controller.dart';
 import 'controllers/my_reviews_controller.dart';
@@ -55,8 +55,9 @@ class ProxvelApp extends StatelessWidget {
         ProxyProvider2<LocalStorageService, ApiClient, FeedbackService>(
           update: (_, storage, api, previous) => FeedbackService(storage, apiClient: api),
         ),
-        ProxyProvider<ApiClient, DestinationService>(
-          update: (_, api, previous) => DestinationService(apiClient: api),
+        ProxyProvider2<LocalStorageService, ApiClient, DestinationService>(
+          update: (_, storage, api, previous) =>
+              DestinationService(apiClient: api, storage: storage),
         ),
         ProxyProvider<ApiClient, TourismService>(
           update: (_, api, previous) => TourismService(apiClient: api),
@@ -82,10 +83,12 @@ class ProxvelApp extends StatelessWidget {
         ProxyProvider<ApiClient, TourismMapService>(
           update: (_, api, previous) => TourismMapService(apiClient: api),
         ),
+        ProxyProvider<ApiClient, NotificationService>(
+          update: (_, api, previous) => NotificationService(apiClient: api),
+        ),
         ProxyProvider<ApiClient, AnnouncementService>(
           update: (_, api, previous) => AnnouncementService(apiClient: api),
         ),
-        Provider<RouteService>(create: (_) => RouteService()),
 
         // Controllers
         ChangeNotifierProxyProvider4<LocalStorageService, SecureTokenStorage, UserService, AuthService, AuthController>(
@@ -131,13 +134,6 @@ class ProxvelApp extends StatelessWidget {
           create: (context) => ArchiveController(context.read<ArchiveService>()),
           update: (context, arcSvc, ctl) => ctl ?? ArchiveController(arcSvc),
         ),
-        ChangeNotifierProxyProvider2<RouteService, LocalStorageService, RoutesController>(
-          create: (context) => RoutesController(
-            context.read<RouteService>(),
-            context.read<LocalStorageService>(),
-          ),
-          update: (context, routeSvc, localSvc, ctl) => ctl ?? RoutesController(routeSvc, localSvc),
-        ),
         ChangeNotifierProxyProvider3<ProfileService, LocalStorageService, UserService, ProfileController>(
           create: (context) => ProfileController(
             context.read<ProfileService>(),
@@ -158,6 +154,10 @@ class ProxvelApp extends StatelessWidget {
         ChangeNotifierProxyProvider<TourismMapService, TourismMapController>(
           create: (context) => TourismMapController(context.read<TourismMapService>()),
           update: (context, mapSvc, ctl) => ctl ?? TourismMapController(mapSvc),
+        ),
+        ChangeNotifierProxyProvider<NotificationService, NotificationsController>(
+          create: (context) => NotificationsController(context.read<NotificationService>()),
+          update: (context, svc, ctl) => ctl ?? NotificationsController(svc),
         ),
         ChangeNotifierProxyProvider<AnnouncementService, AnnouncementController>(
           create: (context) => AnnouncementController(context.read<AnnouncementService>()),
@@ -236,6 +236,8 @@ class _SessionManagerState extends State<_SessionManager> {
     context.read<ProfileController>().clearState();
     context.read<ArchiveController>().clearState();
     context.read<MyReviewsController>().clearState();
+    context.read<NotificationsController>().clearState();
+    context.read<DestinationService>().clearPersonalizedCache();
     // Si hay otros controladores con estado en memoria, se agregarían aquí
   }
 

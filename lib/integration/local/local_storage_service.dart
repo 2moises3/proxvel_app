@@ -69,27 +69,6 @@ class LocalStorageService {
     return _prefs?.getStringList('favorites') ?? [];
   }
 
-  // ── Completed Routes ──
-  Future<void> markRouteCompleted(String routeId) async {
-    final list = getCompletedRoutes();
-    if (!list.contains(routeId)) {
-      list.add(routeId);
-      await _prefs?.setStringList('completed_routes', list);
-    }
-  }
-
-  Future<void> markRouteActive(String routeId) async {
-    final list = getCompletedRoutes();
-    if (list.contains(routeId)) {
-      list.remove(routeId);
-      await _prefs?.setStringList('completed_routes', list);
-    }
-  }
-
-  List<String> getCompletedRoutes() {
-    return _prefs?.getStringList('completed_routes') ?? [];
-  }
-
   // ── Recent Searches ──
   Future<void> addRecentSearch(String query) async {
     final list = getRecentSearches();
@@ -115,7 +94,6 @@ class LocalStorageService {
     await _prefs?.remove('profile');
     // Aislamos estrictamente por usuario:
     await _prefs?.remove('favorites');
-    await _prefs?.remove('completed_routes');
     await _prefs?.remove('local_favorites_v1');
     await _prefs?.remove('local_archives_v1');
     // No borramos 'intro_seen' ni 'recent_searches' ya que son de la app, no del usuario específico

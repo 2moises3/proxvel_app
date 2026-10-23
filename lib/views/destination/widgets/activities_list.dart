@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 class ActivitiesList extends StatelessWidget {
@@ -15,19 +17,15 @@ class ActivitiesList extends StatelessWidget {
       children: [
         const Text(
           '¿Qué puedes hacer?',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
+          style: AppTextStyles.sectionTitle,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
         SizedBox(
           height: 90,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: activities.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 20),
+            separatorBuilder: (context, index) => const SizedBox(width: AppSpace.card),
             itemBuilder: (context, index) {
               return _buildActivityItem(activities[index]);
             },
@@ -57,7 +55,7 @@ class ActivitiesList extends StatelessWidget {
               size: 24,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.related),
           Text(
             activity,
             style: const TextStyle(

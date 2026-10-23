@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/navigation/destination_opening.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../controllers/search_controller.dart' show SearchResultItem;
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/images/adaptive_destination_image.dart';
 
@@ -12,20 +13,19 @@ class SearchResultCard extends StatelessWidget {
   final SearchResultItem item;
   final VoidCallback onTap;
 
-  const SearchResultCard({
-    super.key,
-    required this.item,
-    required this.onTap,
-  });
+  const SearchResultCard({super.key, required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final dest = item.destination;
     final compat = item.compatibility;
-    final compatColor = compat != null ? _compatColor(compat) : AppColors.accent;
-    final location = [dest.city, dest.region]
-        .where((s) => s.trim().isNotEmpty)
-        .join(', ');
+    final compatColor = compat != null
+        ? _labelColor(item.label)
+        : AppColors.accent;
+    final location = [
+      dest.city,
+      dest.region,
+    ].where((s) => s.trim().isNotEmpty).join(', ');
 
     return GestureDetector(
       onTap: onTap,
@@ -33,7 +33,7 @@ class SearchResultCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: AppColors.border, width: 1),
           boxShadow: [
             BoxShadow(
@@ -43,127 +43,150 @@ class SearchResultCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // ── Image ──
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                bottomLeft: Radius.circular(18),
-              ),
-              child: SizedBox(
-                width: 110,
-                height: 120,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    AdaptiveDestinationImage(imagePath: dest.imageUrl),
-                    // Compatibility badge — solo en orden IA.
-                    if (compat != null)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: compatColor.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '$compat%',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Image ──
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppRadius.card),
+                  bottomLeft: Radius.circular(AppRadius.card),
                 ),
-              ),
-            ),
-
-            // ── Info ──
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Label chip — solo en orden IA.
-                    if (item.label != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: compatColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  width: 110,
+                  height: 120,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DestinationHero(
+                        tag: 'search/${dest.id}',
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(AppRadius.card),
                         ),
-                        child: Text(
-                          item.label!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: compatColor,
-                          ),
+                        child: AdaptiveDestinationImage(
+                          imagePath: dest.imageUrl,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                    ],
-
-                    // Name
-                    Text(
-                      dest.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (location.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              size: 13, color: AppColors.accent),
-                          const SizedBox(width: 3),
-                          Expanded(
+                      // Compatibility badge — solo en orden IA.
+                      if (compat != null)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: compatColor.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
-                              location,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              '$compat%',
                               style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
                     ],
-                    if (dest.category.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _miniTag(dest.category),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
-            ),
 
-            const Padding(
-              padding: EdgeInsets.only(right: 10),
-              child: Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textMuted, size: 22),
-            ),
-          ],
+              // ── Info ──
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Label chip — solo en orden IA.
+                      if (item.label != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: compatColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.label!,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: compatColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+
+                      // Name
+                      Text(
+                        dest.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (location.isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.micro),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 13,
+                              color: AppColors.accent,
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                location,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (dest.category.trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.related),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _miniTag(dest.category),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const Padding(
+                padding: EdgeInsets.only(right: 10),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textMuted,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -187,9 +210,12 @@ class SearchResultCard extends StatelessWidget {
     );
   }
 
-  Color _compatColor(int pct) {
-    if (pct >= AppConstants.compatibilityRecommended) return AppColors.success;
-    if (pct >= AppConstants.compatibilityPartial) return AppColors.accent;
+  /// Verde = Recomendado, ámbar = Parcialmente recomendado, gris = el resto.
+  Color _labelColor(String? label) {
+    final l = (label ?? '').toLowerCase();
+    if (l.contains('no recomendado')) return AppColors.textSecondary;
+    if (l.contains('parcial')) return AppColors.accent;
+    if (l.contains('recomendado')) return AppColors.success;
     return AppColors.textSecondary;
   }
 }

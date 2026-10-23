@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../controllers/auth_controller.dart';
-import '../../core/widgets/images/proxvel_enhanced_image.dart';
+import 'widgets/auth_backdrop.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/navigation/home_entry_coordinator.dart';
 import '../../core/widgets/buttons/shimmer_button.dart';
 import '../../core/widgets/forms/residence_fields_widget.dart';
@@ -24,7 +26,9 @@ class ResidenceGateScreen extends StatefulWidget {
   State<ResidenceGateScreen> createState() => _ResidenceGateScreenState();
 }
 
-class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerProviderStateMixin {
+class _ResidenceGateScreenState extends State<ResidenceGateScreen>
+    with TickerProviderStateMixin {
+  final String _background = AuthScenes.current;
   String? _selectedDepartment;
   String? _selectedProvince;
   String? _selectedCity;
@@ -32,8 +36,8 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
   bool _isLoading = false;
   late final AnimationController _shimmerCtrl;
 
-  static const Color _amber = Color(0xFFF59E0B);
-  static const Color _amberDark = Color(0xFFD97706);
+  static const Color _amber = AppColors.accent;
+  static const Color _amberDark = AppColors.accentPressed;
 
   @override
   void initState() {
@@ -51,11 +55,13 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
   }
 
   bool get _canSave =>
-      _selectedDepartment != null && _selectedProvince != null && _selectedCity != null;
+      _selectedDepartment != null &&
+      _selectedProvince != null &&
+      _selectedCity != null;
 
   Future<void> _handleSave() async {
     if (!_canSave) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final user = context.read<AuthController>().currentUser;
@@ -82,7 +88,9 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No pudimos guardar tu residencia. Intenta nuevamente.'),
+            content: Text(
+              'No pudimos guardar tu residencia. Intenta nuevamente.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -110,33 +118,7 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background Image
-          Positioned.fill(
-            child: const ProxvelEnhancedImage(
-              imagePath: 'assets/images/welcome.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-          ),
-
-          // Gradient
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.25, 0.55, 1.0],
-                  colors: [
-                    Colors.black.withValues(alpha: 0.15),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.75),
-                    Colors.black.withValues(alpha: 0.95),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          Positioned.fill(child: AuthBackdrop(imagePath: _background)),
 
           SafeArea(
             child: CustomScrollView(
@@ -149,16 +131,25 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
                     children: [
                       // Top Action Bar
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: widget.mode == ResidenceGateMode.fallback
-                            ? IconButton(
-                                icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 24),
-                                onPressed: _handleLogout,
-                                tooltip: 'Cerrar sesión',
-                              )
-                            : const SizedBox(height: 48), // Spacer to keep layout balanced
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.logout_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  onPressed: _handleLogout,
+                                  tooltip: 'Cerrar sesión',
+                                )
+                              : const SizedBox(
+                                  height: 48,
+                                ), // Spacer to keep layout balanced
                         ),
                       ),
 
@@ -185,16 +176,16 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
                             ),
                           ),
                         ),
-                      
+
                       if (widget.mode == ResidenceGateMode.registration)
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpace.related),
 
                       // Title
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
                         child: Text(
-                          widget.mode == ResidenceGateMode.registration 
-                              ? 'Tu residencia' 
+                          widget.mode == ResidenceGateMode.registration
+                              ? 'Tu residencia'
                               : 'Completa tu\nresidencia',
                           style: GoogleFonts.poppins(
                             fontSize: 34,
@@ -212,9 +203,9 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
                           ),
                         ),
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
+
+                      const SizedBox(height: AppSpace.field),
+
                       // Subtitle
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -238,11 +229,13 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpace.group),
 
                       // Form Fields
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
                         child: ResidenceFieldsWidget(
                           isDarkTheme: true,
                           onChanged: (dept, prov, city) {
@@ -259,19 +252,20 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> with TickerPr
 
                       // Submit Button
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
-                        child: _isLoading 
-                          ? const Center(child: CircularProgressIndicator(color: _amber))
-                          : Opacity(
-                              opacity: _canSave ? 1.0 : 0.5,
-                              child: ShimmerButton(
-                                shimmer: _shimmerCtrl,
-                                baseColor: _amber,
-                                hoverColor: _amberDark,
-                                text: 'Guardar y continuar',
-                                onPressed: _canSave ? _handleSave : () {},
-                              ),
-                            ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
+                        child: Opacity(
+                          opacity: _canSave ? 1.0 : 0.5,
+                          child: ShimmerButton(
+                            isLoading: _isLoading,
+                            shimmer: _shimmerCtrl,
+                            baseColor: _amber,
+                            hoverColor: _amberDark,
+                            text: 'Guardar y continuar',
+                            onPressed: _canSave ? _handleSave : () {},
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 48),

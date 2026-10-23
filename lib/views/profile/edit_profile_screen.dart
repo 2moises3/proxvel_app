@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
@@ -66,23 +68,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _handleSave() async {
     setState(() => _isLoading = true);
-    await context.read<AuthController>().updateUserProfile(
-      name: _nameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      email: _emailController.text.trim(),
-      residenceDepartment: _selectedDepartment,
-      residenceProvince: _selectedProvince,
-      residenceCity: _selectedCity,
-    );
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perfil actualizado correctamente'),
-          backgroundColor: AppColors.success,
-        ),
+    try {
+      await context.read<AuthController>().updateUserProfile(
+        name: _nameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        residenceDepartment: _selectedDepartment,
+        residenceProvince: _selectedProvince,
+        residenceCity: _selectedCity,
       );
-      context.pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Perfil actualizado correctamente'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -111,15 +125,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         title: const Text(
           'Editar perfil',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+          style: AppTextStyles.sectionTitle,
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppSpace.screen),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -171,14 +181,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpace.group),
             ProxvelTextField(label: 'Nombre', controller: _nameController),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             ProxvelTextField(
               label: 'Apellidos',
               controller: _lastNameController,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             ProxvelTextField(
               label: 'Email',
               controller: _emailController,
@@ -187,16 +197,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF9CA3AF), size: 20),
               helperText: 'El correo no se puede modificar',
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpace.group),
             const Text(
               'Residencia',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTextStyles.sectionTitle,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             ResidenceFieldsWidget(
               initialDepartment: _initialDepartment,
               initialProvince: _initialProvince,

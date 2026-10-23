@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
+import '../../theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Compact stat display used in the profile screen.
@@ -44,14 +46,10 @@ class StatsCard extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpace.micro),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
+              style: AppTextStyles.labelSmall,
             ),
           ],
         ),

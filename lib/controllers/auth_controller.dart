@@ -28,6 +28,7 @@ class AuthController extends ChangeNotifier {
     required String lastName,
     required String email,
     required String password,
+    required bool acceptedTerms,
   }) async {
     if (_userService == null) throw Exception('Servicio de usuarios no disponible.');
     if (_authService == null) throw Exception('Servicio de autenticación no disponible.');
@@ -40,6 +41,7 @@ class AuthController extends ChangeNotifier {
       name: unifiedName,
       email: email,
       password: password,
+      acceptedTerms: acceptedTerms,
     );
 
     // Auto-login post-registro
@@ -80,6 +82,70 @@ class AuthController extends ChangeNotifier {
         return e.message;
       }
       return e.toString().replaceAll('Exception: ', '');
+    }
+  }
+
+  /// Cambia la contraseña. Devuelve null si salió bien o el mensaje de error para mostrar.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_authService == null) return 'Servicio de autenticación no disponible.';
+    try {
+      final newToken = await _authService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      // El backend cerró las demás sesiones: se reemplaza el token de este dispositivo.
+      await saveToken(newToken);
+      return null;
+    } catch (e) {
+      if (e is ApiException) return e.message;
+      return 'No pudimos cambiar la contraseña. Verifica tu conexión e intenta nuevamente.';
+    }
+  }
+
+  /// Pide el código de recuperación. `error` es null si salió bien.
+  Future<PasswordResetRequestResult> requestPasswordReset(String email) async {
+    if (_authService == null) {
+      return const PasswordResetRequestResult(error: 'Servicio de autenticación no disponible.');
+    }
+    try {
+      return await _authService.forgotPassword(email.trim());
+    } catch (e) {
+      if (e is ApiException) return PasswordResetRequestResult(error: e.message);
+      return const PasswordResetRequestResult(
+          error: 'No pudimos enviar el código. Verifica tu conexión e intenta de nuevo.');
+    }
+  }
+
+  /// Cambia la contraseña con el código. Devuelve null si salió bien o el mensaje de error.
+  Future<String?> resetPasswordWithCode({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    if (_authService == null) return 'Servicio de autenticación no disponible.';
+    try {
+      await _authService.resetPassword(
+          email: email.trim(), code: code, newPassword: newPassword);
+      return null;
+    } catch (e) {
+      if (e is ApiException) return e.message;
+      return 'No pudimos cambiar la contraseña. Verifica tu conexión e intenta de nuevo.';
+    }
+  }
+
+  /// Registra la aceptación de los textos legales vigentes y actualiza el usuario guardado.
+  Future<bool> acceptCurrentTerms() async {
+    if (_userService == null) return false;
+    try {
+      final updated = await _userService.acceptTerms();
+      await _storage.saveUser(updated);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -177,6 +243,10 @@ class AuthController extends ChangeNotifier {
         role: currentUser.role,
         isActive: currentUser.isActive,
         avatarUrl: newAvatarUrl,
+        residenceDepartment: currentUser.residenceDepartment,
+        residenceProvince: currentUser.residenceProvince,
+        residenceCity: currentUser.residenceCity,
+        acceptedTermsVersion: currentUser.acceptedTermsVersion,
       );
       
       await _storage.saveUser(updatedUser);

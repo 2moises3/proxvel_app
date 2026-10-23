@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Bottom sheet de confirmación de cierre de sesión.
@@ -11,10 +13,10 @@ void showLogoutConfirmSheet(
     context: context,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
     ),
     builder: (sheetContext) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(AppSpace.screen, 16, AppSpace.screen, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -26,7 +28,7 @@ void showLogoutConfirmSheet(
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpace.section),
           Container(
             width: 64,
             height: 64,
@@ -40,7 +42,7 @@ void showLogoutConfirmSheet(
               size: 30,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.field),
           const Text(
             '¿Cerrar sesión?',
             style: TextStyle(
@@ -49,17 +51,13 @@ void showLogoutConfirmSheet(
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.related),
           const Text(
             'Podrás volver a iniciar sesión\nen cualquier momento.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
+            style: AppTextStyles.bodySecondary,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpace.section),
           Row(
             children: [
               Expanded(
@@ -83,7 +81,7 @@ void showLogoutConfirmSheet(
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpace.content),
               Expanded(
                 child: GestureDetector(
                   onTap: () {

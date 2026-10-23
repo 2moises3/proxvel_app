@@ -1,4 +1,7 @@
+import 'traveler_types.dart';
 class TravelerProfileModel {
+  final String? perfilTuristico;
+  bool get isRecommendationReady => travelerTypes.containsKey(perfilTuristico) && intereses.isNotEmpty;
   final String presupuesto;
   final int diasViaje;
   final String climaPreferido;
@@ -22,6 +25,7 @@ class TravelerProfileModel {
   final double pesoSeguridad;
 
   TravelerProfileModel({
+    this.perfilTuristico,
     required this.presupuesto,
     required this.diasViaje,
     required this.climaPreferido,
@@ -42,6 +46,7 @@ class TravelerProfileModel {
   });
 
   factory TravelerProfileModel.fromJson(Map<String, dynamic> json) => TravelerProfileModel(
+        perfilTuristico: json['perfil_turistico'] as String?,
         presupuesto: json['presupuesto'] ?? 'medio',
         diasViaje: json['dias_viaje'] ?? 3,
         climaPreferido: json['clima_preferido'] ?? 'templado',
@@ -62,6 +67,7 @@ class TravelerProfileModel {
       );
 
   Map<String, dynamic> toJson() => {
+        'perfil_turistico': perfilTuristico,
         'presupuesto': presupuesto,
         'dias_viaje': diasViaje,
         'clima_preferido': climaPreferido,
@@ -82,6 +88,7 @@ class TravelerProfileModel {
       };
 
   factory TravelerProfileModel.fromApiJson(Map<String, dynamic> json) => TravelerProfileModel(
+        perfilTuristico: json['perfil_turistico'] as String?,
         presupuesto: json['presupuesto'] ?? 'medio',
         diasViaje: json['dias_viaje'] ?? 3,
         climaPreferido: json['clima_preferido'] ?? 'templado',
@@ -102,6 +109,7 @@ class TravelerProfileModel {
       );
 
   Map<String, dynamic> toApiJson() => {
+        'perfil_turistico': perfilTuristico,
         'presupuesto': presupuesto,
         'dias_viaje': diasViaje,
         'clima_preferido': climaPreferido,
@@ -113,6 +121,7 @@ class TravelerProfileModel {
 
   /// Copia inmutable cambiando solo la preferencia global de IA.
   TravelerProfileModel copyWithAi(bool value) => TravelerProfileModel(
+        perfilTuristico: perfilTuristico,
         presupuesto: presupuesto,
         diasViaje: diasViaje,
         climaPreferido: climaPreferido,

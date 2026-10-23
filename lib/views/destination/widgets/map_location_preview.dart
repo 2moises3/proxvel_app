@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 
+/// Acceso al mapa real, sin representar una ilustración como si fuera un mapa.
 class MapLocationPreview extends StatelessWidget {
   final double? latitude;
   final double? longitude;
@@ -16,136 +19,61 @@ class MapLocationPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (latitude == null || longitude == null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ubicación',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE8ECEF)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.location_off_outlined, color: AppColors.textSecondary),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Ubicación geográfica no disponible en la fuente oficial.',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
+    final hasCoordinates = latitude != null && longitude != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Ubicación',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
+          style: AppTextStyles.sectionTitle,
         ),
-        const SizedBox(height: 12),
-        Container(
-          height: 140,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0F4F8), // Light map background color
+        const SizedBox(height: AppSpace.content),
+        Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            // We would normally use a map plugin here or a static map image.
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Map Pin
-              Column(
-                mainAxisSize: MainAxisSize.min,
+            onTap: hasCoordinates
+                ? () => context.push(destinationId == null
+                    ? '/map'
+                    : '/map/destination/$destinationId')
+                : null,
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 64),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
                 children: [
-                  const Icon(
-                    Icons.location_on,
+                  Icon(
+                    hasCoordinates
+                        ? Icons.map_outlined
+                        : Icons.location_off_outlined,
                     color: AppColors.accent,
-                    size: 40,
+                    size: 24,
                   ),
-                  Container(
-                    width: 12,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(100),
+                  const SizedBox(width: AppSpace.content),
+                  Expanded(
+                    child: Text(
+                      hasCoordinates
+                          ? 'Ver ubicación en el mapa'
+                          : 'Ubicación geográfica no disponible',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
+                  if (hasCoordinates)
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppColors.textSecondary),
                 ],
               ),
-              // "Ver en mapa" button
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () {
-                    if (destinationId != null) {
-                      context.push('/map/destination/$destinationId');
-                    } else {
-                      context.push('/map');
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Ver en mapa',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.open_in_new_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ],

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../theme/app_layout.dart';
+import '../../theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
+import '../buttons/proxvel_button.dart';
 
-/// Reusable premium empty state with icon, title, subtitle, and optional CTA.
+/// Estado compartido que puede desplazarse incluso bajo una cabecera o teclado.
 class ProxvelEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -19,83 +22,49 @@ class ProxvelEmptyState extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // ── Icon circle ──
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppColors.accent, size: 42),
-            ),
-            const SizedBox(height: 28),
-
-            // ── Title ──
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // ── Subtitle ──
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-
-            // ── CTA button ──
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 28),
-              GestureDetector(
-                onTap: onAction,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    actionLabel!,
-                    style: const TextStyle(
-                      color: AppColors.textOnDark,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.screen),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: AppColors.accentSoft,
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(icon, color: AppColors.accent, size: 32),
               ),
+              const SizedBox(height: AppSpace.section),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.sectionTitle,
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: AppSpace.content),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: AppSpace.section),
+                ProxvelButton(text: actionLabel!, onPressed: onAction),
+              ],
             ],
-          ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

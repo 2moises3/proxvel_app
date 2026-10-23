@@ -1,6 +1,5 @@
 import '../../models/archive_model.dart';
 import '../api/api_client.dart';
-import '../api/api_config.dart';
 
 class ArchiveService {
   final ApiClient _apiClient;
@@ -9,7 +8,7 @@ class ArchiveService {
 
   Future<List<ArchiveModel>> getArchives() async {
     try {
-      final response = await _apiClient.get('${ApiConfig.apiBaseUrl}/archives');
+      final response = await _apiClient.get('/archives');
       if (response['success'] == true) {
         final List<dynamic> data = response['data'];
         return data.map((json) => ArchiveModel.fromJson(json)).toList();
@@ -22,7 +21,7 @@ class ArchiveService {
 
   Future<bool> addArchive(String destinationId) async {
     try {
-      final response = await _apiClient.post('${ApiConfig.apiBaseUrl}/archives/$destinationId');
+      final response = await _apiClient.post('/archives/$destinationId');
       if (response['success'] == true) {
         return response['data']['is_archived'] == true;
       }
@@ -34,7 +33,7 @@ class ArchiveService {
 
   Future<bool> removeArchive(String destinationId) async {
     try {
-      final response = await _apiClient.delete('${ApiConfig.apiBaseUrl}/archives/$destinationId');
+      final response = await _apiClient.delete('/archives/$destinationId');
       if (response['success'] == true) {
         return true;
       }
@@ -46,7 +45,7 @@ class ArchiveService {
 
   Future<bool> checkArchive(String destinationId) async {
     try {
-      final response = await _apiClient.get('${ApiConfig.apiBaseUrl}/archives/check/$destinationId');
+      final response = await _apiClient.get('/archives/check/$destinationId');
       if (response['success'] == true) {
         return response['data']['is_archived'] == true;
       }
@@ -54,5 +53,56 @@ class ArchiveService {
     } catch (e) {
       return false;
     }
+  }
+}
+class FavoriteModel {
+  final String destinationId;
+  final String name;
+  final String? city;
+  final String? region;
+  final String? category;
+  final String? coverImageUrl;
+  final double? rating;
+  final bool isFavorite;
+  final DateTime? createdAt;
+
+  FavoriteModel({
+    required this.destinationId,
+    required this.name,
+    this.city,
+    this.region,
+    this.category,
+    this.coverImageUrl,
+    this.rating,
+    this.isFavorite = true,
+    this.createdAt,
+  });
+
+  factory FavoriteModel.fromJson(Map<String, dynamic> json) {
+    return FavoriteModel(
+      destinationId: json['destination_id'] ?? '',
+      name: json['name'] ?? '',
+      city: json['city'],
+      region: json['region'],
+      category: json['category'],
+      coverImageUrl: json['cover_image_url'],
+      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : null,
+      isFavorite: json['is_favorite'] ?? true,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'destination_id': destinationId,
+      'name': name,
+      'city': city,
+      'region': region,
+      'category': category,
+      'cover_image_url': coverImageUrl,
+      'rating': rating,
+      'is_favorite': isFavorite,
+      'created_at': createdAt?.toIso8601String(),
+    };
   }
 }

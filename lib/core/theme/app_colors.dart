@@ -10,6 +10,7 @@ class AppColors {
 
   // ── Accent ──
   static const Color accent = Color(0xFFF59E0B);
+  static const Color accentPressed = Color(0xFFD97706);
   static const Color accentLight = Color(0xFFFBBF24);
   static const Color accentSoft = Color(0xFFFEF3C7);
 

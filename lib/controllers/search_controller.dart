@@ -1,66 +1,98 @@
 import 'package:flutter/material.dart';
 import '../models/destination_model.dart';
-import '../core/constants/app_constants.dart';
+import '../models/seasonality_model.dart';
 import '../integration/services/destination_service.dart';
 import '../integration/local/local_storage_service.dart';
+
+/// Texto comparable: minúsculas, sin tildes ni espacios extremos ("Líneas" == "lineas").
+String normalizeForSearch(String text) {
+  const from = 'áàäâéèëêíìïîóòöôúùüûñ';
+  const to = 'aaaaeeeeiiiioooouuuun';
+  final lower = text.toLowerCase().trim();
+  final buffer = StringBuffer();
+  for (final ch in lower.split('')) {
+    final i = from.indexOf(ch);
+    buffer.write(i >= 0 ? to[i] : ch);
+  }
+  return buffer.toString();
+}
 
 /// Search filter criteria.
 class SearchFilters {
   final String query;
-  final String? city;
+  final String? region;
   final String? category;
-  final String? climate;
-  final double? maxBudget;
   final int? minCompatibility;
+
+  /// Clima favorable (>= 0.70 en la tesis) para esta preferencia: frio|templado|calido|seco.
+  final String? climate;
+
+  /// Afluencia del mes según la tesis: Bajo | Medio | Alto.
+  final String? crowd;
+
+  /// Mes (1-12) con el que se evalúan clima y afluencia. null = mes actual.
+  final int? month;
+
+  /// Nivel de costo estimado: bajo | medio | alto.
+  final String? costLevel;
 
   const SearchFilters({
     this.query = '',
-    this.city,
+    this.region,
     this.category,
-    this.climate,
-    this.maxBudget,
     this.minCompatibility,
+    this.climate,
+    this.crowd,
+    this.month,
+    this.costLevel,
   });
 
   bool get hasActiveFilters =>
-      city != null ||
+      region != null ||
       category != null ||
+      minCompatibility != null ||
       climate != null ||
-      maxBudget != null ||
-      minCompatibility != null;
+      crowd != null ||
+      costLevel != null;
 
   int get activeFilterCount {
     int count = 0;
-    if (city != null) count++;
+    if (region != null) count++;
     if (category != null) count++;
-    if (climate != null) count++;
-    if (maxBudget != null) count++;
     if (minCompatibility != null) count++;
+    if (climate != null) count++;
+    if (crowd != null) count++;
+    if (costLevel != null) count++;
     return count;
   }
 
   SearchFilters copyWith({
     String? query,
-    String? city,
+    String? region,
     String? category,
-    String? climate,
-    double? maxBudget,
     int? minCompatibility,
-    bool clearCity = false,
+    String? climate,
+    String? crowd,
+    int? month,
+    String? costLevel,
+    bool clearRegion = false,
     bool clearCategory = false,
-    bool clearClimate = false,
-    bool clearBudget = false,
     bool clearCompatibility = false,
+    bool clearClimate = false,
+    bool clearCrowd = false,
+    bool clearCost = false,
   }) {
     return SearchFilters(
       query: query ?? this.query,
-      city: clearCity ? null : (city ?? this.city),
+      region: clearRegion ? null : (region ?? this.region),
       category: clearCategory ? null : (category ?? this.category),
-      climate: clearClimate ? null : (climate ?? this.climate),
-      maxBudget: clearBudget ? null : (maxBudget ?? this.maxBudget),
       minCompatibility: clearCompatibility
           ? null
           : (minCompatibility ?? this.minCompatibility),
+      climate: clearClimate ? null : (climate ?? this.climate),
+      crowd: clearCrowd ? null : (crowd ?? this.crowd),
+      month: month ?? this.month,
+      costLevel: clearCost ? null : (costLevel ?? this.costLevel),
     );
   }
 }
@@ -70,11 +102,15 @@ class SearchFilters {
 class SearchResultItem {
   final DestinationModel destination;
   final int? compatibility;
-  final String? label; // 'Recomendado', 'Parcialmente', 'Normal'
+  final double? contextualScore;
+  final int? rankingPosition;
+  final String? label; // la etiqueta que calculó el motor
 
   SearchResultItem({
     required this.destination,
     this.compatibility,
+    this.contextualScore,
+    this.rankingPosition,
     this.label,
   });
 }
@@ -88,9 +124,11 @@ class SearchController extends ChangeNotifier {
   String? error;
 
   // Unique values for filter options (populated from data)
-  List<String> availableCities = [];
+  List<String> availableRegions = [];
+  List<String> availableCostLevels = [];
+  /// Si falló la carga del clima/afluencia del mes, aquí queda el aviso para mostrar.
+  String? contextError;
   List<String> availableCategories = [];
-  List<String> availableClimates = [];
 
   /// Orden por recomendación IA. Apagado por defecto: la búsqueda es normal.
   bool aiSortEnabled = false;
@@ -120,36 +158,75 @@ class SearchController extends ChangeNotifier {
     try {
       final all = await _destinationService.getDestinations();
 
-      // Populate filter options from real data (descarta vacíos).
-      availableCities =
-          all.map((d) => d.city).where((s) => s.trim().isNotEmpty).toSet().toList()
-            ..sort();
+      // Opciones de filtro con los datos reales (se descartan los vacíos).
+      availableRegions = all
+          .map((d) => d.region)
+          .where((r) => r.trim().isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort((a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)));
       availableCategories = all
           .map((d) => d.category)
-          .where((s) => s.trim().isNotEmpty)
+          .where((c) => c.trim().isNotEmpty)
           .toSet()
           .toList()
-        ..sort();
-      availableClimates = all
-          .map((d) => d.climate)
-          .where((s) => s.trim().isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
+        ..sort((a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)));
+
+      availableCostLevels = [
+        for (final level in kCostOptions.keys)
+          if (all.any((d) => d.costLevel == level)) level,
+      ];
+
+      // Clima y afluencia del mes (datos de la tesis) solo si hay filtro de ese tipo.
+      Map<String, MonthContext>? monthContext;
+      contextError = null;
+      if (filters.climate != null || filters.crowd != null) {
+        try {
+          monthContext = await _destinationService
+              .getMonthContext(filters.month ?? DateTime.now().month);
+        } catch (e) {
+          contextError =
+              'No pudimos cargar el clima y la afluencia de ese mes. Intenta de nuevo.';
+          error = contextError;
+          results = [];
+          isLoading = false;
+          notifyListeners();
+          return;
+        }
+      }
 
       // Apply text + faceted filters (sin filtros sobre datos inexistentes).
+      final q = normalizeForSearch(filters.query);
+      final tourismText = q.isEmpty
+          ? <String, String>{}
+          : await _destinationService.getTourismSearchIndex();
+      if (q.isNotEmpty) _storageService.addRecentSearch(filters.query.trim());
       final filtered = all.where((d) {
-        if (filters.query.isNotEmpty) {
-          _storageService.addRecentSearch(filters.query);
-          final q = filters.query.toLowerCase();
-          final matches = d.name.toLowerCase().contains(q) ||
-              d.city.toLowerCase().contains(q) ||
-              d.region.toLowerCase().contains(q) ||
-              d.category.toLowerCase().contains(q) ||
-              d.description.toLowerCase().contains(q);
+        if (q.isNotEmpty) {
+          final matches = [
+            d.name,
+            d.city,
+            d.region,
+            d.category,
+            tourismText[d.id] ?? '',
+          ]
+              .any((field) => normalizeForSearch(field).contains(q));
           if (!matches) return false;
         }
-        if (filters.city != null && d.city != filters.city) return false;
+        if (filters.region != null && d.region != filters.region) return false;
+        if (filters.costLevel != null && d.costLevel != filters.costLevel) {
+          return false;
+        }
+        if (monthContext != null) {
+          final c = monthContext[d.id];
+          if (c == null) return false; // sin datos del mes: no se puede afirmar nada
+          if (filters.climate != null && !c.climateFavorable(filters.climate!)) {
+            return false;
+          }
+          if (filters.crowd != null && c.aforoNivel != filters.crowd) {
+            return false;
+          }
+        }
         if (filters.category != null && d.category != filters.category) {
           return false;
         }
@@ -157,28 +234,32 @@ class SearchController extends ChangeNotifier {
       }).toList();
 
       if (aiSortEnabled && hasProfile) {
-        // ── Orden IA: enriquecer con compatibilidad real y ordenar desc. ──
+        // ── Orden IA: enriquecer con lo que dice el motor y ordenar desc. ──
+        // Un destino que el motor no recomienda (fuera del motor) queda sin
+        // porcentaje ni etiqueta y va al final: no se inventa un 0 %.
         final enriched = <SearchResultItem>[];
         for (final d in filtered) {
-          final compat = await _destinationService.getCompatibility(d.id);
-          final label = compat >= AppConstants.compatibilityRecommended
-              ? 'Recomendado'
-              : compat >= AppConstants.compatibilityPartial
-                  ? 'Parcialmente'
-                  : 'Normal';
+          final info = await _destinationService.getRankingInfo(d.id, month: filters.month);
           enriched.add(SearchResultItem(
             destination: d,
-            compatibility: compat,
-            label: label,
+            compatibility: info?.percent,
+            contextualScore: info?.score,
+            rankingPosition: info?.rank,
+            label: info?.label,
           ));
         }
         final compatFiltered = filters.minCompatibility != null
             ? enriched
-                .where((r) => (r.compatibility ?? 0) >= filters.minCompatibility!)
+                .where((r) =>
+                    r.compatibility != null &&
+                    r.compatibility! >= filters.minCompatibility!)
                 .toList()
             : enriched;
         compatFiltered.sort(
-            (a, b) => (b.compatibility ?? 0).compareTo(a.compatibility ?? 0));
+            (a, b) {
+              if (a.rankingPosition != null && b.rankingPosition != null) return a.rankingPosition!.compareTo(b.rankingPosition!);
+              return (b.contextualScore ?? -double.infinity).compareTo(a.contextualScore ?? -double.infinity);
+            });
         results = compatFiltered;
       } else {
         // ── Orden normal: alfabético. Sin scores IA inventados. ──
@@ -192,7 +273,8 @@ class SearchController extends ChangeNotifier {
             .toList();
       }
     } catch (e) {
-      error = e.toString().replaceAll('Exception: ', '');
+      error = 'No pudimos buscar destinos. Revisa tu conexión e intenta de nuevo.';
+      results = [];
     }
 
     isLoading = false;
@@ -201,6 +283,9 @@ class SearchController extends ChangeNotifier {
 
   void clearFilters() {
     filters = SearchFilters(query: filters.query);
-    search(aiSort: aiSortEnabled);
+    search(
+      aiSort: aiSortEnabled,
+      hasProfile: _storageService.getProfile()?.isRecommendationReady == true,
+    );
   }
 }

@@ -11,6 +11,9 @@ class UserModel {
   final String? residenceProvince;
   final String? residenceCity;
 
+  /// Versión de Términos y Privacidad que aceptó (null = aún no aceptó la versión vigente).
+  final String? acceptedTermsVersion;
+
   UserModel({
     required this.id,
     required this.name,
@@ -23,6 +26,7 @@ class UserModel {
     this.residenceDepartment,
     this.residenceProvince,
     this.residenceCity,
+    this.acceptedTermsVersion,
   });
 
   /// Full display name.
@@ -46,6 +50,7 @@ class UserModel {
         residenceDepartment: json['residence_department'],
         residenceProvince: json['residence_province'],
         residenceCity: json['residence_city'],
+        acceptedTermsVersion: json['accepted_terms_version'],
       );
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -60,6 +65,7 @@ class UserModel {
         residenceDepartment: json['residence_department'],
         residenceProvince: json['residence_province'],
         residenceCity: json['residence_city'],
+        acceptedTermsVersion: json['accepted_terms_version'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -74,6 +80,7 @@ class UserModel {
         if (residenceDepartment != null) 'residence_department': residenceDepartment,
         if (residenceProvince != null) 'residence_province': residenceProvince,
         if (residenceCity != null) 'residence_city': residenceCity,
+        if (acceptedTermsVersion != null) 'accepted_terms_version': acceptedTermsVersion,
       };
 
   /// Serializa el usuario para enviarlo al backend (POST /users).

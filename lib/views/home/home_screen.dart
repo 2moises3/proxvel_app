@@ -1,3 +1,7 @@
+import 'package:go_router/go_router.dart';
+import '../../core/theme/app_layout.dart';
+import '../../controllers/notifications_controller.dart';
+import '../main/main_layout.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +15,9 @@ import '../../controllers/archive_controller.dart';
 import '../../controllers/recommendation_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/announcements/announcement_modal.dart';
+import '../../core/widgets/announcements/announcement_style.dart';
+import '../legal/terms_gate_overlay.dart';
+import '../../core/legal/legal_texts.dart';
 import '../../models/announcement_model.dart';
 import 'widgets/home_explore_content.dart';
 import 'widgets/home_for_you_content.dart';
@@ -43,6 +50,9 @@ class _HomeScreenState extends State<HomeScreen>
       context.read<RecommendationController>().loadRecommendations();
       context.read<FavoritesController>().loadFavorites();
       context.read<ArchiveController>().loadArchives();
+      final notifications = context.read<NotificationsController>();
+      notifications.refreshCount();
+      notifications.startPolling();
       _maybeShowStartAnnouncement();
     });
   }
@@ -55,26 +65,36 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  /// Carga el anuncio de inicio (placement 'app_start') y lo muestra como
-  /// overlay una sola vez por sesión. Falla suave: si no hay anuncio, no hace
-  /// nada. Se muestra como overlay (no como ruta de diálogo) para sobrevivir a
-  /// los refrescos de GoRouter durante la verificación de sesión.
+  /// Ventana al abrir la app: aviso importante pendiente o anuncio de inicio
+  /// (respetando su límite de veces). Una por sesión. Falla suave: si no hay
+  /// anuncio, no hace nada. Se muestra como overlay (no como ruta de diálogo)
+  /// para sobrevivir a los refrescos de GoRouter durante la verificación de sesión.
   Future<void> _maybeShowStartAnnouncement() async {
     if (_startModalShown) return;
-    final annCtrl = context.read<AnnouncementController>();
-    await annCtrl.load(placement: 'app_start');
-    if (!mounted || _startModalShown) return;
-    final ann = annCtrl.currentFor('app_start');
-    if (ann == null) return;
+    // Primero los textos legales: el anuncio de inicio espera a la próxima sesión.
+    final accepted = context.read<AuthController>().currentUser?.acceptedTermsVersion == kLegalVersion;
+    if (!accepted) return;
     _startModalShown = true;
+    final annCtrl = context.read<AnnouncementController>();
+    final ann = await annCtrl.pickStartAnnouncement();
+    if (!mounted || ann == null) return;
+    annCtrl.markViewed(ann);
     setState(() => _startAnnouncement = ann);
   }
 
   void _dismissStartAnnouncement() {
     final ann = _startAnnouncement;
     if (ann == null) return;
-    context.read<AnnouncementController>().dismiss(ann.id);
+    context.read<AnnouncementController>().dismiss(ann);
     setState(() => _startAnnouncement = null);
+  }
+
+  void _openStartAnnouncementAction() {
+    final ann = _startAnnouncement;
+    if (ann == null) return;
+    context.read<AnnouncementController>().markClicked(ann);
+    setState(() => _startAnnouncement = null);
+    openAnnouncementAction(context, ann);
   }
 
   @override
@@ -168,11 +188,14 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
+          // Quien ya tenía cuenta acepta una vez los textos legales vigentes.
+          const TermsGateOverlay(),
           // Overlay del anuncio de inicio (sobre todo el contenido del home).
           if (_startAnnouncement != null)
             AnnouncementModalOverlay(
               announcement: _startAnnouncement!,
               onClose: _dismissStartAnnouncement,
+              onAction: _openStartAnnouncementAction,
             ),
         ],
       ),
@@ -201,7 +224,7 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
       alignment: Alignment.center,
       child: Container(
         height: 60,
-        margin: const EdgeInsets.symmetric(horizontal: 24),
+        margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(30),
@@ -250,8 +273,6 @@ class _CustomHomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     final avatarLeft = 24.0;
 
     // Notification Interpolation
-    final notifTop = avatarTop;
-    final notifRight = 24.0;
 
     // Name Interpolation
     final nameTopExpanded = maxExtent - 32 - 40 - 35; // maxExtent - curve - nameHeight - padding
@@ -318,16 +339,18 @@ class _CustomHomeHeaderDelegate extends SliverPersistentHeaderDelegate {
             height: 32,
             decoration: const BoxDecoration(
               color: AppColors.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
             ),
           ),
         ),
 
-        // Avatar
+        // Avatar (abre la pestaña Perfil)
         Positioned(
           top: avatarTop,
           left: avatarLeft,
-          child: Container(
+          child: GestureDetector(
+            onTap: () => MainLayout.of(context)?.changeTab(3),
+            child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
@@ -340,22 +363,63 @@ class _CustomHomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ? Icon(Icons.person, color: Colors.white, size: avatarRadius * 1.2)
                   : null,
             ),
+            ),
           ),
         ),
 
-        // Notification Icon
+        // Campana: abre el centro de notificaciones (anuncios + avisos personales)
         Positioned(
-          top: notifTop,
-          right: notifRight,
-          child: Container(
-            width: avatarRadius * 2,
-            height: avatarRadius * 2,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black.withValues(alpha: 0.3),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+          top: avatarTop,
+          right: 24,
+          child: GestureDetector(
+            onTap: () => context.push('/notifications'),
+            child: Consumer<NotificationsController>(
+              builder: (context, notifications, _) => Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: avatarRadius * 2,
+                    height: avatarRadius * 2,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.3),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                    ),
+                    child: Icon(
+                      notifications.hasUnread
+                          ? Icons.notifications_active_rounded
+                          : Icons.notifications_none,
+                      color: Colors.white,
+                      size: avatarRadius,
+                    ),
+                  ),
+                  if (notifications.hasUnread)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          notifications.unreadCount > 9 ? '9+' : '${notifications.unreadCount}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-            child: Icon(Icons.notifications_none, color: Colors.white, size: avatarRadius),
           ),
         ),
 

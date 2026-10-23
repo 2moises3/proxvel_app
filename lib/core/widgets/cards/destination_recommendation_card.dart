@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/navigation/destination_opening.dart';
+import '../../theme/app_layout.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/recommendation_result_model.dart';
@@ -29,11 +31,14 @@ class DestinationRecommendationCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 32),
         width: double.infinity,
-        height: 480, 
+        height: (MediaQuery.sizeOf(context).height * .62).clamp(390.0, 480.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           // Borde sutil para darle volumen sin usar blur (glass edge)
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.cardShadow.withValues(alpha: 0.15),
@@ -43,12 +48,18 @@ class DestinationRecommendationCard extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(31), // Ligeramente menor por el borde
+          borderRadius: BorderRadius.circular(
+            AppRadius.card,
+          ), // Ligeramente menor por el borde
           child: Stack(
             fit: StackFit.expand,
             children: [
               // ── 1. Background Image ──
-              AdaptiveDestinationImage(imagePath: dest.imageUrl),
+              DestinationHero(
+                tag: 'recommendation/${dest.id}',
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                child: AdaptiveDestinationImage(imagePath: dest.imageUrl),
+              ),
 
               // ── 2. Deep Cinematic Gradient ──
               Container(
@@ -57,10 +68,14 @@ class DestinationRecommendationCard extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.3), // Top shadow for badges
+                      Colors.black.withValues(
+                        alpha: 0.3,
+                      ), // Top shadow for badges
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.95), // Deep bottom shadow
+                      Colors.black.withValues(
+                        alpha: 0.95,
+                      ), // Deep bottom shadow
                     ],
                     stops: const [0.0, 0.3, 0.5, 1.0],
                   ),
@@ -77,24 +92,31 @@ class DestinationRecommendationCard extends StatelessWidget {
                   children: [
                     // Ranking Badge (Solid White)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: Colors.black, size: 16),
-                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Colors.black,
+                            size: 16,
+                          ),
+                          const SizedBox(width: AppSpace.micro),
                           Text(
-                            '#${index + 1}',
+                            '#${recommendation.rankingPosition ?? index + 1}',
                             style: GoogleFonts.poppins(
                               color: Colors.black,
                               fontSize: 14,
@@ -104,16 +126,18 @@ class DestinationRecommendationCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     // Archivar + Favorito (botones sólidos blancos)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Archivar: lo saca de "Para Ti" y Explorar (se gestiona en Perfil → Archivados)
                         GestureDetector(
-                          onTap: () => context.read<ArchiveController>().toggleArchive(dest.id, dest),
+                          onTap: () => context
+                              .read<ArchiveController>()
+                              .toggleArchive(dest.id, dest),
                           child: Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
@@ -122,11 +146,14 @@ class DestinationRecommendationCard extends StatelessWidget {
                                   color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
-                                )
+                                ),
                               ],
                             ),
-                            child: const Icon(Icons.archive_outlined,
-                                color: Colors.black, size: 20),
+                            child: const Icon(
+                              Icons.archive_outlined,
+                              color: Colors.black,
+                              size: 20,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -135,23 +162,30 @@ class DestinationRecommendationCard extends StatelessWidget {
                           builder: (context, favCtrl, child) {
                             final isFav = favCtrl.isFavorite(dest.id);
                             return GestureDetector(
-                              onTap: () => favCtrl.toggleFavorite(dest.id, dest),
+                              onTap: () =>
+                                  favCtrl.toggleFavorite(dest.id, dest),
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
-                                    )
+                                    ),
                                   ],
                                 ),
                                 child: Icon(
-                                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                  color: isFav ? const Color(0xFFFF4B4B) : Colors.black,
+                                  isFav
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  color: isFav
+                                      ? const Color(0xFFFF4B4B)
+                                      : Colors.black,
                                   size: 20,
                                 ),
                               ),
@@ -180,10 +214,11 @@ class DestinationRecommendationCard extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 3.0, // Amplio tracking para look premium
+                          letterSpacing:
+                              3.0, // Amplio tracking para look premium
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpace.related),
                     ],
 
                     Text(
@@ -197,16 +232,20 @@ class DestinationRecommendationCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.content),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Icon(Icons.location_on, color: Colors.white, size: 16),
+                        const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             dest.city,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
@@ -219,25 +258,34 @@ class DestinationRecommendationCard extends StatelessWidget {
                     ),
 
                     // ── Etiqueta cualitativa + mejor mes (en vez del % crudo) ──
-                    const SizedBox(height: 12),
-                    Row(
+                    const SizedBox(height: AppSpace.content),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.accent.withValues(alpha: 0.95),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.auto_awesome_rounded,
-                                  color: Colors.white, size: 14),
+                              const Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                               const SizedBox(width: 5),
                               Text(
                                 recommendation.label,
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
+                                style: GoogleFonts.poppins(
+                                  color: AppColors.textPrimary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -245,22 +293,24 @@ class DestinationRecommendationCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if ((recommendation.bestMonthName ?? '').isNotEmpty) ...[
+                        if ((recommendation.bestMonthName ?? '')
+                            .isNotEmpty) ...[
                           const SizedBox(width: 10),
-                          const Icon(Icons.event_available_rounded,
-                              color: Colors.white, size: 15),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'Mejor mes: ${_cap(recommendation.bestMonthName!)}',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          const Icon(
+                            Icons.event_available_rounded,
+                            color: Colors.white,
+                            size: 15,
+                          ),
+                          const SizedBox(width: AppSpace.micro),
+                          Text(
+                            'Mejor mes: ${_cap(recommendation.bestMonthName!)}',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
@@ -268,8 +318,10 @@ class DestinationRecommendationCard extends StatelessWidget {
                     if ((recommendation.contextStatus ?? '').isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
-                        recommendation.contextStatus!,
-                        style: GoogleFonts.inter(
+                        recommendation.monthName == null
+                            ? 'Clima y afluencia considerados'
+                            : 'Para ${recommendation.monthName} · clima y afluencia considerados',
+                        style: GoogleFonts.poppins(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,

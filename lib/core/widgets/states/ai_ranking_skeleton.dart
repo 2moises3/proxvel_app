@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
 
 class AiRankingSkeletonCard extends StatefulWidget {
   const AiRankingSkeletonCard({super.key});
@@ -108,7 +109,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                 height: 36,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
               ),
               Row(
@@ -153,7 +154,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpace.content),
               Container(
                 width: 240,
                 height: 32,
@@ -162,7 +163,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpace.related),
               Container(
                 width: 180,
                 height: 32,
@@ -171,7 +172,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.field),
               Row(
                 children: [
                   Container(
@@ -182,7 +183,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpace.related),
                   Container(
                     width: 140,
                     height: 16,
@@ -193,7 +194,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.field),
               Row(
                 children: [
                   Container(
@@ -201,7 +202,7 @@ class _AiRankingSkeletonCardState extends State<AiRankingSkeletonCard>
                     height: 28,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.card),
                     ),
                   ),
                   const SizedBox(width: 10),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -21,7 +22,7 @@ class HomeHeader extends StatelessWidget {
             letterSpacing: -0.5, // Le da un toque más Premium
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpace.related),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

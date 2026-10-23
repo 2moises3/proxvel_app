@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/destination_model.dart';
@@ -98,7 +99,7 @@ class _CoverflowCarouselState extends State<CoverflowCarousel> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpace.section),
         // Minimalist Dots Indicator
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
