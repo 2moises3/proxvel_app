@@ -62,9 +62,14 @@ class RecommendationController extends ChangeNotifier {
     } catch (e) {
       if (generation != _generation) return;
       profileIncomplete =
-          e is ApiException && (e.statusCode == 400 || e.statusCode == 422);
+          e is ApiException &&
+          (e.code == 'TRAVELER_PROFILE_INCOMPLETE' ||
+              (e.statusCode == 400 &&
+                  e.message.contains('no cuenta con un perfil de viaje')));
       error = profileIncomplete
           ? 'Completa tu estilo de viajero y preferencias para recibir recomendaciones.'
+          : e is ApiException && (e.statusCode == 400 || e.statusCode == 422)
+          ? 'No pudimos procesar la solicitud de recomendaciones. Intenta nuevamente.'
           : 'No pudimos cargar tus recomendaciones. Revisa tu conexión e intenta de nuevo.';
     }
     if (generation != _generation) return;
