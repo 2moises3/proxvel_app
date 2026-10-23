@@ -9,7 +9,8 @@ import '../local/secure_token_storage.dart';
 class ApiException implements Exception {
   final int statusCode;
   final String message;
-  ApiException(this.statusCode, this.message);
+  final String? code;
+  ApiException(this.statusCode, this.message, {this.code});
 
   @override
   String toString() => message;
@@ -170,6 +171,16 @@ class ApiClient {
       errorMsg = response.statusCode >= 500 ? 'Ocurrió un problema inesperado. Intenta nuevamente.' : 'Error del servidor.';
     }
 
+    String? errorCode;
+    try {
+      final payload = jsonDecode(response.body);
+      final detail = payload is Map ? payload['detail'] : null;
+      if (detail is Map && detail['code'] is String) {
+        errorCode = detail['code'] as String;
+      }
+    } catch (_) {
+      // Una respuesta sin JSON conserva el mensaje seguro anterior.
+    }
     final lower = errorMsg.toLowerCase();
 
     if (response.statusCode == 400 || response.statusCode == 409) {
@@ -201,6 +212,6 @@ class ApiClient {
       errorMsg = 'Ocurrió un problema inesperado. Intenta nuevamente.';
     }
 
-    throw ApiException(response.statusCode, errorMsg);
+    throw ApiException(response.statusCode, errorMsg, code: errorCode);
   }
 }
