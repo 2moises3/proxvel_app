@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/traveler_profile_model.dart';
@@ -23,7 +24,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border, width: 1),
         boxShadow: [
           BoxShadow(
@@ -70,7 +71,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border, width: 1),
         boxShadow: [
           BoxShadow(
@@ -90,7 +91,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
                 size: 20,
                 color: AppColors.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpace.related),
               const Expanded(
                 child: Text(
                   'Perfil de viajero',
@@ -103,7 +104,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.content),
           const Text(
             'Completa tu perfil viajero para recibir explicaciones personalizadas.',
             style: TextStyle(
@@ -130,7 +131,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
                     size: 16,
                     color: AppColors.primary,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpace.related),
                   Text(
                     'Completar perfil',
                     style: TextStyle(

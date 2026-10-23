@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
 import '../../theme/app_colors.dart';
 import '../../../integration/services/peru_location_service.dart';
 import '../inputs/glass_select_field.dart';
@@ -205,7 +206,7 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
         _buildField(
           label: 'Provincia',
           value: _selectedProvince,
@@ -221,7 +222,7 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
         _buildField(
           label: 'Ciudad / Distrito',
           value: _selectedCity,

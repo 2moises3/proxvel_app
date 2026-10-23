@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/destination_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../integration/services/review_service.dart';
 
 class ReviewsTabContent extends StatelessWidget {
   final DestinationController controller;
@@ -18,16 +21,12 @@ class ReviewsTabContent extends StatelessWidget {
       children: [
         const Text(
           'Opiniones de viajeros',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
+          style: AppTextStyles.sectionTitle,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
         if (controller.hasReviewsError) ...[
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpace.screen),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
@@ -37,13 +36,13 @@ class ReviewsTabContent extends StatelessWidget {
               child: Text(
                 'No se pudieron cargar las opiniones. Inténtalo nuevamente.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                style: AppTextStyles.bodySecondary,
               ),
             ),
           ),
         ] else if (reviews.isEmpty) ...[
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpace.screen),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
@@ -53,7 +52,7 @@ class ReviewsTabContent extends StatelessWidget {
               child: Text(
                 'Aún no hay opiniones para este destino. Sé el primero en comentar.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                style: AppTextStyles.bodySecondary,
               ),
             ),
           ),
@@ -62,7 +61,7 @@ class ReviewsTabContent extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: reviews.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            separatorBuilder: (context, index) => const SizedBox(height: AppSpace.field),
             itemBuilder: (context, index) {
               final review = reviews[index];
               return Container(
@@ -90,7 +89,7 @@ class ReviewsTabContent extends StatelessWidget {
                             );
                           }),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpace.related),
                         Text(
                           review.ratingGeneral.toStringAsFixed(1),
                           style: const TextStyle(
@@ -100,7 +99,7 @@ class ReviewsTabContent extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.content),
                     Text(
                       '"${review.reviewText}"',
                       style: const TextStyle(
@@ -110,14 +109,32 @@ class ReviewsTabContent extends StatelessWidget {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Viajero PROXVEL',
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    const SizedBox(height: AppSpace.content),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _authorLine(review.authorName, review.createdAt),
+                            style: AppTextStyles.mutedLabel,
+                          ),
+                        ),
+                        if (review.reviewId != null)
+                          InkWell(
+                            onTap: () => _reportReview(context, review.reviewId!),
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.flag_outlined, size: 14, color: AppColors.textMuted),
+                                  SizedBox(width: AppSpace.micro),
+                                  Text('Reportar', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -125,7 +142,7 @@ class ReviewsTabContent extends StatelessWidget {
             },
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpace.section),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -153,5 +170,61 @@ class ReviewsTabContent extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+const _kMonths = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
+/// «Lucía P. · octubre 2026». Sin nombre: «Viajero PROXVEL».
+String _authorLine(String? author, String? createdAt) {
+  final who = (author == null || author.trim().isEmpty) ? 'Viajero PROXVEL' : author;
+  final date = DateTime.tryParse(createdAt ?? '');
+  if (date != null) {
+    return '$who · ${_kMonths[date.month - 1]} ${date.year}';
+  }
+  return who;
+}
+
+const _kReportReasons = <String, String>{
+  'ofensiva': 'Es ofensiva o discriminatoria',
+  'falsa': 'Parece falsa o engañosa',
+  'spam': 'Es publicidad o spam',
+  'datos_personales': 'Contiene datos personales',
+  'otro': 'Otro motivo',
+};
+
+/// Pide el motivo y reporta la reseña; el equipo la revisa y puede ocultarla.
+Future<void> _reportReview(BuildContext context, String reviewId) async {
+  final service = context.read<ReviewService>();
+  final messenger = ScaffoldMessenger.of(context);
+  final reason = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 20, 22, 8),
+            child: Text('¿Por qué reportas esta reseña?', style: AppTextStyles.sectionTitle),
+          ),
+          for (final e in _kReportReasons.entries)
+            ListTile(title: Text(e.value), onTap: () => Navigator.pop(ctx, e.key)),
+          const SizedBox(height: AppSpace.related),
+        ],
+      ),
+    ),
+  );
+  if (reason == null) return;
+  try {
+    await service.reportReview(reviewId, reason);
+    messenger.showSnackBar(const SnackBar(content: Text('Gracias. Revisaremos la reseña.')));
+  } catch (_) {
+    messenger.showSnackBar(const SnackBar(content: Text('No pudimos enviar el reporte. Intenta de nuevo.')));
   }
 }

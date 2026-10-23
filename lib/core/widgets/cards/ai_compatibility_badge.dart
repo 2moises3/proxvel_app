@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
 import '../../theme/app_colors.dart';
 
 /// Insignia discreta de compatibilidad IA.
@@ -33,9 +34,9 @@ class AiCompatibilityBadge extends StatelessWidget {
         children: [
           Icon(Icons.auto_awesome_rounded,
               size: compact ? 11 : 13, color: AppColors.accent),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpace.micro),
           Text(
-            '$compatibility% IA',
+            '$compatibility% afinidad',
             style: TextStyle(
               color: AppColors.accent,
               fontSize: compact ? 10 : 12,

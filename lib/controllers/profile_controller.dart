@@ -14,6 +14,7 @@ class ProfileController extends ChangeNotifier {
   UserModel? user;
   TravelerProfileModel? profile;
   String? error;
+  bool isShowingCachedProfile = false;
 
   int _mutationGeneration = 0;
 
@@ -24,6 +25,7 @@ class ProfileController extends ChangeNotifier {
     final currentGeneration = ++_mutationGeneration;
     isLoading = true;
     error = null;
+    isShowingCachedProfile = false;
     notifyListeners();
     
     try {
@@ -64,7 +66,10 @@ class ProfileController extends ChangeNotifier {
                 // Degradación elegante: leemos de local pero NO bloqueamos el UI
                 final localProfile = _storageService.getProfile();
                 profile = localProfile;
-                // No seteamos "error global" porque arruinaría la experiencia
+                isShowingCachedProfile = localProfile != null;
+                if (localProfile == null) {
+                  error = 'No pudimos cargar tu perfil viajero. Intenta nuevamente.';
+                }
               }
             }
           }
@@ -83,7 +88,7 @@ class ProfileController extends ChangeNotifier {
       }
     } catch (e) {
       if (currentGeneration == _mutationGeneration) {
-        error = e.toString();
+        error = 'No pudimos cargar tu perfil. Revisa tu conexión e intenta de nuevo.';
       }
     }
     
@@ -98,50 +103,50 @@ class ProfileController extends ChangeNotifier {
     user = null;
     profile = null;
     error = null;
+    isShowingCachedProfile = false;
     isLoading = false;
     notifyListeners();
   }
 
   Future<void> updatePreferences(TravelerProfileModel updatedProfile) async {
+    // Sin el usuario en memoria (recarga o enlace directo) se carga antes de guardar.
+    // Nunca se guarda solo en el teléfono: el viajero creería que se guardó y el motor
+    // seguiría usando las preferencias anteriores.
+    if (user?.id == null) await loadProfileData();
     final userId = user?.id;
+    if (userId == null) {
+      throw Exception('No pudimos identificar tu cuenta. Vuelve a iniciar sesión.');
+    }
     _mutationGeneration++; // Cancela silenciosamente las cargas viejas
-    
+
     error = null;
     isLoading = false;
-    
-    if (userId != null) {
-      // Llamada real al backend
-      final realProfile = await _profileService.putTravelerProfile(
-        userId: userId,
-        profile: updatedProfile,
-      );
-      profile = realProfile;
-      await _storageService.saveProfile(realProfile);
-    } else {
-      // Fallback local
-      profile = updatedProfile;
-      await _storageService.saveProfile(updatedProfile);
-    }
+
+    final realProfile = await _profileService.putTravelerProfile(
+      userId: userId,
+      profile: updatedProfile,
+    );
+    profile = realProfile;
+    await _storageService.saveProfile(realProfile);
     notifyListeners();
   }
 
   /// Cambia la preferencia "Aplicar IA en toda la app".
   /// Usa PATCH parcial (no recalcula pesos en backend). Optimista con reversión.
   Future<void> setApplyAiGlobally(bool value) async {
+    if (user?.id == null) await loadProfileData();
     final userId = user?.id;
     final current = profile;
     if (current == null) return; // Sin perfil no hay preferencia que aplicar.
+    if (userId == null) {
+      // Nunca solo en el teléfono: el backend es quien aplica la IA en Explorar y Búsqueda.
+      throw Exception('No pudimos identificar tu cuenta. Vuelve a iniciar sesión.');
+    }
 
     _mutationGeneration++;
     final previous = current;
     profile = current.copyWithAi(value);
     notifyListeners();
-
-    if (userId == null) {
-      // Sin sesión backend: persistir solo local.
-      await _storageService.saveProfile(profile!);
-      return;
-    }
 
     try {
       final updated = await _profileService.patchTravelerProfile(

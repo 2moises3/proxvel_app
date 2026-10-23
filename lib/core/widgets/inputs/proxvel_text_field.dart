@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_layout.dart';
+import '../../theme/app_text_styles.dart';
 
 class ProxvelTextField extends StatefulWidget {
   final String label;
@@ -13,6 +16,7 @@ class ProxvelTextField extends StatefulWidget {
   final String? helperText;
   final Widget? prefixIcon;
   final Color? fillColor;
+  final TextInputType? keyboardType;
 
   const ProxvelTextField({
     super.key,
@@ -27,6 +31,7 @@ class ProxvelTextField extends StatefulWidget {
     this.helperText,
     this.prefixIcon,
     this.fillColor,
+    this.keyboardType,
   });
 
   @override
@@ -44,59 +49,76 @@ class _ProxvelTextFieldState extends State<ProxvelTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: widget.errorText != null ? 8 : 16),
-      child: TextField(
-        controller: widget.controller,
-        readOnly: widget.readOnly,
-        obscureText: widget.isPassword ? _obscureText : false,
-        onChanged: widget.onChanged,
-        textCapitalization: widget.textCapitalization,
-        inputFormatters: widget.inputFormatters,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          labelStyle: TextStyle(color: widget.errorText != null ? Colors.red : const Color(0xFF9CA3AF)), // Gray-400 or Red
-          errorText: widget.errorText,
-          errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
-          helperText: widget.helperText,
-          prefixIcon: widget.prefixIcon,
-          filled: true,
-          fillColor: widget.fillColor ?? Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: widget.errorText != null ? Colors.red : const Color(0xFFE5E7EB)),
+    return TextField(
+      style: AppTextStyles.body1,
+      controller: widget.controller,
+      readOnly: widget.readOnly,
+      keyboardType: widget.keyboardType,
+      obscureText: widget.isPassword ? _obscureText : false,
+      onChanged: widget.onChanged,
+      textCapitalization: widget.textCapitalization,
+      inputFormatters: widget.inputFormatters,
+      decoration: InputDecoration(
+        labelText: widget.label,
+        labelStyle: TextStyle(
+          color: widget.errorText != null
+              ? AppColors.error
+              : AppColors.textMuted,
+        ), // Gray-400 or Red
+        errorText: widget.errorText,
+        errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
+        helperText: widget.helperText,
+        prefixIcon: widget.prefixIcon,
+        filled: true,
+        fillColor: widget.fillColor ?? AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(
+            color: widget.errorText != null
+                ? AppColors.error
+                : AppColors.border,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: widget.errorText != null ? Colors.red : const Color(0xFFE5E7EB)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: widget.errorText != null ? Colors.red : const Color(0xFF374151)),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red, width: 1),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.red, width: 1.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          suffixIcon: widget.isPassword
-              ? IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                    color: const Color(0xFF9CA3AF),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureText = !_obscureText;
-                    });
-                  },
-                )
-              : null,
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(
+            color: widget.errorText != null
+                ? AppColors.error
+                : AppColors.border,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: BorderSide(
+            color: widget.errorText != null
+                ? AppColors.error
+                : AppColors.accent,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: const BorderSide(color: AppColors.error, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.all(AppSpace.field),
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscureText
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textMuted,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              )
+            : null,
       ),
     );
   }

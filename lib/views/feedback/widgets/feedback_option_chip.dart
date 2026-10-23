@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Selectable chip for feedback experience type.
@@ -39,7 +40,7 @@ class FeedbackOptionChip extends StatelessWidget {
               size: 18,
               color: isSelected ? AppColors.accent : AppColors.textSecondary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpace.related),
             Text(
               label,
               style: TextStyle(

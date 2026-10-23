@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Interactive star rating selector with labels.
@@ -42,7 +43,7 @@ class RatingSelector extends StatelessWidget {
             );
           }),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpace.related),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: Text(

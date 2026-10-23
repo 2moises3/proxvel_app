@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Displays a key influence factor with icon and description.
@@ -35,7 +36,7 @@ class InfluenceFactorItem extends StatelessWidget {
           ),
           child: Icon(icon, color: c, size: 18),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpace.content),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

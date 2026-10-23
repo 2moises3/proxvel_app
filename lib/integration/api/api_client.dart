@@ -158,7 +158,8 @@ class ApiClient {
       final json = jsonDecode(utf8.decode(response.bodyBytes));
       if (json is Map) {
         if (json['detail'] != null) {
-          errorMsg = json['detail'].toString();
+          final detail = json['detail'];
+          errorMsg = detail is Map ? (detail['message'] as String? ?? 'Revisa los datos e intenta nuevamente.') : detail is String ? detail : 'Revisa los datos e intenta nuevamente.';
         } else if (json['message'] != null) {
           errorMsg = json['message'].toString();
         } else if (json['error'] != null) {

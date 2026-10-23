@@ -18,9 +18,10 @@ class DestinationModel {
   final double? latitude;
   final double? longitude;
 
-  // ── Extended fields for "Sobre el destino" ──
-  final String? type;           // e.g. 'Sitios Arqueológicos', 'Parque Nacional'
-  final String? hierarchy;      // e.g. 'Jerarquía 4', 'Jerarquía 3'
+  /// Nivel de costo estimado: 'bajo' | 'medio' | 'alto' (dato editorial; null si no está cargado).
+  final String? costLevel;
+
+  // ── Campos extendidos para "Sobre el destino" ──
   final double? altitudeM;      // Altitude in meters
   final String? bestSeason;     // e.g. 'Abril - Octubre'
   final List<String> activities;  // e.g. ['Caminata', 'Fotografía', ...]
@@ -45,8 +46,7 @@ class DestinationModel {
     this.isTrending = false,
     this.latitude,
     this.longitude,
-    this.type,
-    this.hierarchy,
+    this.costLevel,
     this.altitudeM,
     this.bestSeason,
     this.activities = const [],
@@ -78,8 +78,7 @@ class DestinationModel {
         isTrending: isTrending,
         latitude: latitude,
         longitude: longitude,
-        type: type,
-        hierarchy: hierarchy,
+        costLevel: costLevel,
         altitudeM: altitudeM,
         bestSeason: bestSeason,
         activities: activities,
@@ -109,7 +108,6 @@ class DestinationModel {
       rating: json['rating']?.toDouble() ?? (tourism['rating']?.toDouble() ?? 0.0),
       reviewsCount: json['reviews_count'] ?? (tourism['reviews_count'] ?? 0),
       aspects: const [],
-      type: tourism['experience_type'],
       latitude: _parseDouble(json['latitude'] ?? tourism['latitude']),
       longitude: _parseDouble(json['longitude'] ?? tourism['longitude']),
     );
@@ -134,9 +132,9 @@ class DestinationModel {
       rating: json['rating']?.toDouble() ?? 0.0,
       reviewsCount: json['reviews_count'] ?? 0,
       aspects: const [],
-      type: json['category'],
       latitude: _parseDouble(json['latitude']),
       longitude: _parseDouble(json['longitude']),
+      costLevel: json['cost_level'] as String?,
     );
   }
 
@@ -159,7 +157,6 @@ class DestinationModel {
       rating: fav.rating ?? 0.0,
       reviewsCount: 0, // FavoriteModel no expone reviewsCount; evita NoSuchMethodError
       aspects: const [],
-      type: fav.category,
       latitude: null, // FavoriteModel no los expone aún
       longitude: null,
     );
@@ -206,10 +203,10 @@ class DestinationModel {
       rating: json['rating']?.toDouble() ?? (tourism['rating']?.toDouble() ?? 0.0),
       reviewsCount: json['reviews_count'] ?? (tourism['reviews_count'] ?? 0),
       aspects: const [],
-      type: tourism['experience_type'],
       latitude: _parseDouble(json['latitude'] ?? tourism['latitude']),
       longitude: _parseDouble(json['longitude'] ?? tourism['longitude']),
       galleryImages: gallery,
+      costLevel: json['cost_level'] as String?,
     );
   }
 
@@ -232,8 +229,6 @@ class DestinationModel {
         isTrending: json['isTrending'] ?? false,
         latitude: _parseDouble(json['latitude']),
         longitude: _parseDouble(json['longitude']),
-        type: json['type'],
-        hierarchy: json['hierarchy'],
         altitudeM: json['altitudeM']?.toDouble(),
         bestSeason: json['bestSeason'],
         activities: List<String>.from(json['activities'] ?? []),
@@ -259,8 +254,6 @@ class DestinationModel {
         'isTrending': isTrending,
         'latitude': latitude,
         'longitude': longitude,
-        'type': type,
-        'hierarchy': hierarchy,
         'altitudeM': altitudeM,
         'bestSeason': bestSeason,
         'activities': activities,

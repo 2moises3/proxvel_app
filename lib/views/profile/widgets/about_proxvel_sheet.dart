@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Bottom sheet "Sobre PROXVEL": logo, nombre y versión.
@@ -7,10 +9,10 @@ void showAboutProxvelSheet(BuildContext context) {
     context: context,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
     ),
     builder: (_) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      padding: const EdgeInsets.fromLTRB(AppSpace.screen, 16, AppSpace.screen, 40),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -22,13 +24,13 @@ void showAboutProxvelSheet(BuildContext context) {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpace.section),
           Image.asset(
             'assets/images/proxvel_logo_transparente.png',
             width: 60,
             height: 60,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.field),
           const Text(
             'PROXVEL',
             style: TextStyle(
@@ -38,17 +40,13 @@ void showAboutProxvelSheet(BuildContext context) {
               letterSpacing: 2,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.related),
           const Text(
             'Aplicativo de recomendación\nturística personalizada',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
+            style: AppTextStyles.bodySecondary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.field),
           Text(
             'Versión 1.0.0',
             style: TextStyle(

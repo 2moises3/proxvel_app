@@ -5,6 +5,7 @@ import 'explanation_model.dart';
 
 class RecommendationResultModel {
   final String id;
+  final int? rankingPosition;
   final DestinationModel destination;
   final double compatibilityPercentage;
   final double finalScore;
@@ -19,6 +20,7 @@ class RecommendationResultModel {
 
   RecommendationResultModel({
     required this.id,
+    this.rankingPosition,
     required this.destination,
     required this.compatibilityPercentage,
     required this.finalScore,
@@ -122,6 +124,7 @@ class RecommendationResultModel {
 
     return RecommendationResultModel(
       id: json['destination_id'] ?? '',
+      rankingPosition: json['ranking_position'] as int?,
       destination: DestinationModel.fromApiRecommendation(json),
       compatibilityPercentage: compat,
       finalScore: score,
@@ -138,6 +141,7 @@ class RecommendationResultModel {
 
   factory RecommendationResultModel.fromJson(Map<String, dynamic> json) => RecommendationResultModel(
         id: json['id'],
+        rankingPosition: json['rankingPosition'] as int?,
         destination: DestinationModel.fromJson(json['destination']),
         compatibilityPercentage: json['compatibilityPercentage'].toDouble(),
         finalScore: json['finalScore'].toDouble(),
@@ -150,6 +154,7 @@ class RecommendationResultModel {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'rankingPosition': rankingPosition,
         'destination': destination.toJson(),
         'compatibilityPercentage': compatibilityPercentage,
         'finalScore': finalScore,

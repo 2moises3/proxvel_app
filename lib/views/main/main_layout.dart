@@ -3,7 +3,6 @@ import '../../core/theme/app_colors.dart';
 import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../map/map_screen.dart';
-// RoutesScreen en standby por decisión de producto (Fase 0.1)
 import '../profile/profile_screen.dart';
 import '../../core/widgets/navigation/proxvel_bottom_navigation.dart';
 

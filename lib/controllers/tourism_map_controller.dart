@@ -56,7 +56,7 @@ class TourismMapController extends ChangeNotifier {
     try {
       _markers = await _mapService.getMapMarkers();
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = 'No pudimos cargar el mapa. Intenta de nuevo.';
       _markers = [];
     } finally {
       _isLoading = false;
@@ -64,10 +64,18 @@ class TourismMapController extends ChangeNotifier {
     }
   }
 
-  Future<void> selectDestination(MapMarkerModel marker) async {
+  /// true si el viajero prefirió no compartir su ubicación: no se calcula la distancia.
+  bool locationDeclined = false;
+
+  /// [useLocation]=false selecciona el destino sin pedir permiso ni calcular distancia.
+  Future<void> selectDestination(MapMarkerModel marker, {bool useLocation = true}) async {
     _selectedMarker = marker;
     _errorMessage = null;
+    _userLocation = null;
+    _distanceKm = null;
+    locationDeclined = !useLocation;
     notifyListeners();
+    if (!useLocation) return;
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -105,7 +113,7 @@ class TourismMapController extends ChangeNotifier {
       _distanceKm = meter / 1000;
       
     } catch (e) {
-      _errorMessage = "No se pudo obtener la ubicación: $e";
+      _errorMessage = 'No pudimos obtener tu ubicación. Puedes ver el destino sin compartirla.';
     }
     
     notifyListeners();
@@ -115,6 +123,7 @@ class TourismMapController extends ChangeNotifier {
     _selectedMarker = null;
     _userLocation = null;
     _distanceKm = null;
+    locationDeclined = false;
     _errorMessage = null;
     notifyListeners();
   }

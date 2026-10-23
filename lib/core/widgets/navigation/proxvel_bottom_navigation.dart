@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_layout.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Premium bottom navigation with 4 tabs: Home, Mapa, Favoritos, Perfil.
-/// NOTA: Rutas está en standby por decisión de producto (Fase 0.1).
 class ProxvelBottomNavigation extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -37,7 +37,7 @@ class ProxvelBottomNavigation extends StatelessWidget {
               Expanded(
                 child: _NavItem(
                   icon: Icons.home_rounded,
-                  label: 'Home',
+                   label: 'Inicio',
                   isActive: currentIndex == 0,
                   onTap: () => onTap(0),
                 ),
@@ -104,7 +104,7 @@ class _NavItem extends StatelessWidget {
               size: 24,
               color: isActive ? AppColors.accent : AppColors.navInactive,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpace.micro),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: GoogleFonts.poppins(

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Card displaying the recommendation ranking position, compatibility
-/// percentage, and recommendation label.
 class RankingHeaderCard extends StatelessWidget {
   final int? rankPosition;
   final int compatibilityPercentage;
-  final String label; // 'Recomendado', 'Parcialmente recomendado', etc.
-
+  final String label;
   const RankingHeaderCard({
     super.key,
     this.rankPosition,
@@ -16,136 +15,55 @@ class RankingHeaderCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isRecommended = label.toLowerCase().contains('recomendado') &&
-        !label.toLowerCase().contains('no recomendado');
-    final badgeColor = isRecommended ? AppColors.accent : AppColors.accent;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // ── Left: Rank badge + label ──
-          Expanded(
-            child: Row(
-              children: [
-                // Rank number badge
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: rankPosition != null
-                        ? Text(
-                            '#$rankPosition',
-                            style: const TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.explore_rounded,
-                            color: AppColors.accent,
-                            size: 24,
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                // "Recomendado para ti" text
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rankPosition != null ? 'Recomendado para ti' : 'Información del destino',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          height: 1.1,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpace.card),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.sectionTitle),
+        const SizedBox(height: AppSpace.field),
+        Row(
+          children: [
+            Text(
+              '$compatibilityPercentage%',
+              style: AppTextStyles.h1.copyWith(color: AppColors.accent),
             ),
-          ),
-
-          // ── Right: Compatibility % + badge ──
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            const SizedBox(width: AppSpace.content),
+            const Expanded(
+              child: Text('Afinidad relativa', style: AppTextStyles.body2),
+            ),
+          ],
+        ),
+        if (rankPosition != null) ...[
+          const SizedBox(height: AppSpace.related),
+          Text('Posición #$rankPosition este mes', style: AppTextStyles.label),
+        ],
+        const SizedBox(height: AppSpace.related),
+        const Text(
+          'No indica una probabilidad de satisfacción.',
+          style: AppTextStyles.body2,
+        ),
+        const SizedBox(height: AppSpace.related),
+        const Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text('Entender mi afinidad', style: AppTextStyles.label),
             children: [
               Text(
-                '$compatibilityPercentage%',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  color: badgeColor,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'compatible contigo',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Badge label
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: badgeColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label.length > 18
-                          ? label.substring(0, 18)
-                          : label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.check_circle, color: Colors.white, size: 14),
-                  ],
-                ),
+                'La afinidad compara tus intereses y las valoraciones del modelo. El orden también considera el clima y la afluencia del mes; por eso puede diferir del porcentaje.',
+                style: AppTextStyles.bodySecondary,
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }

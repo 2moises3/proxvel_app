@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -75,7 +76,7 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
@@ -91,7 +92,7 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                   const Color(0xFF080A0F).withValues(alpha: 0.85),
                 ],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
               border: Border(
                 top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
               ),
@@ -103,7 +104,7 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.content),
                     Container(
                       width: 36,
                       height: 4,
@@ -112,9 +113,9 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
                       child: Text(
                         widget.title,
                         style: GoogleFonts.poppins(
@@ -125,10 +126,10 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppSpace.card),
                     if (widget.items.length > 8)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
                         child: TextField(
                           controller: _searchController,
                           onChanged: _filterItems,
@@ -156,7 +157,7 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                           ),
                         ),
                       ),
-                    if (widget.items.length > 8) const SizedBox(height: 12),
+                    if (widget.items.length > 8) const SizedBox(height: AppSpace.content),
                     Flexible(
                       child: ListView.separated(
                         shrinkWrap: true,

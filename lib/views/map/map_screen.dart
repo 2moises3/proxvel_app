@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -47,26 +49,22 @@ class _MapScreenState extends State<MapScreen> {
           if (controller.errorMessage != null && controller.filteredMarkers.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(AppSpace.screen),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.textSecondary),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpace.field),
                     const Text(
                       'No pudimos cargar los destinos en el mapa. Verifica tu conexión e intenta nuevamente.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     ElevatedButton.icon(
                       onPressed: () => controller.loadMarkers(),
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Reintentar'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
                     ),
                   ],
                 ),
@@ -103,7 +101,15 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     TileLayer(
                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.proxvel_app',
+                      userAgentPackageName: 'com.m3biznovatech.proxvel',
+                    ),
+                    RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution(
+                          'OpenStreetMap contributors',
+                          onTap: () => launchUrl(Uri.parse('https://www.openstreetmap.org/copyright')),
+                        ),
+                      ],
                     ),
                     MarkerLayer(markers: markers),
                   ],
@@ -127,7 +133,7 @@ class _MapScreenState extends State<MapScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpace.related),
         itemBuilder: (context, index) {
           if (index == 0) {
             final isSelected = controller.selectedCategory == null;

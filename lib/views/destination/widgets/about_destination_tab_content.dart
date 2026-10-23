@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../models/destination_model.dart';
 import '../../../models/tourism_catalog_model.dart';
 import '../../../core/theme/app_colors.dart';
@@ -20,178 +22,91 @@ class AboutDestinationTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    final sections = <Widget>[];
+    void add(Widget child) {
+      if (sections.isNotEmpty) {
+        sections.add(const SizedBox(height: AppSpace.section));
+      }
+      sections.add(child);
+    }
 
-
-        // 1. Descripción
-        const Text(
-          'Descripción',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+    final description = tourismInfo?.description ?? destination.description;
+    if (description.trim().isNotEmpty) {
+      add(
+        _section('Qué te espera', ExpandableDescriptionText(text: description)),
+      );
+    }
+    final activities = tourismInfo?.activitiesSummary;
+    if (activities != null && activities.trim().isNotEmpty) {
+      add(
+        _section(
+          'Qué puedes hacer',
+          Text(activities, style: AppTextStyles.bodySecondary),
         ),
-        const SizedBox(height: 12),
-        ExpandableDescriptionText(
-          text: tourismInfo?.description ?? destination.description,
-        ),
-
-        const SizedBox(height: 28),
-
-        // 3. ¿Qué puedes hacer?
-        if (destination.activities.isNotEmpty ||
-            (tourismInfo?.activitiesSummary != null)) ...[
-          if (tourismInfo?.activitiesSummary != null) ...[
-            const Text(
-              'Actividades',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              tourismInfo!.activitiesSummary!,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ] else ...[
-            ActivitiesList(activities: destination.activities),
-          ],
-          const SizedBox(height: 28),
-        ],
-
-        // 4. Información clave (jerarquía, altitud, accesibilidad)
-        if (tourismInfo?.accessibilitySummary != null) ...[
-          const Text(
-            'Accesibilidad',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            tourismInfo!.accessibilitySummary!,
-            style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
-          ),
-          const SizedBox(height: 28),
-        ],
-
-        KeyInfoGrid(destination: destination, tourismInfo: tourismInfo),
-
-        const SizedBox(height: 28),
-
-        // 5. Ubicación
-        MapLocationPreview(
-          latitude: tourismInfo?.latitude,
-          longitude: tourismInfo?.longitude,
-          destinationId: destination.id,
-        ),
-
-        const SizedBox(height: 28),
-
-        // 6. Información práctica
-        PracticalInfoCard(
-          bestSeason: destination.bestSeason,
-          estimatedDays: destination.estimatedDays,
-        ),
-
-        // 7. Información Explícita (MINCETUR)
-        if (tourismInfo != null) ...[
-          const SizedBox(height: 28),
-          _buildOfficialInfo(tourismInfo!),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildOfficialInfo(TourismCatalogModel info) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      );
+    } else if (destination.activities.isNotEmpty) {
+      add(ActivitiesList(activities: destination.activities));
+    }
+    if (tourismInfo?.interestTags.isNotEmpty == true) {
+      add(
+        _section(
+          'Ideal si te interesa',
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              const Icon(
-                Icons.verified_rounded,
-                color: AppColors.success,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Información Explícita',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+              for (final tag in tourismInfo!.interestTags)
+                Chip(
+                  label: Text(_capitalize(tag)),
+                  backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                  side: BorderSide.none,
+                  labelStyle: AppTextStyles.smallLabel,
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (info.officialName != null)
-            _infoRow('Nombre oficial:', info.officialName!),
-          _infoRow(
-            'Fuente:',
-            'Inventario de Recursos Turísticos del Perú - MINCETUR',
-          ),
-          if (info.officialSourceCode != null)
-            _infoRow('Código de fuente:', info.officialSourceCode!),
-          if (info.officialSourceUrl != null)
-            _infoRow('Link oficial:', info.officialSourceUrl!),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Divider(),
-          ),
-          if (info.department != null && info.province != null)
-            _infoRow(
-              'Ubicación:',
-              '${info.district != null ? '${info.district}, ' : ''}${info.province}, ${info.department}',
-            ),
-          if (info.type != null) _infoRow('Tipo:', info.type!),
-          if (info.subtype != null) _infoRow('Subtipo:', info.subtype!),
-          if (info.hierarchy != null && info.hierarchy != 'null')
-            _infoRow('Jerarquía:', info.hierarchy!),
-          if (info.experienceType != null)
-            _infoRow('Experiencia:', info.experienceType!),
-          if (info.altitudeM != null)
-            _infoRow('Altitud:', '${info.altitudeM} m.s.n.m.'),
-        ],
+        ),
+      );
+    }
+    if (tourismInfo != null &&
+        (tourismInfo!.costLabel != null ||
+            tourismInfo!.recommendedDuration != null ||
+            tourismInfo!.howToGet != null ||
+            tourismInfo!.visitorInfoSummary != null ||
+            tourismInfo!.officialWebsite != null)) {
+      add(PracticalInfoCard(info: tourismInfo));
+    }
+    final accessibility = tourismInfo?.accessibilitySummary;
+    if (accessibility != null && accessibility.trim().isNotEmpty) {
+      add(
+        _section(
+          'Accesibilidad',
+          Text(accessibility, style: AppTextStyles.bodySecondary),
+        ),
+      );
+    }
+    add(KeyInfoGrid(destination: destination, tourismInfo: tourismInfo));
+    add(
+      MapLocationPreview(
+        latitude: tourismInfo?.latitude ?? destination.latitude,
+        longitude: tourismInfo?.longitude ?? destination.longitude,
+        destinationId: destination.id,
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: sections,
     );
   }
 
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _section(String title, Widget body) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: AppTextStyles.sectionTitle),
+      const SizedBox(height: AppSpace.content),
+      body,
+    ],
+  );
+
+  static String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }

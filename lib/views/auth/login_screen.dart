@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_layout.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../controllers/auth_controller.dart';
+import '../../core/widgets/legal/legal_links_row.dart';
+import '../../integration/services/auth_service.dart';
 import '../../core/navigation/home_entry_coordinator.dart';
-import '../../core/widgets/images/proxvel_enhanced_image.dart';
+import 'widgets/auth_backdrop.dart';
+import 'widgets/auth_back_button.dart';
 import '../../core/widgets/buttons/shimmer_button.dart';
 import '../../core/widgets/inputs/glass_text_field.dart';
 
@@ -17,10 +23,11 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
+  final String _background = AuthScenes.current;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
   bool _isLoading = false;
 
   String? _loginError;
@@ -28,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   String? _passwordError;
 
   // Reusing the amber color from welcome screen
-  static const Color _amber = Color(0xFFF59E0B);
-  static const Color _amberDark = Color(0xFFD97706);
+  static const Color _amber = AppColors.accent;
+  static const Color _amberDark = AppColors.accentPressed;
 
   late final AnimationController _shimmerCtrl;
 
@@ -44,8 +51,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   String _sanitizeAuthError(Object error) {
     String rawError = error.toString();
-    rawError = rawError.replaceAll('Exception: ', '').replaceAll('ApiException: ', '').trim();
-    
+    rawError = rawError
+        .replaceAll('Exception: ', '')
+        .replaceAll('ApiException: ', '')
+        .trim();
+
     if (rawError.isEmpty) {
       return 'No pudimos completar la acción. Intenta nuevamente.';
     }
@@ -83,8 +93,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _handleLogin() async {
     setState(() {
-      _emailError = _emailController.text.isEmpty ? 'El correo es requerido' : null;
-      _passwordError = _passwordController.text.isEmpty ? 'La contraseña es requerida' : null;
+      _emailError = _emailController.text.isEmpty
+          ? 'El correo es requerido'
+          : null;
+      _passwordError = _passwordController.text.isEmpty
+          ? 'La contraseña es requerida'
+          : null;
       _loginError = null;
     });
 
@@ -96,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       _emailController.text.trim(),
       _passwordController.text,
     );
-    
+
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
@@ -115,6 +129,86 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     super.dispose();
   }
 
+  /// v1: la recuperación por correo aún no está activa; se muestra cómo recuperar la cuenta.
+  /// Si el backend la activa (v2), abre la pantalla del código.
+  Future<void> _onForgotPassword() async {
+    final info = await context.read<AuthService>().supportContact();
+    if (!mounted) return;
+    if (info.resetByEmail) {
+      context.push('/forgot-password');
+      return;
+    }
+    final email = info.supportEmail ?? 'soporte@m3biznovatech.com';
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen,
+            20,
+            AppSpace.screen,
+            24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¿Olvidaste tu contraseña?',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Escríbenos a $email desde el correo de tu cuenta y te enviaremos una contraseña temporal. Muy pronto podrás recuperarla tú mismo desde aquí.',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.black54,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: email));
+                        Navigator.of(sheetContext).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Correo de soporte copiado'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      label: const Text('Copiar correo'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.content),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      child: const Text('Entendido'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -128,33 +222,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ── Fullscreen Background Image ──
-          Positioned.fill(
-            child: ProxvelEnhancedImage(
-              imagePath: 'assets/images/welcome.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-          ),
-
-          // ── Cinematic Bottom Dark Gradient ──
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.25, 0.55, 1.0],
-                  colors: [
-                    Colors.black.withValues(alpha: 0.15),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.75),
-                    Colors.black.withValues(alpha: 0.95),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          Positioned.fill(child: AuthBackdrop(imagePath: _background)),
 
           // ── Content ──
           SafeArea(
@@ -168,13 +236,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     children: [
                       // Top Action Bar
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 22),
-                            onPressed: () => context.pop(),
-                          ),
+                          child: AuthBackButton(onPressed: () => context.pop()),
                         ),
                       ),
 
@@ -182,14 +250,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
                       // Title
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
                         child: Text(
                           '¡Bienvenido de\nnuevo!',
                           style: GoogleFonts.poppins(
-                            fontSize: 34,
-                            height: 1.18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            textStyle: AppTextStyles.headingOnDark,
                             letterSpacing: -0.2,
                             shadows: [
                               Shadow(
@@ -201,14 +268,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                         ),
                       ),
-                      
-                      const SizedBox(height: 12),
-                      
+
+                      const SizedBox(height: AppSpace.content),
+
                       // Subtitle
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
                         child: Text(
-                          'Continua tu aventura',
+                          'Continúa tu aventura',
                           style: GoogleFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
@@ -224,32 +293,42 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         ),
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: AppSpace.group),
 
                       // Form Fields
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
                         child: Column(
                           children: [
                             GlassTextField(
-                              label: 'Email',
+                              label: 'Correo electrónico',
                               controller: _emailController,
                               errorText: _emailError,
                               keyboardType: TextInputType.emailAddress,
                               onChanged: (val) {
-                                if (_emailError != null) setState(() => _emailError = null);
-                                if (_loginError != null) setState(() => _loginError = null);
+                                if (_emailError != null) {
+                                  setState(() => _emailError = null);
+                                }
+                                if (_loginError != null) {
+                                  setState(() => _loginError = null);
+                                }
                               },
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpace.card),
                             GlassTextField(
                               label: 'Contraseña',
                               controller: _passwordController,
                               isPassword: true,
                               errorText: _passwordError,
                               onChanged: (val) {
-                                if (_passwordError != null) setState(() => _passwordError = null);
-                                if (_loginError != null) setState(() => _loginError = null);
+                                if (_passwordError != null) {
+                                  setState(() => _passwordError = null);
+                                }
+                                if (_loginError != null) {
+                                  setState(() => _loginError = null);
+                                }
                               },
                             ),
                           ],
@@ -259,18 +338,29 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       // Error Message
                       if (_loginError != null) ...[
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 28.0).copyWith(top: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpace.screen,
+                          ).copyWith(top: 16),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.red.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, color: Color(0xFFFF6B6B), size: 18),
-                                const SizedBox(width: 12),
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: Color(0xFFFF6B6B),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: AppSpace.content),
                                 Expanded(
                                   child: Text(
                                     _loginError!,
@@ -287,82 +377,58 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         ),
                       ],
 
-                      const SizedBox(height: 20),
-
-                      // Options (Remember me & Forgot password)
+                      // «Recordar sesión» no existe: la sesión siempre se conserva (token seguro).
+                      const SizedBox(height: AppSpace.content),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: Checkbox(
-                                    value: _rememberMe,
-                                    onChanged: (val) {
-                                      setState(() => _rememberMe = val ?? false);
-                                    },
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                    side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                    activeColor: _amber,
-                                    checkColor: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Recordar sesión',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _onForgotPassword,
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 10,
                               ),
-                              child: Text(
-                                '¿Olvidaste tu contraseña?',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
+                              minimumSize: const Size(0, 44),
+                            ),
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 36),
+                      const SizedBox(height: AppSpace.field),
 
                       // Login Button
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
-                        child: _isLoading 
-                          ? const Center(child: CircularProgressIndicator(color: _amber))
-                          : ShimmerButton(
-                              shimmer: _shimmerCtrl,
-                              baseColor: _amber,
-                              hoverColor: _amberDark,
-                              text: 'Iniciar Sesión',
-                              onPressed: _handleLogin,
-                            ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
+                        child: ShimmerButton(
+                          isLoading: _isLoading,
+                          shimmer: _shimmerCtrl,
+                          baseColor: _amber,
+                          hoverColor: _amberDark,
+                          text: 'Iniciar sesión',
+                          onPressed: _handleLogin,
+                        ),
                       ),
 
-                      const SizedBox(height: 36),
+                      const SizedBox(height: AppSpace.group),
 
                       // Register Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             '¿No tienes una cuenta? ',
@@ -371,8 +437,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               fontSize: 14,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => context.push('/register'),
+                          TextButton(
+                            onPressed: () => context.push('/register'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 44),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                            ),
                             child: Text(
                               'Regístrate',
                               style: GoogleFonts.poppins(
@@ -384,8 +457,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                         ],
                       ),
+                      const LegalLinksRow(),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpace.section),
                     ],
                   ),
                 ),

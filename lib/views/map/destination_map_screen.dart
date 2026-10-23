@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/maps/animated_map_marker.dart';
 import '../../controllers/tourism_map_controller.dart';
 import '../../models/map_marker_model.dart';
+import '../../core/widgets/maps/location_consent.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DestinationMapScreen extends StatefulWidget {
   final String destinationId;
@@ -23,39 +27,65 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
   final double _initialZoom = 5.0;
   
   MapMarkerModel? _lastSelectedMarker;
+  LatLng? _lastUserLocation;
+  bool _destinationUnavailable = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final controller = context.read<TourismMapController>();
-      await controller.loadMarkers();
-      
-      try {
-        final marker = controller.markers.firstWhere((m) => m.destinationId == widget.destinationId);
-        controller.selectDestination(marker);
-      } catch (e) {
-        // Destination not found
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAndSelect());
+  }
+
+  Future<void> _loadAndSelect() async {
+    final controller = context.read<TourismMapController>();
+    setState(() => _destinationUnavailable = false);
+    await controller.loadMarkers();
+    if (!mounted || controller.errorMessage != null) return;
+    MapMarkerModel? marker;
+    for (final item in controller.markers) {
+      if (item.destinationId == widget.destinationId) {
+        marker = item;
+        break;
       }
-    });
+    }
+    if (marker == null) {
+      setState(() => _destinationUnavailable = true);
+      return;
+    }
+    await _selectWithConsent(controller, marker);
+  }
+
+  /// Explica para qué se usa el GPS antes de pedir el permiso; sin consentimiento solo se muestra el destino.
+  Future<void> _selectWithConsent(TourismMapController controller, MapMarkerModel marker) async {
+    final allowed = await ensureLocationConsent(context);
+    if (!mounted) return;
+    await controller.selectDestination(marker, useLocation: allowed);
   }
 
   void _handleStateChanges(TourismMapController controller) {
-    if (controller.selectedMarker != null && controller.selectedMarker != _lastSelectedMarker && controller.userLocation != null) {
+    if (controller.selectedMarker != null &&
+        (controller.selectedMarker != _lastSelectedMarker ||
+            controller.userLocation != _lastUserLocation)) {
       _lastSelectedMarker = controller.selectedMarker;
+      _lastUserLocation = controller.userLocation;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.fitCamera(
-          CameraFit.bounds(
+        if (!mounted || controller.selectedMarker == null) return;
+        final marker = controller.selectedMarker!;
+        if (controller.userLocation == null) {
+          _mapController.move(LatLng(marker.latitude, marker.longitude), 12);
+        } else {
+          _mapController.fitCamera(CameraFit.bounds(
             bounds: LatLngBounds.fromPoints([
               controller.userLocation!,
-              LatLng(controller.selectedMarker!.latitude, controller.selectedMarker!.longitude),
+              LatLng(marker.latitude, marker.longitude),
             ]),
-            padding: const EdgeInsets.all(50.0),
-          ),
-        );
+            padding: const EdgeInsets.all(50),
+          ));
+        }
       });
     } else if (controller.selectedMarker == null && _lastSelectedMarker != null) {
       _lastSelectedMarker = null;
+      _lastUserLocation = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _mapController.move(_initialCenter, _initialZoom);
       });
@@ -88,35 +118,48 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (_destinationUnavailable) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpace.screen),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.location_off_outlined,
+                        size: 44, color: AppColors.textSecondary),
+                    const SizedBox(height: AppSpace.field),
+                    const Text(
+                      'Este destino aún no tiene una ubicación disponible en el mapa.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpace.field),
+                    TextButton(onPressed: _loadAndSelect,
+                        child: const Text('Reintentar')),
+                  ],
+                ),
+              ),
+            );
+          }
+
           if (controller.errorMessage != null && controller.selectedMarker == null) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(AppSpace.screen),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.map_rounded, size: 64, color: AppColors.textSecondary),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpace.field),
                     const Text(
                       'No pudimos cargar la ubicación del destino en el mapa. Verifica tu conexión e intenta nuevamente.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     ElevatedButton.icon(
-                      onPressed: () async {
-                        await controller.loadMarkers();
-                        try {
-                          final marker = controller.markers.firstWhere((m) => m.destinationId == widget.destinationId);
-                          controller.selectDestination(marker);
-                        } catch (_) {}
-                      },
+                      onPressed: _loadAndSelect,
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Reintentar'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
                     ),
                   ],
                 ),
@@ -176,7 +219,15 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
                 children: [
                   TileLayer(
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.proxvel_app',
+                    userAgentPackageName: 'com.m3biznovatech.proxvel',
+                  ),
+                  RichAttributionWidget(
+                    attributions: [
+                      TextSourceAttribution(
+                        'OpenStreetMap contributors',
+                        onTap: () => launchUrl(Uri.parse('https://www.openstreetmap.org/copyright')),
+                      ),
+                    ],
                   ),
                   if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
                   MarkerLayer(markers: markers),
@@ -202,7 +253,7 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
         boxShadow: [
           BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))
         ],
@@ -229,13 +280,13 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.related),
             Text(
-              m.city != null ? '${m.city}, ${m.region}' : m.region ?? '',
-              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              [m.city, m.region].whereType<String>().where((p) => p.trim().isNotEmpty).join(', '),
+              style: AppTextStyles.bodySecondary,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
             if (controller.distanceKm != null)
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -247,13 +298,19 @@ class _DestinationMapScreenState extends State<DestinationMapScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.directions_car, color: AppColors.primary),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpace.related),
                     Text(
                       'Distancia estimada: ${controller.distanceKm!.toStringAsFixed(1)} km',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: AppTextStyles.cardTitle,
                     ),
                   ],
                 ),
+              )
+            else if (controller.locationDeclined)
+              OutlinedButton.icon(
+                onPressed: () => _selectWithConsent(controller, m),
+                icon: const Icon(Icons.my_location_rounded, size: 18),
+                label: const Text('Calcular distancia desde mi ubicación'),
               )
             else if (controller.errorMessage == null)
               const Center(child: Padding(

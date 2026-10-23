@@ -15,17 +15,29 @@ class ApiConfig {
     return 'http://127.0.0.1:8000/api/v1';
   }
 
+  /// URL base activa de la API.
+  /// Lee prioritariamente la variable `API_BASE_URL` definida en `.env`.
+  /// Si está presente, se usa de manera global en toda la app sin importar la plataforma.
   static String get baseUrl {
-    // `bool.hasEnvironment` NO está soportado en Flutter Web (lanza
-    // "Unsupported operation"). Se lee directamente con String.fromEnvironment
-    // (const, web-safe) y se usa el fallback si no fue definido en el build.
     const fromEnv = String.fromEnvironment('API_BASE_URL');
-    if (fromEnv.isNotEmpty) return fromEnv;
+    if (fromEnv.trim().isNotEmpty) {
+      String url = fromEnv.trim().replaceAll(RegExp(r'/+$'), '');
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url';
+      }
+      return url;
+    }
     return _fallbackUrl;
   }
 
-  static const String webBaseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const int timeoutSeconds = 30;
+  /// Alias de compatibilidad: delega siempre a la URL base activa
+  static String get webBaseUrl => baseUrl;
+  static String get apiBaseUrl => baseUrl;
+
+  static const int timeoutSeconds = int.fromEnvironment(
+    'API_TIMEOUT_SECONDS',
+    defaultValue: 30,
+  );
 
   static const bool useMockFallback = bool.fromEnvironment(
     'USE_MOCK_FALLBACK',
@@ -34,6 +46,4 @@ class ApiConfig {
 
   // Endpoints
   static const String favorites = '/favorites';
-
-  static String get apiBaseUrl => baseUrl;
 }

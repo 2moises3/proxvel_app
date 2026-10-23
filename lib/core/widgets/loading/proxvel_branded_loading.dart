@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -291,7 +292,7 @@ class _ProxvelBrandedLoadingState extends State<ProxvelBrandedLoading>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(width: 20, height: 1, color: Colors.white.withValues(alpha: 0.5)),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpace.related),
                         Text(
                           'Powered by',
                           style: TextStyle(
@@ -301,18 +302,18 @@ class _ProxvelBrandedLoadingState extends State<ProxvelBrandedLoading>
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpace.related),
                         Container(width: 20, height: 1, color: Colors.white.withValues(alpha: 0.5)),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.content),
                     SvgPicture.asset(
                       'assets/branding/bnt_logo.svg',
                       width: 130,
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpace.group),
               ],
             ),
           ),

@@ -45,6 +45,7 @@ dependencies:
   geolocator: ^14.0.3
   google_fonts: ^8.1.0
   image_picker: ^1.2.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,7 @@ flutter:
     - assets/icons/
     - assets/data/
     - assets/branding/
+    - assets/google_fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

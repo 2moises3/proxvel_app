@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -80,6 +81,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   if (profileCtrl.error != null)
                     _ErrorBanner(profileCtrl.error!),
+                  if (profileCtrl.isShowingCachedProfile)
+                    _ErrorBanner(
+                      'Estás viendo preferencias guardadas en este dispositivo. Conéctate y actualiza antes de editarlas.',
+                    ),
 
                   ProfileStatsRow(
                     favoritesCount: favCount,
@@ -88,13 +93,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
 
                   if (profile != null) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     PreferencesSummaryCard(profile: profile),
                   ],
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpace.section),
                   ProfileMenuSection(
                     onEditProfile: () => context.push('/profile/edit'),
+                    onChangePassword: () => context.push('/profile/change-password'),
                     onPreferences: () async {
                       // Capturamos el controller antes del await para no usar
                       // BuildContext tras un gap asíncrono.
@@ -106,6 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                     onMyReviews: () => context.push('/profile/my-reviews'),
                     onArchived: () => context.push('/archived'),
+                    onPrivacy: () => context.push('/legal'),
                     onAbout: () => showAboutProxvelSheet(context),
                     onLogout: () => showLogoutConfirmSheet(
                       context,
@@ -117,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpace.group),
                   Text(
                     'PROXVEL v1.0.0',
                     style: TextStyle(
@@ -126,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpace.section),
                 ],
               ),
             ),
@@ -156,7 +163,7 @@ class _ErrorBanner extends StatelessWidget {
             color: AppColors.error,
             size: 20,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpace.related),
           Expanded(
             child: Text(
               message,

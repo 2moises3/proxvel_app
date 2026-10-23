@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Premium profile header with avatar (initials), name, and email.
@@ -34,7 +36,7 @@ class ProfileHeader extends StatelessWidget {
         padding: EdgeInsets.only(top: topPadding),
         child: Column(
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpace.section),
 
             // ── Avatar ──
             GestureDetector(
@@ -90,27 +92,35 @@ class ProfileHeader extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
 
             // ── Name ──
-            Text(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+              child: Text(
               name,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textOnDark,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.h2OnDark,
               ),
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpace.micro),
 
             // ── Email ──
-            Text(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+              child: Text(
               email,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: AppColors.textOnDark.withValues(alpha: 0.6),
+              ),
               ),
             ),
 

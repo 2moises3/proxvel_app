@@ -12,12 +12,14 @@ class UserService {
     required String name,
     required String email,
     required String password,
+    required bool acceptedTerms,
   }) async {
     try {
       final body = {
         'name': name,
         'email': email,
         'password': password,
+        'accepted_terms': acceptedTerms,
       };
       debugPrint('POST URL: ${ApiConfig.apiBaseUrl}/users');
       final response = await _api.post('/users', body);
@@ -33,6 +35,17 @@ class UserService {
     } catch (e) {
       throw Exception('Error inesperado al crear usuario: $e');
     }
+  }
+
+  /// Registra la aceptación de la versión vigente de Términos y Privacidad.
+  Future<UserModel> acceptTerms() async {
+    final response = await _api.post('/users/me/accept-terms');
+    return UserModel.fromApiJson(response['data'] as Map<String, dynamic>);
+  }
+
+  /// Pide eliminar la cuenta propia (acceso bloqueado ya; borrado tras 14 días).
+  Future<void> deleteMyAccount(String password) async {
+    await _api.post('/users/me/delete-account', {'password': password});
   }
 
   Future<UserModel> getUserById(String userId) async {

@@ -28,10 +28,14 @@ class RecommendationAspectContributionModel {
 }
 
 class ExplanationModel {
+  final double? shapBase;
+  final Map<String, double> shapValues;
   final String summary;
   final List<RecommendationAspectContributionModel> topAspects;
 
   ExplanationModel({
+    this.shapBase,
+    this.shapValues = const {},
     required this.summary,
     required this.topAspects,
   });
@@ -39,6 +43,8 @@ class ExplanationModel {
   factory ExplanationModel.fromJson(Map<String, dynamic> json) {
     var aspectsList = json['top_aspects'] as List? ?? [];
     return ExplanationModel(
+      shapBase: (json['shap_base'] as num?)?.toDouble(),
+      shapValues: {for (final e in (json['shap_values'] as Map? ?? {}).entries) if (e.value is num) e.key.toString(): (e.value as num).toDouble()},
       summary: json['summary'] ?? '',
       topAspects: aspectsList
           .map((i) => RecommendationAspectContributionModel.fromJson(i))
@@ -47,6 +53,8 @@ class ExplanationModel {
   }
 
   Map<String, dynamic> toJson() => {
+        'shap_base': shapBase,
+        'shap_values': shapValues,
         'summary': summary,
         'top_aspects': topAspects.map((i) => i.toJson()).toList(),
       };

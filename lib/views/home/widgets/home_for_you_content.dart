@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/navigation/destination_opening.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/recommendation_controller.dart';
@@ -8,7 +11,8 @@ import '../../../core/widgets/cards/destination_recommendation_card.dart';
 import '../../../core/widgets/states/ai_ranking_loader.dart';
 import '../../../core/widgets/states/ai_ranking_skeleton.dart';
 import '../../../core/widgets/states/empty_profile_for_ai_state.dart';
-import '../../../controllers/archive_controller.dart' as import_archive_controller;
+import '../../../controllers/archive_controller.dart'
+    as import_archive_controller;
 import 'profile_summary_card.dart';
 
 /// Scrollable content for the "Para Ti" tab, showing personalized recommendations.
@@ -18,8 +22,10 @@ class HomeForYouContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RecommendationController>();
-    final archiveCtrl = context.watch<import_archive_controller.ArchiveController>();
-    final userName = context.watch<AuthController>().currentUser?.fullName ?? 'Viajero';
+    final archiveCtrl = context
+        .watch<import_archive_controller.ArchiveController>();
+    final userName =
+        context.watch<AuthController>().currentUser?.fullName ?? 'Viajero';
 
     if (controller.isLoading && controller.recommendations.isEmpty) {
       return const AiRankingLoader();
@@ -27,47 +33,67 @@ class HomeForYouContent extends StatelessWidget {
 
     final filteredRecs = controller.recommendations
         .where((r) => !archiveCtrl.isArchived(r.destination.id))
+        .take(3)
         .toList();
 
     if (filteredRecs.isEmpty) {
       final err = controller.error;
       // Caso perfil incompleto (o sin error): empty state honesto con acción.
-      final isProfileIssue = err == null || err.toLowerCase().contains('perfil');
+      final isProfileIssue = controller.profileIncomplete;
       if (isProfileIssue) {
         return const EmptyProfileForAiState();
       }
-      return _errorState(err);
+      return _errorState(
+        context,
+        err ??
+            'No hay destinos disponibles con estos filtros. Prueba otra región.',
+      );
     }
 
     return RefreshIndicator(
       onRefresh: () => controller.loadRecommendations(forceRefresh: true),
       color: AppColors.accent,
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        key: const PageStorageKey('for-you-scroll'),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpace.section),
 
             // ── Profile Summary Card ──
             ProfileSummaryCard(userName: userName),
 
             // ── Background Refresh Error Banner ──
-            if (controller.error != null && controller.recommendations.isNotEmpty) ...[
-              const SizedBox(height: 16),
+            if (controller.error != null &&
+                controller.recommendations.isNotEmpty) ...[
+              const SizedBox(height: AppSpace.field),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.screen,
+                ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, size: 18, color: Colors.red),
-                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 18,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(width: AppSpace.content),
                       const Expanded(
                         child: Text(
                           'No pudimos actualizar tus recomendaciones. Inténtalo otra vez.',
@@ -84,22 +110,15 @@ class HomeForYouContent extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpace.group),
 
             // ── Section Title ──
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Recomendaciones IA',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
+                  const Text('Destinos para ti', style: AppTextStyles.h2),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -125,15 +144,15 @@ class HomeForYouContent extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
 
             // ── Selector de mes (clima/aforo del mes objetivo) ──
             _MonthSelectorBar(selected: controller.selectedMonth),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.field),
 
             // ── Recommendation cards ──
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 600),
                 switchInCurve: Curves.easeOutCubic,
@@ -148,77 +167,66 @@ class HomeForYouContent extends StatelessWidget {
                       )
                     : Column(
                         key: const ValueKey('cards'),
-                        children: filteredRecs.asMap().entries.map(
-                          (entry) {
-                            final index = entry.key;
-                            final rec = entry.value;
-                            return DestinationRecommendationCard(
-                              recommendation: rec,
-                              index: index,
-                              onTap: () {
-                                // Lleva el mes elegido al detalle, para que clima/aforo allí
-                                // muestren la misma temporada que el ranking.
-                                final m = controller.selectedMonth;
-                                final q = m != null ? '&month=$m' : '';
-                                context.push(
-                                  '/destination/${rec.destination.id}?source=ai_recommendation$q',
-                                );
-                              },
-                            );
-                          },
-                        ).toList(),
+                        children: filteredRecs.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final rec = entry.value;
+                          return DestinationRecommendationCard(
+                            recommendation: rec,
+                            index: index,
+                            onTap: () {
+                              // Lleva el mes elegido al detalle, para que clima/aforo allí
+                              // muestren la misma temporada que el ranking.
+                              final m = controller.selectedMonth;
+                              final q = m != null ? '&month=$m' : '';
+                              context.push(
+                                '/destination/${rec.destination.id}?source=ai_recommendation$q',
+                                extra: DestinationOpening(
+                                  rec.destination,
+                                  'recommendation',
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
                       ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpace.group),
           ],
         ),
       ),
     );
   }
 
-  Widget _errorState(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(48),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: Colors.red,
-                size: 36,
-              ),
+  Widget _errorState(BuildContext context, String error) {
+    final controller = context.read<RecommendationController>();
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpace.screen),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.travel_explore_rounded,
+            size: 40,
+            color: AppColors.accent,
+          ),
+          const SizedBox(height: AppSpace.field),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpace.field),
+          TextButton(
+            onPressed: () => controller.loadRecommendations(forceRefresh: true),
+            child: const Text('Reintentar'),
+          ),
+          if (controller.selectedRegion != null)
+            TextButton(
+              onPressed: () => controller.setRegion(null),
+              child: const Text('Ver todas las regiones'),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Algo salió mal',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -231,8 +239,18 @@ class _MonthSelectorBar extends StatelessWidget {
   const _MonthSelectorBar({required this.selected});
 
   static const _names = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
   ];
 
   @override
@@ -243,7 +261,7 @@ class _MonthSelectorBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
+          padding: EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, 10),
           child: Text(
             '¿Para qué mes viajas?',
             style: TextStyle(
@@ -257,9 +275,9 @@ class _MonthSelectorBar extends StatelessWidget {
           height: 38,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
             itemCount: 12,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpace.related),
             itemBuilder: (context, i) {
               final month = i + 1;
               final isSel = activeMonth == month;
@@ -270,7 +288,7 @@ class _MonthSelectorBar extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   decoration: BoxDecoration(
                     color: isSel ? AppColors.accent : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
                     border: Border.all(
                       color: isSel
                           ? AppColors.accent

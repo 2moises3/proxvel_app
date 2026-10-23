@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../models/aspect_score_model.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -14,7 +16,10 @@ class AspectScoreGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Grid of aspect scores in pairs
+        // V3 presenta tres aspectos legibles a ancho completo.
+        if (aspects.length <= 3)
+          for (final aspect in aspects) _AspectScoreRow(aspect: aspect),
+        if (aspects.length > 3)
         for (int i = 0; i < aspects.length; i += 2)
           Padding(
             padding: EdgeInsets.only(
@@ -35,16 +40,16 @@ class AspectScoreGrid extends StatelessWidget {
             ),
           ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpace.field),
 
         // Legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 10,
+          runSpacing: 6,
           children: [
             _legendDot(AppColors.success, 'Fortaleza (≥ 70%)'),
-            const SizedBox(width: 10),
             _legendDot(AppColors.accent, 'Oportunidad (50 – 69%)'),
-            const SizedBox(width: 10),
             _legendDot(AppColors.error, 'Bajo (< 50%)'),
           ],
         ),
@@ -64,15 +69,15 @@ class AspectScoreGrid extends StatelessWidget {
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 4),
-        Text(
+        const SizedBox(width: AppSpace.micro),
+        Flexible(child: Text(
           text,
           style: const TextStyle(
-            fontSize: 9,
+            fontSize: 11,
             color: AppColors.textMuted,
             fontWeight: FontWeight.w500,
           ),
-        ),
+        )),
       ],
     );
   }
@@ -105,15 +110,10 @@ class _AspectScoreRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   aspect.aspect,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.smallLabel,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpace.micro),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
                 decoration: BoxDecoration(
@@ -131,7 +131,7 @@ class _AspectScoreRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.related),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../models/review_model.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -56,12 +58,8 @@ class MyReviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Destino ID: ${review.destinationId ?? 'No disponible'}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                  review.destinationName ?? review.destinationId ?? 'Destino',
+                  style: AppTextStyles.cardTitle,
                 ),
               ),
               Row(
@@ -71,7 +69,7 @@ class MyReviewCard extends StatelessWidget {
                     color: AppColors.accent,
                     size: 18,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpace.micro),
                   Text(
                     review.ratingGeneral.toStringAsFixed(1),
                     style: const TextStyle(
@@ -84,7 +82,7 @@ class MyReviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.content),
 
           // Review Text
           Text(
@@ -97,9 +95,9 @@ class MyReviewCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.field),
           const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.content),
 
           // Aspects (if exist)
           if (hasAspects) ...[
@@ -111,7 +109,7 @@ class MyReviewCard extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.related),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -139,11 +137,14 @@ class MyReviewCard extends StatelessWidget {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.content),
           ],
 
           // Status and processing month
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 width: 8,
@@ -153,7 +154,6 @@ class MyReviewCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 6),
               Text(
                 _mapStatus(review.status),
                 style: TextStyle(
@@ -164,11 +164,8 @@ class MyReviewCard extends StatelessWidget {
               ),
               if (review.processingMonth != null &&
                   review.processingMonth!.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                const Text('•', style: TextStyle(color: AppColors.textMuted)),
-                const SizedBox(width: 8),
                 Text(
-                  'Mes: ${review.processingMonth}',
+                  'Análisis: ${review.processingMonth}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textMuted,

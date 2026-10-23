@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_text_styles.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../controllers/archive_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/cards/classic_destination_card.dart';
-import '../../../models/destination_model.dart';
+import '../../core/widgets/images/adaptive_destination_image.dart';
 
 class ArchivedScreen extends StatefulWidget {
   const ArchivedScreen({super.key});
@@ -29,13 +30,19 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Archivados',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
             color: AppColors.textPrimary,
           ),
+          tooltip: 'Volver',
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/main'),
+        ),
+        title: Text(
+          'Archivados',
+          style: AppTextStyles.sectionTitle,
         ),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -53,21 +60,21 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
           if (arcCtrl.error != null) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(AppSpace.screen),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                    const SizedBox(height: 16),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(height: AppSpace.field),
                     Text(
                       'No se pudieron cargar los archivados',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: AppTextStyles.sectionTitle,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpace.related),
                     Text(
                       arcCtrl.error!,
                       textAlign: TextAlign.center,
@@ -76,11 +83,11 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     ElevatedButton(
                       onPressed: arcCtrl.loadArchives,
                       child: const Text('Reintentar'),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -90,12 +97,12 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
           if (arcCtrl.archives.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(AppSpace.screen),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(AppSpace.screen),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
@@ -106,7 +113,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.section),
                     Text(
                       'Sin archivos',
                       style: GoogleFonts.poppins(
@@ -115,7 +122,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.content),
                     Text(
                       'Aquí aparecerán los destinos que hayas decidido ocultar.',
                       textAlign: TextAlign.center,
@@ -139,28 +146,71 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
               itemCount: arcCtrl.archives.length,
               itemBuilder: (context, index) {
                 final arc = arcCtrl.archives[index];
-                // Creamos un DestinationModel mockeado a partir del ArchiveModel 
-                // para reutilizar la ClassicDestinationCard
-                final dest = DestinationModel(
-                  id: arc.destinationId,
-                  name: arc.name,
-                  city: arc.city ?? '',
-                  region: arc.region ?? '',
-                  category: arc.category ?? '',
-                  description: '',
-                  imageUrl: arc.coverImageUrl ?? '',
-                  averageCost: 0,
-                  climate: '',
-                  crowdLevel: '',
-                  rating: 0,
-                  aspects: const [],
-                );
-
-                return ClassicDestinationCard(
-                  destination: dest,
-                  onTap: () {
-                    context.push('/destination/${dest.id}');
-                  },
+                final location = [arc.city, arc.region]
+                    .whereType<String>()
+                    .where((value) => value.trim().isNotEmpty)
+                    .join(', ');
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: AppColors.surface,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () =>
+                        context.push('/destination/${arc.destinationId}'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              width: 84,
+                              height: 84,
+                              child: AdaptiveDestinationImage(
+                                imagePath: arc.coverImageUrl ?? '',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.content),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  arc.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.cardTitle,
+                                ),
+                                if (location.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    location,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Quitar de archivados',
+                            constraints: const BoxConstraints(
+                              minWidth: 44,
+                              minHeight: 44,
+                            ),
+                            onPressed: () =>
+                                arcCtrl.toggleArchive(arc.destinationId),
+                            icon: const Icon(Icons.unarchive_outlined),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               },
             ),

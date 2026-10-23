@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_layout.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Card showing the mock XAI-style recommendation explanation.
@@ -46,14 +48,10 @@ class ExplanationCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.content),
           Text(
             explanation,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.6,
-            ),
+            style: AppTextStyles.body2,
           ),
         ],
       ),

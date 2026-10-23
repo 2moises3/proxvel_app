@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'button_content.dart';
 
+/// Acción de formulario. Conserva su tamaño durante la espera y admite texto ampliado.
 class ProxvelButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -16,41 +18,15 @@ class ProxvelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = ButtonContent(text: text, isLoading: isLoading);
     return SizedBox(
       width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSecondary ? Colors.white : const Color(0xFF2B323B), // Premium Dark Gray
-          foregroundColor: isSecondary ? const Color(0xFF2B323B) : Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: isSecondary 
-                ? const BorderSide(color: Color(0xFFE5E7EB), width: 1.5)
-                : BorderSide.none,
-          ),
-        ),
-        child: isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isSecondary ? const Color(0xFF2B323B) : Colors.white,
-                  ),
-                ),
-              )
-            : Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
+      child: isSecondary
+          ? OutlinedButton(
+              onPressed: isLoading ? null : onPressed,
+              child: label,
+            )
+          : FilledButton(onPressed: isLoading ? null : onPressed, child: label),
     );
   }
 }
