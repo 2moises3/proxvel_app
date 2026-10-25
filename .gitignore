@@ -44,8 +44,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.kotlin/
 
 # Environment variables
 .env
 .env.*
 !.env.example
+
+# Firma Android: nunca publicar llave ni contraseñas
+/android/key.properties
+*.jks
+*.keystore

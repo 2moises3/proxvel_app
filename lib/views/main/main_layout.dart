@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../integration/services/app_update_service.dart';
 import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../map/map_screen.dart';
@@ -25,7 +27,34 @@ class MainLayoutState extends State<MainLayout> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startWarmPrefetch();
+      _checkForUpdate();
     });
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final release = await AppUpdateService().latestAvailable();
+      if (!mounted || release == null) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Actualización disponible'),
+          content: Text('PROXVEL ${release.versionName} ya está disponible.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Después')),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                context.push('/profile/updates');
+              },
+              child: const Text('Actualizar'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      // La aplicación sigue funcionando si no hay red o falla la consulta.
+    }
   }
 
   Future<void> _startWarmPrefetch() async {

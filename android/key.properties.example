@@ -1,0 +1,6 @@
+# Copia a android/key.properties (ignorado por Git).
+# Usa / en la ruta de Windows. Guarda la llave fuera del repositorio.
+storeFile=C:/ruta/segura/proxvel-release.jks
+storePassword=REEMPLAZAR
+keyAlias=proxvel-release
+keyPassword=REEMPLAZAR

@@ -14,6 +14,7 @@ class ProfileMenuSection extends StatelessWidget {
   final VoidCallback onArchived;
   final VoidCallback onPrivacy;
   final VoidCallback onAbout;
+  final VoidCallback onUpdates;
   final VoidCallback onLogout;
 
   const ProfileMenuSection({
@@ -25,6 +26,7 @@ class ProfileMenuSection extends StatelessWidget {
     required this.onArchived,
     required this.onPrivacy,
     required this.onAbout,
+    required this.onUpdates,
     required this.onLogout,
   });
 
@@ -83,6 +85,12 @@ class ProfileMenuSection extends StatelessWidget {
                   icon: Icons.info_outline_rounded,
                   label: 'Sobre PROXVEL',
                   onTap: onAbout,
+                ),
+                const Divider(height: 1, color: AppColors.divider),
+                ProfileMenuItem(
+                  icon: Icons.system_update_rounded,
+                  label: 'Actualizar app',
+                  onTap: onUpdates,
                 ),
               ],
             ),

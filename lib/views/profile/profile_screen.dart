@@ -114,6 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onArchived: () => context.push('/archived'),
                     onPrivacy: () => context.push('/legal'),
                     onAbout: () => showAboutProxvelSheet(context),
+                    onUpdates: () => context.push('/profile/updates'),
                     onLogout: () => showLogoutConfirmSheet(
                       context,
                       onConfirm: () async {
