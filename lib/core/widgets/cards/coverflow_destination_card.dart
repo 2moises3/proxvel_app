@@ -64,6 +64,7 @@ class CoverflowDestinationCard extends StatelessWidget {
               child: AdaptiveDestinationImage(
                 imagePath: destination.imageUrl,
                 fit: BoxFit.cover,
+                cacheWidth: 1000,
               ),
             ),
           ),

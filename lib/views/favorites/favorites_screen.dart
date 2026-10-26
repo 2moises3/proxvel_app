@@ -39,7 +39,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FavoritesController>().loadFavorites();
+      context.read<FavoritesController>().ensureFavoritesLoaded();
     });
   }
 
@@ -59,18 +59,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
 
     final controller = context.watch<FavoritesController>();
-    final archiveCtrl = context.watch<import_archive_controller.ArchiveController>();
+    final archiveCtrl = context
+        .watch<import_archive_controller.ArchiveController>();
 
     final allFavorites = controller.favorites
         .where((d) => !archiveCtrl.isArchived(d.id))
         .toList();
 
     // Extraer ciudades únicas ordenadas
-    final cities = allFavorites
-        .map((d) => d.city.trim())
-        .where((c) => c.isNotEmpty)
-        .toSet()
-        .toList()..sort();
+    final cities =
+        allFavorites
+            .map((d) => d.city.trim())
+            .where((c) => c.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
 
     // Filtrar por ciudad y por texto
     final filteredFavorites = allFavorites.where((d) {
@@ -106,12 +109,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: controller.isLoading
                   ? const LoadingView()
                   : controller.error != null
-                      ? _buildErrorView(controller)
-                      : allFavorites.isEmpty
-                          ? _buildEmptyState()
-                          : filteredFavorites.isEmpty
-                              ? _buildNoSearchResults()
-                              : _buildFavoritesContent(controller, filteredFavorites),
+                  ? _buildErrorView(controller)
+                  : allFavorites.isEmpty
+                  ? _buildEmptyState()
+                  : filteredFavorites.isEmpty
+                  ? _buildNoSearchResults()
+                  : _buildFavoritesContent(controller, filteredFavorites),
             ),
           ],
         ),
@@ -145,7 +148,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     if (totalCount > 0) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2.5,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.discovery.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
@@ -298,10 +304,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 color: AppColors.primary,
               ),
             ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 48,
+              minHeight: 48,
+            ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
                     onPressed: () => _searchCtrl.clear(),
                   )
                 : null,
@@ -344,7 +357,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 color: isSelected ? AppColors.discovery : Colors.white,
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: isSelected ? AppColors.discovery : const Color(0xFFE5E7EB),
+                  color: isSelected
+                      ? AppColors.discovery
+                      : const Color(0xFFE5E7EB),
                   width: 1.0,
                 ),
                 boxShadow: isSelected
@@ -370,13 +385,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     city ?? 'Todas',
                     style: AppTypography.style(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? Colors.white.withValues(alpha: 0.24)
@@ -388,7 +408,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       style: AppTypography.style(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -509,7 +531,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 }
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 26,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(99),
@@ -585,8 +610,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               _selectedCity != null && _searchQuery.isNotEmpty
                   ? 'No hay favoritos en "$_selectedCity" que coincidan con "$_searchQuery".'
                   : _selectedCity != null
-                      ? 'Aún no tienes favoritos guardados en "$_selectedCity".'
-                      : 'No tienes ningún favorito que coincida con "$_searchQuery".',
+                  ? 'Aún no tienes favoritos guardados en "$_selectedCity".'
+                  : 'No tienes ningún favorito que coincida con "$_searchQuery".',
               textAlign: TextAlign.center,
               style: AppTypography.style(
                 fontSize: 14,
@@ -640,7 +665,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.error ?? 'Verifica tu conexión a internet e inténtalo nuevamente.',
+              controller.error ??
+                  'Verifica tu conexión a internet e inténtalo nuevamente.',
               textAlign: TextAlign.center,
               style: AppTypography.style(
                 fontSize: 14,
@@ -656,7 +682,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: const Text('Reintentar'),
             ),
@@ -742,7 +771,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: 1.2,
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: Text(

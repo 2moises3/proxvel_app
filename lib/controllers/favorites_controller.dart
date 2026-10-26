@@ -9,29 +9,46 @@ class FavoritesController extends ChangeNotifier {
   final FavoritesService _favoritesService;
 
   bool isLoading = false;
+  bool hasLoaded = false;
+  Future<void>? _pendingLoad;
+  int _sessionGeneration = 0;
   List<DestinationModel> favorites = [];
   Set<String> favoriteDestinationIds = {};
   String? error;
 
   FavoritesController(this._favoritesService);
 
-  Future<void> loadFavorites() async {
+  Future<void> ensureFavoritesLoaded() =>
+      hasLoaded ? Future.value() : loadFavorites();
+
+  Future<void> loadFavorites() =>
+      _pendingLoad ??= _loadFavorites(_sessionGeneration);
+
+  Future<void> _loadFavorites(int generation) async {
     isLoading = true;
     error = null;
     notifyListeners();
 
     try {
       final favModels = await _favoritesService.getFavorites();
-      favorites = favModels.map((f) => DestinationModel.fromFavoriteModel(f)).toList();
+      if (generation != _sessionGeneration) return;
+      favorites = favModels
+          .map((f) => DestinationModel.fromFavoriteModel(f))
+          .toList();
       favoriteDestinationIds = favorites.map((d) => d.id).toSet();
+      hasLoaded = true;
     } catch (e) {
+      if (generation != _sessionGeneration) return;
       error = 'No pudimos cargar tus favoritos. Intenta nuevamente.';
       favorites = [];
       favoriteDestinationIds = {};
+    } finally {
+      if (generation == _sessionGeneration) {
+        _pendingLoad = null;
+        isLoading = false;
+        notifyListeners();
+      }
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 
   /// Marca/desmarca un favorito. Optimista en UI, persiste en backend.
@@ -72,6 +89,9 @@ class FavoritesController extends ChangeNotifier {
 
   /// Limpia todo el estado en memoria. Llamar al logout/cambio de usuario.
   void clearState() {
+    _sessionGeneration++;
+    _pendingLoad = null;
+    hasLoaded = false;
     favorites = [];
     favoriteDestinationIds = {};
     error = null;

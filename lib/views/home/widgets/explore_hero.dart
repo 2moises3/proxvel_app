@@ -138,6 +138,7 @@ class _ExploreHeroState extends State<ExploreHero>
                                         ? Image.network(
                                             avatarUrl!,
                                             fit: BoxFit.cover,
+                                            cacheWidth: 120,
                                             errorBuilder: (_, _, _) =>
                                                 _avatar(),
                                           )

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -46,6 +47,8 @@ class _TourismMapViewState extends State<TourismMapView>
   );
   String? _category, _selectedId;
   bool _ready = false, _refreshScheduled = false, _tilesFailed = false;
+  bool _centeredOnUser = false;
+  Timer? _cameraRefresh;
   bool _showSearchResults = false;
   LatLng? _from, _to;
   int _tileRevision = 0;
@@ -75,13 +78,26 @@ class _TourismMapViewState extends State<TourismMapView>
   Future<void> _load({bool refresh = false}) async {
     if (!mounted) return;
     final controller = context.read<TourismMapController>();
+    if (_location.position == null && !_location.busy) {
+      // Resolve an existing permission alongside the catalogue request.
+      unawaited(
+        _location.locate(requestPermission: false).then((_) {
+          if (mounted) _centerOnKnownUser();
+        }),
+      );
+    }
     await controller.loadMarkers(refresh: refresh);
     if (!mounted) return;
-    _fitPlaces(_places(controller));
-    if (_location.position == null && !_location.busy) {
-      // Previously granted permission is reused. Opening a map never asks for it.
-      _location.locate(requestPermission: false);
-    }
+    if (_focused || !_centeredOnUser) _fitPlaces(_places(controller));
+    _centerOnKnownUser();
+  }
+
+  void _centerOnKnownUser() {
+    if (_focused || !_ready || _centeredOnUser) return;
+    final position = _location.position;
+    if (position == null) return;
+    _centeredOnUser = true;
+    _fly(LatLng(position.latitude, position.longitude), 10);
   }
 
   List<MapMarkerModel> _places(TourismMapController c) => _focused
@@ -90,6 +106,7 @@ class _TourismMapViewState extends State<TourismMapView>
 
   @override
   void dispose() {
+    _cameraRefresh?.cancel();
     _flight.dispose();
     _map.dispose();
     _search.dispose();
@@ -161,7 +178,9 @@ class _TourismMapViewState extends State<TourismMapView>
     if (gesture) _flight.stop();
     if (_refreshScheduled) return;
     _refreshScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // flutter_map moves its own layers; regrouping photo pins does not need a
+    // rebuild on every animation frame or touch movement.
+    _cameraRefresh = Timer(const Duration(milliseconds: 100), () {
       _refreshScheduled = false;
       if (mounted) setState(() {});
     });
@@ -182,17 +201,18 @@ class _TourismMapViewState extends State<TourismMapView>
 
   Future<void> _locate({bool center = true}) async {
     FocusScope.of(context).unfocus();
-    if (_location.needsSettings || _location.serviceDisabled) {
-      await _location.openSettingsAndRetry();
-      return;
+    final cached = _location.position;
+    if (cached != null && center) {
+      _fly(LatLng(cached.latitude, cached.longitude), 13);
     }
-    await _location.locate();
+    await _location.locate(requestPermission: true);
     if (!mounted) return;
     final point = _location.position;
     if (point != null && center) {
       _fly(LatLng(point.latitude, point.longitude), 13);
+    } else if (_location.error != null) {
+      _message(_location.error!);
     }
-    if (_location.error != null) _message(_location.error!);
   }
 
   void _message(String message) => ScaffoldMessenger.of(context).showSnackBar(
@@ -373,6 +393,7 @@ class _TourismMapViewState extends State<TourismMapView>
                       onMapReady: () {
                         _ready = true;
                         _fitPlaces(places);
+                        _centerOnKnownUser();
                         setState(() {});
                       },
                       onPositionChanged: _cameraChanged,
@@ -400,34 +421,6 @@ class _TourismMapViewState extends State<TourismMapView>
                       ),
                       MarkerLayer(
                         markers: [
-                          if (user != null)
-                            Marker(
-                              point: LatLng(user.latitude, user.longitude),
-                              width: 36,
-                              height: 36,
-                              child: Semantics(
-                                label: 'Tu ubicación aproximada',
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.discovery.withValues(
-                                      alpha: .18,
-                                    ),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: AppColors.discovery,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 3,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
                           for (final group in groups)
                             Marker(
                               point: group.point,
@@ -455,6 +448,35 @@ class _TourismMapViewState extends State<TourismMapView>
                                     _fitPlaces(group.items);
                                   }
                                 },
+                              ),
+                            ),
+                          // Paint the traveler above photo pins when they overlap.
+                          if (user != null)
+                            Marker(
+                              point: LatLng(user.latitude, user.longitude),
+                              width: 36,
+                              height: 36,
+                              child: Semantics(
+                                label: 'Tu ubicación aproximada',
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.discovery.withValues(
+                                      alpha: .18,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.discovery,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                         ],
@@ -554,9 +576,11 @@ class _TourismMapViewState extends State<TourismMapView>
                     children: [
                       _control(
                         'Mi ubicación',
-                        AppIcons.mapPin,
+                        null,
                         _location.busy ? null : () => _locate(),
                         active: user != null,
+                        icon: Icons.my_location_rounded,
+                        loading: _location.busy,
                       ),
                       const SizedBox(height: 8),
                       _control(
@@ -802,6 +826,7 @@ class _TourismMapViewState extends State<TourismMapView>
     VoidCallback? onTap, {
     bool active = false,
     IconData? icon,
+    bool loading = false,
   }) => Material(
     color: active ? AppColors.accent : Colors.white,
     elevation: 5,
@@ -811,7 +836,16 @@ class _TourismMapViewState extends State<TourismMapView>
       tooltip: label,
       onPressed: onTap,
       constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-      icon: asset == null
+      icon: loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: AppColors.discovery,
+              ),
+            )
+          : asset == null
           ? Icon(icon, size: 22, color: AppColors.textPrimary)
           : AppIcon(asset, color: AppColors.textPrimary),
     ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,8 +23,9 @@ class DestinationLocation extends ChangeNotifier {
         await Geolocator.openLocationSettings();
       }
     } catch (_) {
-      error =
-          'Abre los ajustes de ubicación de tu dispositivo o navegador. Después, vuelve a pulsar para actualizar.';
+      error = kIsWeb
+          ? 'En tu navegador, haz clic en el ícono a la izquierda de la URL y activa "Permitir ubicación".'
+          : 'Abre los ajustes de ubicación de tu dispositivo. Después, vuelve a pulsar para actualizar.';
     }
     needsSettings = false;
     serviceDisabled = false;
@@ -38,7 +40,13 @@ class DestinationLocation extends ChangeNotifier {
     serviceDisabled = false;
     notifyListeners();
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
+      bool isEnabled = true;
+      try {
+        isEnabled = await Geolocator.isLocationServiceEnabled();
+      } catch (_) {
+        isEnabled = !kIsWeb ? false : true;
+      }
+      if (!isEnabled && !kIsWeb) {
         serviceDisabled = true;
         throw 'Activa la ubicación del dispositivo para calcular la distancia.';
       }
@@ -48,7 +56,9 @@ class DestinationLocation extends ChangeNotifier {
       }
       if (permission == LocationPermission.deniedForever) {
         needsSettings = true;
-        throw 'Puedes permitir la ubicación desde los ajustes de la app o del navegador.';
+        throw kIsWeb
+            ? 'La ubicación está bloqueada en tu navegador. Haz clic en el ícono a la izquierda de la URL y activa "Permitir ubicación".'
+            : 'Puedes permitir la ubicación desde los ajustes de la app o del dispositivo.';
       }
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) {
@@ -58,9 +68,9 @@ class DestinationLocation extends ChangeNotifier {
         return;
       }
       position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 15),
+        locationSettings: LocationSettings(
+          accuracy: kIsWeb ? LocationAccuracy.low : LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 20),
         ),
       );
       measuredAt = DateTime.now();

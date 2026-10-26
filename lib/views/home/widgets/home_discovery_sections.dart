@@ -121,6 +121,7 @@ class HomeDiscoverySections extends StatelessWidget {
                               child: AdaptiveDestinationImage(
                                 imagePath: available[personal.destination.id]!
                                     .imageUrl,
+                                cacheWidth: 200,
                               ),
                             ),
                           ),

@@ -68,77 +68,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: profileCtrl.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  ProfileHeader(
-                    name: userName,
-                    email: userEmail,
-                    avatarUrl: user?.avatarUrl,
-                    onTapAvatar: _pickAndUploadAvatar,
-                    onEditProfile: () => context.push('/profile/edit'),
-                  ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            if (profileCtrl.isLoading)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.accent,
+                backgroundColor: Colors.transparent,
+              ),
+            ProfileHeader(
+              name: userName,
+              email: userEmail,
+              avatarUrl: user?.avatarUrl,
+              onTapAvatar: _pickAndUploadAvatar,
+              onEditProfile: () => context.push('/profile/edit'),
+            ),
 
-                  if (profileCtrl.error != null)
-                    _ErrorBanner(profileCtrl.error!),
-                  if (profileCtrl.isShowingCachedProfile)
-                    _ErrorBanner(
-                      'Estás viendo preferencias guardadas en este dispositivo. Conéctate y actualiza antes de editarlas.',
-                    ),
+            if (profileCtrl.error != null) _ErrorBanner(profileCtrl.error!),
+            if (profileCtrl.isShowingCachedProfile)
+              _ErrorBanner(
+                'Estás viendo preferencias guardadas en este dispositivo. Conéctate y actualiza antes de editarlas.',
+              ),
 
-                  ProfileStatsRow(
-                    favoritesCount: favCount,
-                    reviewsCount: reviewCount,
-                    recommendationsCount: recCount,
-                  ),
+            ProfileStatsRow(
+              favoritesCount: favCount,
+              reviewsCount: reviewCount,
+              recommendationsCount: recCount,
+            ),
 
-                  if (profile != null) ...[
-                    const SizedBox(height: AppSpace.section),
-                    PreferencesSummaryCard(profile: profile),
-                  ],
+            if (profile != null) ...[
+              const SizedBox(height: AppSpace.section),
+              PreferencesSummaryCard(profile: profile),
+            ],
 
-                  const SizedBox(height: AppSpace.section),
-                  ProfileMenuSection(
-                    onEditProfile: () => context.push('/profile/edit'),
-                    onChangePassword: () =>
-                        context.push('/profile/change-password'),
-                    // The shared editor publishes the confirmed backend response.
-                    // Reloading here would duplicate the request and blank the page.
-                    onPreferences: () => context.push('/profile/preferences'),
-                    onMyReviews: () => context.push('/profile/my-reviews'),
-                    onArchived: () => context.push('/archived'),
-                    onPrivacy: () => context.push('/legal'),
-                    onAbout: () => showAboutProxvelSheet(context),
-                    onDeleteAccount: () =>
-                        context.push('/legal/delete-account'),
-                    onUpdates: () => context.push('/profile/updates'),
-                    onLogout: () => showLogoutConfirmSheet(
-                      context,
-                      onConfirm: () async {
-                        final router = GoRouter.of(context);
-                        await auth.logout();
-                        router.go('/welcome');
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: AppSpace.group),
-                  const Text(
-                    'Hecho para descubrir el Perú.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 120),
-                ],
+            const SizedBox(height: AppSpace.section),
+            ProfileMenuSection(
+              onEditProfile: () => context.push('/profile/edit'),
+              onChangePassword: () => context.push('/profile/change-password'),
+              // The shared editor publishes the confirmed backend response.
+              // Reloading here would duplicate the request and blank the page.
+              onPreferences: () => context.push('/profile/preferences'),
+              onMyReviews: () => context.push('/profile/my-reviews'),
+              onArchived: () => context.push('/archived'),
+              onPrivacy: () => context.push('/legal'),
+              onAbout: () => showAboutProxvelSheet(context),
+              onDeleteAccount: () => context.push('/legal/delete-account'),
+              onUpdates: () => context.push('/profile/updates'),
+              onLogout: () => showLogoutConfirmSheet(
+                context,
+                onConfirm: () async {
+                  final router = GoRouter.of(context);
+                  await auth.logout();
+                  router.go('/welcome');
+                },
               ),
             ),
+
+            const SizedBox(height: AppSpace.group),
+            const Text(
+              'Hecho para descubrir el Perú.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 146 + MediaQuery.viewPaddingOf(context).bottom),
+          ],
+        ),
+      ),
     );
   }
 }

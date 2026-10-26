@@ -110,7 +110,7 @@ class MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBody: _currentIndex == 0 || _currentIndex == 1,
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: [

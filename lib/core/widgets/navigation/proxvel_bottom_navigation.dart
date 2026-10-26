@@ -31,12 +31,6 @@ class ProxvelBottomNavigation extends StatelessWidget {
     AppIcons.navProfile,
   ];
 
-  static double _blurAt(double position) {
-    if (position <= 0.18) return 0.0;
-    final t = ((position - 0.18) / 0.82).clamp(0.0, 1.0);
-    return 10 * t * t * (3 - 2 * t);
-  }
-
   @override
   Widget build(BuildContext context) {
     final duration = MediaQuery.disableAnimationsOf(context)
@@ -52,19 +46,19 @@ class ProxvelBottomNavigation extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) => Stack(
                 children: [
-                  // Smoothstep starts with zero blur and zero slope. Disjoint
-                  // slices avoid re-blurring an overlapping horizontal seam.
-                  for (var band = 0; band < 16; band++)
+                  // A few clipped bands preserve the progressive frost without
+                  // asking the GPU to filter the backdrop sixteen times.
+                  for (var band = 1; band < 4; band++)
                     Positioned(
-                      top: constraints.maxHeight * band / 16,
+                      top: constraints.maxHeight * band / 4,
                       left: 0,
                       right: 0,
-                      height: constraints.maxHeight / 16,
+                      height: constraints.maxHeight / 4,
                       child: ClipRect(
                         child: BackdropFilter(
                           filter: ImageFilter.blur(
-                            sigmaX: _blurAt(band / 15),
-                            sigmaY: _blurAt(band / 15),
+                            sigmaX: band * 2.5,
+                            sigmaY: band * 2.5,
                           ),
                           child: const SizedBox.expand(),
                         ),
@@ -125,7 +119,7 @@ class ProxvelBottomNavigation extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(99),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                       child: Container(
                         foregroundDecoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(99),

@@ -44,17 +44,19 @@ class _SessionReadyScreenState extends State<SessionReadyScreen> {
       return;
     }
     final recommendations = context.read<RecommendationController>();
+    final archives = context.read<ArchiveController>();
     _escapeTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) setState(() => _canContinue = true);
     });
     try {
-      // El breve mínimo deja leer la confirmación; no simula progreso de red.
+      // These requests can finish on Home; they should not hold the route open.
+      unawaited(recommendations.loadRecommendations());
+      unawaited(archives.loadArchives());
+      // Keep a short readable confirmation while warming the local hero image.
       await Future.wait([
         HomeEntryCoordinator.prepareHomeForFirstPaint(context),
-        recommendations.loadRecommendations(),
-        context.read<ArchiveController>().loadArchives(),
-        Future<void>.delayed(const Duration(milliseconds: 1100)),
-      ]).timeout(const Duration(seconds: 8));
+        Future<void>.delayed(const Duration(milliseconds: 850)),
+      ]).timeout(const Duration(seconds: 3));
     } catch (_) {
       // Los controladores conservan los errores para reintentar desde Inicio.
       // Un timeout no cancela las solicitudes: pueden terminar en segundo plano.

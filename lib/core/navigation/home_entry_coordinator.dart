@@ -7,62 +7,21 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/home_controller.dart';
 
 class HomeEntryCoordinator {
-  static const Duration _homePreparationTimeout = Duration(seconds: 5);
-
-  /// Prepara los datos e imágenes críticas del Home de forma silenciosa.
-  /// No realiza validaciones de sesión ni ruteos, solo trabajo pesado.
+  /// Starts the catalogue in the background and warms only the local hero.
+  /// Network photos load in their visible cards instead of delaying navigation.
   static Future<void> prepareHomeForFirstPaint(BuildContext context) async {
     final homeController = context.read<HomeController>();
-    if (kDebugMode) {
-      debugPrint(
-        '[HomeEntryCoordinator] destinations before: ${homeController.destinations.length}',
-      );
+    if (homeController.destinations.isEmpty && !homeController.isLoading) {
+      unawaited(homeController.loadDestinations());
     }
-
     try {
-      if (homeController.destinations.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('[HomeEntryCoordinator] loadDestinations start');
-        }
-        await homeController.loadDestinations();
-        if (kDebugMode) {
-          debugPrint('[HomeEntryCoordinator] loadDestinations end');
-        }
-      }
-
-      if (!context.mounted) return;
-      final urls = homeController.featuredDestinations
-          .map((d) => d.imageUrl.trim())
-          .where((url) => url.isNotEmpty)
-          .take(5)
-          .toSet()
-          .toList();
-
-      // Agregar assets estáticos críticos de la UI del Home
-      urls.addAll(['assets/images/home_andes_lagoon.webp']);
-
-      if (kDebugMode) debugPrint('[HomeEntryCoordinator] urls selected: $urls');
-
-      await Future.wait(
-        urls.map((url) async {
-          try {
-            final ImageProvider provider = url.startsWith('http')
-                ? NetworkImage(url)
-                : AssetImage(url) as ImageProvider;
-            await precacheImage(provider, context);
-            if (kDebugMode) {
-              debugPrint('[HomeEntryCoordinator] precache success $url');
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('[HomeEntryCoordinator] precache failed $url: $e');
-            }
-          }
-        }),
-      ).timeout(_homePreparationTimeout);
+      await precacheImage(
+        const AssetImage('assets/images/home_andes_lagoon.webp'),
+        context,
+      );
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[HomeEntryCoordinator] prepareHome error: $e');
+        debugPrint('[HomeEntryCoordinator] hero preload failed: $e');
       }
     }
   }
