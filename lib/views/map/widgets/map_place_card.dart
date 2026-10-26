@@ -15,12 +15,16 @@ class MapPlaceCard extends StatelessWidget {
     this.distanceMeters,
     this.onClose,
     this.locationBusy = false,
+    this.isPinned = false,
+    this.onTogglePin,
   });
   final MapMarkerModel place;
   final VoidCallback onOpen, onGoogleMaps, onLocate;
   final VoidCallback? onClose;
+  final VoidCallback? onTogglePin;
   final double? distanceMeters;
   final bool locationBusy;
+  final bool isPinned;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +223,21 @@ class MapPlaceCard extends StatelessWidget {
                           : '${mapDistanceLabel(distanceMeters!)} en línea recta',
                     ),
                   ),
+                  if (onTogglePin != null)
+                    TextButton.icon(
+                      onPressed: onTogglePin,
+                      style: TextButton.styleFrom(
+                        foregroundColor: isPinned ? AppColors.primary : AppColors.textSecondary,
+                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      icon: Icon(
+                        isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                        size: 15,
+                        color: isPinned ? AppColors.primary : AppColors.textSecondary,
+                      ),
+                      label: Text(isPinned ? 'Fijado' : 'Fijar en mapa'),
+                    ),
                   TextButton.icon(
                     onPressed: onGoogleMaps,
                     style: TextButton.styleFrom(

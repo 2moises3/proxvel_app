@@ -10,11 +10,13 @@ class MapPhotoPin extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
+    this.pinned = false,
     this.count = 1,
   });
   final String imageUrl, label;
   final VoidCallback onTap;
   final bool selected;
+  final bool pinned;
   final int count;
   @override
   Widget build(BuildContext context) => Semantics(
@@ -43,7 +45,11 @@ class MapPhotoPin extends StatelessWidget {
                     child: Container(
                       width: 17,
                       height: 17,
-                      color: selected ? AppColors.accent : Colors.white,
+                      color: selected
+                          ? AppColors.accent
+                          : pinned
+                          ? AppColors.primary
+                          : Colors.white,
                     ),
                   ),
                 ),
@@ -53,12 +59,18 @@ class MapPhotoPin extends StatelessWidget {
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: selected ? AppColors.accent : Colors.white,
-                    boxShadow: const [
+                    color: selected
+                        ? AppColors.accent
+                        : pinned
+                        ? AppColors.primary
+                        : Colors.white,
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x40000000),
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
+                        color: pinned
+                            ? AppColors.primary.withValues(alpha: .35)
+                            : const Color(0x40000000),
+                        blurRadius: pinned ? 16 : 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
@@ -71,6 +83,31 @@ class MapPhotoPin extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (pinned)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.push_pin_rounded,
+                        size: 11,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 if (count > 1)
                   Positioned(
                     right: 0,

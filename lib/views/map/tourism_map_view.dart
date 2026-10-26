@@ -45,7 +45,7 @@ class _TourismMapViewState extends State<TourismMapView>
     vsync: this,
     duration: const Duration(milliseconds: 500),
   );
-  String? _category, _selectedId;
+  String? _category, _selectedId, _pinnedDestinationId;
   bool _ready = false, _refreshScheduled = false, _tilesFailed = false;
   bool _centeredOnUser = false;
   Timer? _cameraRefresh;
@@ -377,6 +377,18 @@ class _TourismMapViewState extends State<TourismMapView>
                     .toSet()
                     .toList()
                   ..sort();
+            final pinnedPlace = _pinnedDestinationId == null
+                ? null
+                : (places
+                        .where(
+                          (p) => p.destinationId == _pinnedDestinationId,
+                        )
+                        .firstOrNull ??
+                    controller.markers
+                        .where(
+                          (p) => p.destinationId == _pinnedDestinationId,
+                        )
+                        .firstOrNull);
             return Stack(
               children: [
                 Positioned.fill(
@@ -436,6 +448,10 @@ class _TourismMapViewState extends State<TourismMapView>
                                 selected:
                                     group.items.first.destinationId ==
                                     _selectedId,
+                                pinned: group.items.any(
+                                  (item) =>
+                                      item.destinationId == _pinnedDestinationId,
+                                ),
                                 onTap: () {
                                   if (group.items.length == 1) {
                                     _select(group.items.first);
@@ -637,6 +653,20 @@ class _TourismMapViewState extends State<TourismMapView>
                       MediaQuery.paddingOf(context).top + (_focused ? 84 : 132),
                   child: const TourismMapAttribution(),
                 ),
+                if (pinnedPlace != null)
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    top:
+                        MediaQuery.paddingOf(context).top +
+                        (_focused ? 84 : 140),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: _pinnedBanner(pinnedPlace),
+                      ),
+                    ),
+                  ),
                 if (_tilesFailed)
                   Positioned(
                     left: 20,
@@ -865,6 +895,15 @@ class _TourismMapViewState extends State<TourismMapView>
           selected.longitude,
         ),
         locationBusy: _location.busy,
+        isPinned: selected.destinationId == _pinnedDestinationId,
+        onTogglePin: () {
+          setState(() {
+            _pinnedDestinationId =
+                (_pinnedDestinationId == selected.destinationId)
+                    ? null
+                    : selected.destinationId;
+          });
+        },
         onLocate: () => _locate(center: false),
         onGoogleMaps: () => _googleMaps(selected),
         onOpen: () => _open(selected),
@@ -956,6 +995,115 @@ class _TourismMapViewState extends State<TourismMapView>
                 child: const Text('Ver todos los destinos'),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pinnedBanner(MapMarkerModel pinnedPlace) {
+    final distanceMeters = _location.distance(
+      pinnedPlace.latitude,
+      pinnedPlace.longitude,
+    );
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      child: InkWell(
+        onTap: () {
+          _fly(LatLng(pinnedPlace.latitude, pinnedPlace.longitude), 14);
+          _select(pinnedPlace);
+        },
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.push_pin_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            pinnedPlace.destination,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Fijado',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      distanceMeters != null
+                          ? '${mapDistanceLabel(distanceMeters)} en línea recta'
+                          : 'Toca para enfocar en mapa',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'Desfijar destino',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 28,
+                  minHeight: 28,
+                ),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  size: 17,
+                  color: AppColors.textSecondary,
+                ),
+                onPressed: () => setState(() => _pinnedDestinationId = null),
+              ),
+            ],
+          ),
         ),
       ),
     );
