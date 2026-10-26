@@ -8,12 +8,11 @@ import 'announcement_style.dart';
 
 /// Ventana del anuncio al abrir la app ('app_start') o aviso importante ('global_modal').
 ///
-/// Se renderiza DENTRO del árbol del Home (en un Stack), no como ruta de
-/// diálogo. Esto lo hace inmune a los refrescos de GoRouter durante el arranque
-/// (verificación de sesión, carga de perfil), que descartaban un showDialog.
+/// Conserva su ciclo de vida en Home, pero se pinta en el Overlay raíz:
+/// el anuncio y su barrera cubren también la isla de navegación global.
 ///
 /// Un aviso importante no se cierra tocando fuera ni con X: hay que pulsar «Entendido».
-class AnnouncementModalOverlay extends StatelessWidget {
+class AnnouncementModalOverlay extends StatefulWidget {
   final AnnouncementModel announcement;
 
   /// El viajero cerró la ventana (X, fuera, «Ahora no» o «Entendido»).
@@ -30,8 +29,26 @@ class AnnouncementModalOverlay extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final ann = announcement;
+  State<AnnouncementModalOverlay> createState() =>
+      _AnnouncementModalOverlayState();
+}
+
+class _AnnouncementModalOverlayState extends State<AnnouncementModalOverlay> {
+  final _portal = OverlayPortalController()..show();
+
+  @override
+  Widget build(BuildContext context) => OverlayPortal(
+    overlayLocation: OverlayChildLocation.rootOverlay,
+    controller: _portal,
+    overlayChildBuilder: _buildModal,
+    child: const SizedBox.shrink(),
+  );
+
+  VoidCallback get onClose => widget.onClose;
+  VoidCallback get onAction => widget.onAction;
+
+  Widget _buildModal(BuildContext context) {
+    final ann = widget.announcement;
     final style = AnnouncementStyle.of(ann.templateType);
     final showImage = style.allowsImage && ann.hasImage;
     final important = ann.placement == 'global_modal';
@@ -40,6 +57,7 @@ class AnnouncementModalOverlay extends StatelessWidget {
       child: Material(
         color: Colors.black.withValues(alpha: 0.55),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: important ? null : onClose, // tap fuera del card = cerrar
           child: Center(
             child: GestureDetector(
@@ -63,21 +81,28 @@ class AnnouncementModalOverlay extends StatelessWidget {
                           height: 150,
                           width: double.infinity,
                           child: showImage
-                              ? AdaptiveDestinationImage(imagePath: ann.backgroundImageUrl!)
+                              ? AdaptiveDestinationImage(
+                                  imagePath: ann.backgroundImageUrl!,
+                                )
                               : DecoratedBox(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: style.light
-                                          ? const [AppColors.accentSoft, AppColors.surface]
+                                          ? const [
+                                              AppColors.accentSoft,
+                                              AppColors.surface,
+                                            ]
                                           : style.gradient,
                                     ),
                                   ),
                                   child: Center(
                                     child: Icon(
                                       style.icon,
-                                      color: style.light ? AppColors.accent : style.iconColor,
+                                      color: style.light
+                                          ? AppColors.accent
+                                          : style.iconColor,
                                       size: 44,
                                     ),
                                   ),
@@ -99,7 +124,11 @@ class AnnouncementModalOverlay extends StatelessWidget {
                                     color: Colors.black.withValues(alpha: 0.4),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                                  child: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                             ),
@@ -137,7 +166,9 @@ class AnnouncementModalOverlay extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: _ModalButton(
-                                  label: important || !ann.hasAction ? 'Entendido' : 'Ahora no',
+                                  label: important || !ann.hasAction
+                                      ? 'Entendido'
+                                      : 'Ahora no',
                                   onTap: onClose,
                                 ),
                               ),
@@ -172,7 +203,11 @@ class _ModalButton extends StatelessWidget {
   final bool filled;
   final VoidCallback onTap;
 
-  const _ModalButton({required this.label, required this.onTap, this.filled = false});
+  const _ModalButton({
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +222,9 @@ class _ModalButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: filled ? AppColors.primary : null,
             borderRadius: BorderRadius.circular(14),
-            border: filled ? null : Border.all(color: AppColors.border, width: 1.5),
+            border: filled
+                ? null
+                : Border.all(color: AppColors.border, width: 1.5),
           ),
           child: Text(
             label,

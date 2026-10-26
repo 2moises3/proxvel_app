@@ -1,7 +1,6 @@
-import '../../models/seasonality_model.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/navigation/destination_opening.dart';
 import '../../core/theme/app_layout.dart';
-import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -19,11 +18,13 @@ import 'widgets/search_filter_sheet.dart';
 class SearchResultsScreen extends StatefulWidget {
   final String initialQuery;
   final String? initialCategory;
+  final bool autoOpenFilters;
 
   const SearchResultsScreen({
     super.key,
     this.initialQuery = '',
     this.initialCategory,
+    this.autoOpenFilters = false,
   });
 
   @override
@@ -52,6 +53,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         aiSort: profileCtrl.profile?.applyAiGlobally ?? false,
         hasProfile: profileCtrl.profile?.isRecommendationReady == true,
       );
+
+      if (widget.autoOpenFilters) {
+        await Future<void>.delayed(const Duration(milliseconds: 280));
+        if (mounted) _openFilters();
+      }
     });
   }
 
@@ -82,18 +88,24 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     );
   }
 
-  void _openFilters() {
+  Future<void> _openFilters() async {
+    FocusScope.of(context).unfocus();
     final ctrl = context.read<SearchController>();
-    showModalBottomSheet(
+    final selected = await showModalBottomSheet<SearchFilters>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        maxChildSize: 0.9,
-        minChildSize: 0.4,
-        builder: (_, scrollCtrl) => SearchFilterSheet(controller: ctrl),
+      builder: (_) => FractionallySizedBox(
+        heightFactor: .88,
+        child: SearchFilterSheet(controller: ctrl),
       ),
+    );
+    if (!mounted || selected == null) return;
+    ctrl.search(
+      newFilters: selected.copyWith(query: _queryCtrl.text.trim()),
+      aiSort: ctrl.aiSortEnabled,
+      hasProfile: _hasProfile,
     );
   }
 
@@ -102,7 +114,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
 
@@ -155,315 +167,213 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Widget _buildHeader(SearchController ctrl) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    final filterCount = ctrl.filters.activeFilterCount;
-
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primaryDark, AppColors.primary],
-        ),
-      ),
+    return SafeArea(
+      bottom: false,
       child: Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 12, 16, 20),
-          child: Column(
-            children: [
-              // ── Back + Title ──
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Volver',
+                  onPressed: () => context.pop(),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Color(0xFF202020),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Hero(
+                    tag: 'home_search_bar_hero',
+                    child: Material(
                       color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Buscar destinos',
-                      style: AppTextStyles.sectionOnDark,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpace.content),
-
-              // ── Search field + filter button ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                          ),
+                      borderRadius: BorderRadius.circular(99),
+                      child: TextField(
+                        controller: _queryCtrl,
+                        onSubmitted: (_) => _onSearch(),
+                        onChanged: (_) => setState(() {}),
+                        textInputAction: TextInputAction.search,
+                        style: AppTypography.style(
+                          fontSize: 15,
+                          color: const Color(0xFF202020),
                         ),
-                        child: TextField(
-                          controller: _queryCtrl,
-                          onSubmitted: (_) => _onSearch(),
-                          style: const TextStyle(
-                            color: AppColors.textOnDark,
-                            fontSize: 15,
+                        decoration: InputDecoration(
+                          hintText: '¿A dónde quieres ir?',
+                          filled: true,
+                          fillColor: Colors.white,
+                          hintStyle: AppTypography.style(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
                           ),
-                          decoration: InputDecoration(
-                            filled: false,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            hintText: '¿A dónde viajas hoy?',
-                            hintStyle: TextStyle(
-                              color: AppColors.textOnDark.withValues(
-                                alpha: 0.65,
-                              ),
-                              fontSize: 15,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search_rounded,
-                              color: AppColors.accent,
-                              size: 22,
-                            ),
-                            suffixIcon: _queryCtrl.text.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.clear_rounded,
-                                      color: AppColors.textOnDark.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      _queryCtrl.clear();
-                                      _onSearch();
-                                    },
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
+                          prefixIcon: IconButton(
+                            tooltip: 'Buscar',
+                            onPressed: _onSearch,
+                            icon: const Icon(Icons.search_rounded, size: 21),
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: _openFilters,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: filterCount > 0
-                              ? AppColors.accent
-                              : Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Icon(
-                              Icons.tune_rounded,
-                              color: filterCount > 0
-                                  ? AppColors.primary
-                                  : AppColors.textOnDark,
-                              size: 22,
-                            ),
-                            if (filterCount > 0)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.error,
-                                    shape: BoxShape.circle,
+                          suffixIcon: _queryCtrl.text.isNotEmpty
+                              ? IconButton(
+                                  tooltip: 'Borrar búsqueda',
+                                  onPressed: () {
+                                    _queryCtrl.clear();
+                                    _onSearch();
+                                  },
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 19,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      '$filterCount',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Toggle: Ordenar para mí ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: AppColors.accent,
-                      size: 18,
-                    ),
-                    const SizedBox(width: AppSpace.related),
-                    const Expanded(
-                      child: Text(
-                        'Ordenar para mí',
-                        style: TextStyle(
-                          color: AppColors.textOnDark,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Switch(
-                      value: ctrl.aiSortEnabled,
-                      activeThumbColor: AppColors.accent,
-                      onChanged: _onToggleAiSort,
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Aviso: IA pedida sin perfil ──
-              if (ctrl.aiBlockedNoProfile)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.accent.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline_rounded,
-                          color: AppColors.accent,
-                          size: 18,
-                        ),
-                        const SizedBox(width: AppSpace.related),
-                        Expanded(
-                          child: Text(
-                            'Elige tus preferencias para ordenar los destinos según tu forma de viajar.',
-                            style: TextStyle(
-                              color: AppColors.textOnDark.withValues(
-                                alpha: 0.9,
-                              ),
-                              fontSize: 12,
+                                )
+                              : null,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(99),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFDBDBD7),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(99),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFDBDBD7),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(99),
+                            borderSide: const BorderSide(
+                              color: AppColors.discovery,
+                              width: 1.5,
                             ),
                           ),
                         ),
-                        TextButton(
-                          onPressed: () => context.push('/profile/preferences'),
-                          style: TextButton.styleFrom(
-                            minimumSize: const Size(0, 44),
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                          ),
-                          child: const Text(
-                            'Completar',
-                            style: TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-
-              if (ctrl.contextError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    ctrl.contextError!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.error,
+                const SizedBox(width: 10),
+                Hero(
+                  tag: 'home_filter_button_hero',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: IconButton.filled(
+                      tooltip: 'Filtros',
+                      onPressed: _openFilters,
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: const Color(0xFF202020),
+                        minimumSize: const Size(52, 52),
+                      ),
+                      icon: Badge(
+                        isLabelVisible: ctrl.filters.activeFilterCount > 0,
+                        backgroundColor: AppColors.discovery,
+                        label: Text('${ctrl.filters.activeFilterCount}'),
+                        child: const Icon(Icons.tune_rounded, size: 22),
+                      ),
                     ),
-                  ),
-                ),
-
-              // ── Active filters summary ──
-              if (ctrl.filters.hasActiveFilters) ...[
-                const SizedBox(height: AppSpace.content),
-                SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    children: [
-                      if (ctrl.filters.region != null)
-                        _activeFilterChip(ctrl.filters.region!),
-                      if (ctrl.filters.category != null)
-                        _activeFilterChip(ctrl.filters.category!),
-                      if (ctrl.filters.climate != null)
-                        _activeFilterChip(
-                          'Clima ${kClimateOptions[ctrl.filters.climate!] ?? ctrl.filters.climate!} · ${kMonthShort[(ctrl.filters.month ?? DateTime.now().month) - 1]}',
-                        ),
-                      if (ctrl.filters.crowd != null)
-                        _activeFilterChip(
-                          kCrowdOptions[ctrl.filters.crowd!] ??
-                              ctrl.filters.crowd!,
-                        ),
-                      if (ctrl.filters.costLevel != null)
-                        _activeFilterChip(
-                          'Costo ${kCostOptions[ctrl.filters.costLevel!] ?? ctrl.filters.costLevel!}',
-                        ),
-                      if (ctrl.filters.minCompatibility != null)
-                        _activeFilterChip(
-                          '≥ ${ctrl.filters.minCompatibility}%',
-                        ),
-                    ],
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _activeFilterChip(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.accent.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.accent,
-          ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 48,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ctrl.availableCategories.length + 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final category = i == 0
+                      ? null
+                      : ctrl.availableCategories[i - 1];
+                  return ChoiceChip(
+                    label: Text(category ?? 'Todos'),
+                    selected: ctrl.filters.category == category,
+                    showCheckmark: false,
+                    selectedColor: AppColors.discovery,
+                    backgroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    side: const BorderSide(color: AppColors.border),
+                    labelStyle: AppTypography.style(
+                      fontSize: 13,
+                      color: ctrl.filters.category == category
+                          ? Colors.white
+                          : const Color(0xFF202020),
+                    ),
+                    onSelected: (_) => ctrl.search(
+                      newFilters: ctrl.filters.copyWith(
+                        category: category,
+                        clearCategory: category == null,
+                        query: _queryCtrl.text.trim(),
+                      ),
+                      aiSort: ctrl.aiSortEnabled,
+                      hasProfile: _hasProfile,
+                    ),
+                  );
+                },
+              ),
+            ),
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 18,
+                  color: AppColors.discovery,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Ordenar para mí',
+                    style: AppTypography.style(
+                      fontSize: 14,
+                      color: const Color(0xFF202020),
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: ctrl.aiSortEnabled,
+                  activeTrackColor: AppColors.discovery,
+                  activeThumbColor: Colors.white,
+                  onChanged: _onToggleAiSort,
+                ),
+              ],
+            ),
+            if (ctrl.aiBlockedNoProfile)
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Completa tus preferencias para usar el orden por IA.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push('/profile/preferences'),
+                    child: const Text('Completar'),
+                  ),
+                ],
+              ),
+            if (ctrl.filters.hasActiveFilters)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${ctrl.filters.activeFilterCount} filtros activos',
+                      style: AppTypography.style(
+                        fontSize: 12,
+                        color: AppColors.discovery,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ctrl.clearFilters(),
+                    child: const Text('Limpiar filtros'),
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );

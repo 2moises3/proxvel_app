@@ -1,3 +1,4 @@
+import '../profile/widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -31,6 +32,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 
   Future<void> _delete() async {
+    if (_busy) return;
     if (_password.text.isEmpty) {
       setState(() => _error = 'Escribe tu contraseña para confirmar.');
       return;
@@ -48,47 +50,45 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = e.statusCode == 403 ? 'La contraseña no es correcta.' : e.message;
+        _error = e.statusCode == 403
+            ? 'La contraseña no es correcta.'
+            : e.message;
       });
       return;
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'No pudimos procesar tu solicitud. Revisa tu conexión e intenta de nuevo.';
+        _error =
+            'No pudimos procesar tu solicitud. Revisa tu conexión e intenta de nuevo.';
       });
       return;
     }
     await auth.logout();
     router.go('/welcome');
-    messenger.showSnackBar(const SnackBar(
-      duration: Duration(seconds: 6),
-      content: Text('Tu cuenta se eliminará en 14 días. Si cambias de opinión, escribe a $kSupportEmail.'),
-    ));
+    messenger.showSnackBar(
+      const SnackBar(
+        duration: Duration(seconds: 6),
+        content: Text(
+          'Tu cuenta se eliminará en 14 días. Si cambias de opinión, escribe a $kSupportEmail.',
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textPrimary),
-          tooltip: 'Volver',
-          onPressed: _busy ? null : () => context.pop(),
-        ),
-        title: const Text(
-          'Eliminar mi cuenta',
-          style: AppTextStyles.sectionTitle,
-        ),
-      ),
+      appBar: profilePageBar(context, 'Eliminar mi cuenta', busy: _busy),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(AppSpace.screen, 20, AppSpace.screen, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen,
+            20,
+            AppSpace.screen,
+            32,
+          ),
           children: [
             const Text('Esto es lo que pasará', style: AppTextStyles.cardTitle),
             const SizedBox(height: AppSpace.content),
@@ -105,9 +105,15 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   children: [
                     const Padding(
                       padding: EdgeInsets.only(top: 7, right: 10, left: 4),
-                      child: Icon(Icons.circle, size: 5, color: AppColors.error),
+                      child: Icon(
+                        Icons.circle,
+                        size: 5,
+                        color: AppColors.error,
+                      ),
                     ),
-                    Expanded(child: Text(t, style: AppTextStyles.bodySecondary)),
+                    Expanded(
+                      child: Text(t, style: AppTextStyles.bodySecondary),
+                    ),
                   ],
                 ),
               ),
@@ -118,11 +124,20 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               enabled: !_busy,
               decoration: InputDecoration(
                 labelText: 'Tu contraseña',
+                hintText: 'Confirma con tu contraseña actual',
                 errorText: _error,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                  tooltip: _obscure ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                  tooltip: _obscure
+                      ? 'Mostrar contraseña'
+                      : 'Ocultar contraseña',
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
@@ -131,15 +146,27 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             const SizedBox(height: AppSpace.card),
             FilledButton(
               onPressed: _busy ? null : _delete,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.error, minimumSize: const Size.fromHeight(50)),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                minimumSize: const Size.fromHeight(50),
+              ),
               child: _busy
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Text('Eliminar mi cuenta'),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
               onPressed: _busy ? null : () => context.pop(),
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
               child: const Text('Cancelar'),
             ),
           ],

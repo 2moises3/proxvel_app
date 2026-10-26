@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'widgets/profile_page_bar.dart';
+import '../../core/theme/app_colors.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,19 +31,34 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   }
 
   Future<void> _check() async {
-    setState(() { _checking = true; _message = 'Buscando actualizaciones…'; });
+    setState(() {
+      _checking = true;
+      _message = 'Buscando actualizaciones…';
+    });
     try {
+      if (kIsWeb || !Platform.isAndroid) {
+        setState(
+          () => _message =
+              'Las actualizaciones se instalan desde PROXVEL para Android.',
+        );
+        return;
+      }
       final installed = await PackageInfo.fromPlatform();
       final release = await _service.latestAvailable();
       if (!mounted) return;
       setState(() {
         _installedVersion = '${installed.version}+${installed.buildNumber}';
         _release = release;
-        _message = release == null ? 'Ya tienes la última versión publicada.' : 'Nueva versión disponible';
+        _message = release == null
+            ? 'Ya tienes la última versión publicada.'
+            : 'Nueva versión disponible';
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _message = 'No pudimos comprobar las actualizaciones. Revisa tu conexión.');
+      setState(
+        () => _message =
+            'No pudimos comprobar las actualizaciones. Revisa tu conexión.',
+      );
     } finally {
       if (mounted) setState(() => _checking = false);
     }
@@ -49,14 +67,23 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   Future<void> _install() async {
     final release = _release;
     if (release == null || _downloading) return;
-    setState(() { _downloading = true; _progress = null; });
+    setState(() {
+      _downloading = true;
+      _progress = null;
+    });
     try {
       await _service.downloadAndInstall(release, (progress) {
         if (mounted) setState(() => _progress = progress);
       });
-      if (mounted) setState(() => _message = 'Confirma la instalación en Android.');
+      if (mounted) {
+        setState(() => _message = 'Confirma la instalación en Android.');
+      }
     } catch (error) {
-      if (mounted) setState(() => _message = 'No se pudo instalar la actualización: $error');
+      if (mounted) {
+        setState(
+          () => _message = 'No se pudo instalar la actualización: $error',
+        );
+      }
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -64,8 +91,9 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Actualizaciones')),
-    body: Padding(
+    backgroundColor: AppColors.background,
+    appBar: profilePageBar(context, 'Actualizaciones'),
+    body: SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,21 +113,29 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _downloading ? null : _install,
-              child: Text(_downloading ? 'Descargando…' : 'Descargar e instalar'),
+              child: Text(
+                _downloading ? 'Descargando…' : 'Descargar e instalar',
+              ),
             ),
             if (_downloading) ...[
               const SizedBox(height: 16),
               LinearProgressIndicator(value: _progress),
             ],
             const SizedBox(height: 16),
-            const Text('Android puede pedirte permiso para instalar desde PROXVEL y confirmar la actualización.'),
+            const Text(
+              'Android puede pedirte permiso para instalar desde PROXVEL y confirmar la actualización.',
+            ),
           ],
-          if (_checking) const Padding(
-            padding: EdgeInsets.only(top: 20),
-            child: CircularProgressIndicator(),
-          ),
-          if (!_checking && !_downloading && Platform.isAndroid)
-            TextButton(onPressed: _check, child: const Text('Volver a comprobar')),
+          if (_checking)
+            const Padding(
+              padding: EdgeInsets.only(top: 20),
+              child: CircularProgressIndicator(),
+            ),
+          if (!_checking && !_downloading && !kIsWeb && Platform.isAndroid)
+            TextButton(
+              onPressed: _check,
+              child: const Text('Volver a comprobar'),
+            ),
         ],
       ),
     ),

@@ -34,14 +34,12 @@ class RankingInfo {
   });
 }
 
-
 /// Catálogo y medios desde PostgreSQL; ranking y explicación del usuario desde
 /// el motor V3 autenticado. Los datos científicos pertenecen al snapshot validado.
 class DestinationService {
   final ApiClient? _api;
   final LocalStorageService? storage;
-  DestinationService({ApiClient? apiClient, this.storage})
-      : _api = apiClient;
+  DestinationService({ApiClient? apiClient, this.storage}) : _api = apiClient;
 
   /// Etiquetas en español para los aspectos ABSA del backend.
   static const Map<String, String> _aspectLabels = {
@@ -62,9 +60,22 @@ class DestinationService {
   final Map<String, Map<String, dynamic>> _detailCache = {};
   final Map<String, Map<String, Map<String, dynamic>>> _rankingByMonth = {};
   final Map<String, Future<void>> _rankingLoads = {};
+  List<DestinationModel>? _catalogCache;
+  Future<List<DestinationModel>>? _catalogLoad;
+  int _catalogGeneration = 0;
   Map<String, String>? _tourismSearchIndex;
 
-  void clearPersonalizedCache() { _rankingByMonth.clear(); _rankingLoads.clear(); }
+  /// El gesto de actualizar Inicio vuelve a consultar el catálogo público.
+  void invalidateDestinationCatalog() {
+    _catalogGeneration++;
+    _catalogCache = null;
+    _catalogLoad = null;
+  }
+
+  void clearPersonalizedCache() {
+    _rankingByMonth.clear();
+    _rankingLoads.clear();
+  }
 
   /// Texto oficial del catálogo para encontrar actividades y descripciones.
   /// La lista general de destinos no contiene estos campos.
@@ -87,8 +98,24 @@ class DestinationService {
     return index;
   }
 
-
   Future<List<DestinationModel>> getDestinations() async {
+    if (_catalogCache != null) return _catalogCache!;
+    if (_catalogLoad != null) return _catalogLoad!;
+    final generation = _catalogGeneration;
+    final loading = _fetchDestinations();
+    _catalogLoad = loading;
+    try {
+      final result = await loading;
+      if (generation == _catalogGeneration && result.isNotEmpty) {
+        _catalogCache = result;
+      }
+      return result;
+    } finally {
+      if (generation == _catalogGeneration) _catalogLoad = null;
+    }
+  }
+
+  Future<List<DestinationModel>> _fetchDestinations() async {
     if (_api != null) {
       try {
         final json = await _api.get('/destinations');
@@ -166,7 +193,13 @@ class DestinationService {
           // clima y aforo_multitudes NO son aspectos ABSA de reseñas: son señales
           // contextuales (Fase 4, datos reales del mes). Se excluyen de la lista
           // ABSA y se muestran aparte vía getDestinationContext().
-          if (!const ['costos', 'atencion_servicio', 'atractivos'].contains(key)) return;
+          if (!const [
+            'costos',
+            'atencion_servicio',
+            'atractivos',
+          ].contains(key)) {
+            return;
+          }
           final value = aspectMap[key];
           if (value is num) {
             scores.add(
@@ -232,12 +265,14 @@ class DestinationService {
         crowdScore: (entry['crowd_score'] as num?)?.toDouble(),
         monthName: entry['month_name'] as String?,
         rank: entry['ranking_position'] as int?,
-        explanation: entry['explanation'] is Map<String, dynamic> ? ExplanationModel.fromJson(entry['explanation']) : null,
+        explanation: entry['explanation'] is Map<String, dynamic>
+            ? ExplanationModel.fromJson(entry['explanation'])
+            : null,
         label: (label is String && label.isNotEmpty) ? label : null,
         topAspects: [
-          for (final item in ((entry['explanation'] as Map?)?['top_aspects']
-                  as List? ??
-              const []))
+          for (final item
+              in ((entry['explanation'] as Map?)?['top_aspects'] as List? ??
+                  const []))
             if (item is Map && item['aspect'] is String)
               _aspectLabels[item['aspect']] ?? item['aspect'] as String,
         ],
@@ -251,7 +286,6 @@ class DestinationService {
   }
 
   final Map<int, Map<String, MonthContext>> _monthContextCache = {};
-
 
   /// Clima y afluencia de todos los destinos en un mes (filtros del buscador).
   Future<Map<String, MonthContext>> getMonthContext(int month) async {
@@ -279,18 +313,18 @@ class DestinationService {
     String? tolerancia,
   }) async {
     if (_api == null) return null;
-      final json = await _api.get(
-        '/destinations/$destinationId/calendar',
-        queryParams: {
-          if (clima != null && clima.isNotEmpty) 'clima': clima,
-          if (tolerancia != null && tolerancia.isNotEmpty)
-            'tolerancia': tolerancia,
-        },
-      );
-      final data = json['data'];
-      if (data is! Map<String, dynamic>) return null;
-      final calendar = DestinationCalendar.fromJson(data);
-      return calendar.hasAnyData ? calendar : null;
+    final json = await _api.get(
+      '/destinations/$destinationId/calendar',
+      queryParams: {
+        if (clima != null && clima.isNotEmpty) 'clima': clima,
+        if (tolerancia != null && tolerancia.isNotEmpty)
+          'tolerancia': tolerancia,
+      },
+    );
+    final data = json['data'];
+    if (data is! Map<String, dynamic>) return null;
+    final calendar = DestinationCalendar.fromJson(data);
+    return calendar.hasAnyData ? calendar : null;
   }
 
   /// Afinidad relativa de Fase 3; no es el puntaje contextual ni una probabilidad.
@@ -367,19 +401,29 @@ class DestinationService {
     int? month,
   }) async {
     if (_api == null) return null;
-    final mes = month ?? DateTime.now().month; // 0 = mes actual (lo decide el backend)
+    final mes =
+        month ?? DateTime.now().month; // 0 = mes actual (lo decide el backend)
     final userId = storage?.getUser()?.id ?? 'no-user';
-    final profileKey = storage?.getProfile()?.toApiJson().toString() ?? 'no-profile';
+    final profileKey =
+        storage?.getProfile()?.toApiJson().toString() ?? 'no-profile';
     final cacheKey = 'tesis-v3-20261022|$userId|$profileKey|$mes';
     if (!_rankingByMonth.containsKey(cacheKey)) {
       final load = _rankingLoads.putIfAbsent(cacheKey, () async {
-        final json = await _api.get('/recommendations/me', queryParams: {'limit': '100', 'month': '$mes'});
+        final json = await _api.get(
+          '/recommendations/me',
+          queryParams: {'limit': '100', 'month': '$mes'},
+        );
         final items = json['data'] as List? ?? [];
         _rankingByMonth[cacheKey] = {
-          for (final item in items.whereType<Map<String, dynamic>>()) (item['destination_id'] ?? '') as String: item,
+          for (final item in items.whereType<Map<String, dynamic>>())
+            (item['destination_id'] ?? '') as String: item,
         };
       });
-      try { await load; } finally { _rankingLoads.remove(cacheKey); }
+      try {
+        await load;
+      } finally {
+        _rankingLoads.remove(cacheKey);
+      }
     }
     return _rankingByMonth[cacheKey]?[destinationId];
   }

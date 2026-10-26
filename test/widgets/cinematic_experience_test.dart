@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:proxvell_app/core/theme/app_theme.dart';
 import 'package:proxvell_app/views/auth/welcome_screen.dart';
 import 'package:proxvell_app/views/auth/login_screen.dart';
@@ -28,7 +27,6 @@ class _WaitingDestinationController extends DestinationController {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() => AuthScenes.selected = 0);
 
   GoRouter router() => GoRouter(
@@ -63,8 +61,12 @@ void main() {
       await tester.pump(const Duration(seconds: 8));
       await tester.pump(const Duration(milliseconds: 1300));
       expect(background(tester), AuthScenes.assets[1]);
-      await tester.ensureVisible(find.text('Ya tengo cuenta · Iniciar sesión'));
-      await tester.tap(find.text('Ya tengo cuenta · Iniciar sesión'));
+      await tester.ensureVisible(find.text('Comenzar aventura'));
+      await tester.tap(find.text('Comenzar aventura'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('Iniciar sesión'));
+      await tester.tap(find.text('Iniciar sesión'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(LoginScreen), findsOneWidget);
@@ -96,8 +98,12 @@ void main() {
     final route = router();
     await tester.pumpWidget(host(route));
     await tester.pump(const Duration(seconds: 8));
-    await tester.ensureVisible(find.text('Crear mi cuenta'));
-    await tester.tap(find.text('Crear mi cuenta'));
+    await tester.ensureVisible(find.text('Comenzar aventura'));
+    await tester.tap(find.text('Comenzar aventura'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('Crear cuenta'));
+    await tester.tap(find.text('Crear cuenta'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(background(tester), AuthScenes.assets[1]);
@@ -119,7 +125,11 @@ void main() {
       await tester.pumpWidget(host(route, reduce: true));
       await tester.pump(const Duration(seconds: 32));
       expect(background(tester), AuthScenes.assets.first);
-      await tester.ensureVisible(find.text('Crear mi cuenta'));
+      await tester.ensureVisible(find.text('Comenzar aventura'));
+      await tester.tap(find.text('Comenzar aventura'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('Crear cuenta'));
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       route.dispose();

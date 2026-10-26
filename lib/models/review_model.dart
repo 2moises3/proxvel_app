@@ -1,12 +1,15 @@
 class ReviewModel {
   /// Identificador de la reseña (para reportarla).
   final String? reviewId;
+  final bool isOwn;
   final double ratingGeneral;
   final String reviewText;
   final String userId;
   final String? destinationId;
+
   /// Nombre visible del destino (null si el backend no lo envía).
   final String? destinationName;
+
   /// Autor visible («Lucía P.»); null si el backend no lo envía.
   final String? authorName;
   final String? createdAt;
@@ -16,6 +19,7 @@ class ReviewModel {
 
   ReviewModel({
     this.reviewId,
+    this.isOwn = false,
     required this.ratingGeneral,
     required this.reviewText,
     required this.userId,
@@ -32,7 +36,9 @@ class ReviewModel {
     Map<String, dynamic> parsedAspects = {};
     if (json['aspect_ratings'] is List) {
       for (var item in json['aspect_ratings']) {
-        if (item is Map<String, dynamic> && item.containsKey('aspect') && item.containsKey('rating')) {
+        if (item is Map<String, dynamic> &&
+            item.containsKey('aspect') &&
+            item.containsKey('rating')) {
           parsedAspects[item['aspect'].toString()] = item['rating'];
         }
       }
@@ -42,6 +48,7 @@ class ReviewModel {
 
     return ReviewModel(
       reviewId: json['review_id'] as String?,
+      isOwn: json['is_own'] == true,
       ratingGeneral: (json['rating_general'] as num?)?.toDouble() ?? 0.0,
       reviewText: json['review_text'] as String? ?? '',
       userId: json['user_id'] as String? ?? 'Anónimo',

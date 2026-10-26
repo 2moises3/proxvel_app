@@ -1,3 +1,4 @@
+import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -25,17 +26,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   bool _isLoading = false;
   bool _submitted = false;
-  String? _serverError; // error devuelto por el backend (contraseña actual incorrecta, etc.)
+  String?
+  _serverError; // error devuelto por el backend (contraseña actual incorrecta, etc.)
 
   String? get _currentError {
     if (_serverError != null) return _serverError;
-    if (_submitted && _currentController.text.isEmpty) return 'Ingresa tu contraseña actual.';
+    if (_submitted && _currentController.text.isEmpty) {
+      return 'Ingresa tu contraseña actual.';
+    }
     return null;
   }
 
   String? get _newError {
     final value = _newController.text;
-    if (value.isEmpty) return _submitted ? 'Ingresa la nueva contraseña.' : null;
+    if (value.isEmpty) {
+      return _submitted ? 'Ingresa la nueva contraseña.' : null;
+    }
     if (value.length < kMinPasswordLength) {
       return 'Debe tener al menos $kMinPasswordLength caracteres.';
     }
@@ -59,6 +65,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _confirmController.text == _newController.text;
 
   Future<void> _handleSave() async {
+    if (_isLoading) return;
     setState(() {
       _submitted = true;
       _serverError = null;
@@ -67,9 +74,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() => _isLoading = true);
     final error = await context.read<AuthController>().changePassword(
-          currentPassword: _currentController.text,
-          newPassword: _newController.text,
-        );
+      currentPassword: _currentController.text,
+      newPassword: _newController.text,
+    );
     if (!mounted) return;
 
     if (error != null) {
@@ -102,23 +109,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Cambiar contraseña',
-          style: AppTextStyles.sectionTitle,
-        ),
-      ),
+      appBar: profilePageBar(context, 'Cambiar contraseña', busy: _isLoading),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpace.screen),
         child: Column(
@@ -131,6 +122,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             const SizedBox(height: AppSpace.section),
             ProxvelTextField(
               label: 'Contraseña actual',
+              hintText: 'Escribe tu contraseña actual',
+              readOnly: _isLoading,
               controller: _currentController,
               isPassword: true,
               errorText: _currentError,
@@ -139,6 +132,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
               label: 'Nueva contraseña',
+              hintText: 'Al menos 8 caracteres',
+              readOnly: _isLoading,
               controller: _newController,
               isPassword: true,
               errorText: _newError,
@@ -148,6 +143,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
               label: 'Repite la nueva contraseña',
+              hintText: 'Vuelve a escribirla',
+              readOnly: _isLoading,
               controller: _confirmController,
               isPassword: true,
               errorText: _confirmError,

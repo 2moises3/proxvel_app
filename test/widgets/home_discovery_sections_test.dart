@@ -63,23 +63,31 @@ void main() {
     expect(find.text('Reserva Nacional de Paracas'), findsWidgets);
     expect(find.text('Para descubrir'), findsOneWidget);
     expect(find.text('Tendencias del momento'), findsNothing);
-    expect(
-      find.byKey(const ValueKey('home-category-Arqueología')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('home-category-Todos')), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('Reserva Nacional de Paracas').first);
     expect(selectedDestination, 'paracas');
 
-    await tester.ensureVisible(find.text('Arqueología').last);
+    final categoriesRail = find.byKey(const ValueKey('home-categories-rail'));
+    await tester.ensureVisible(categoriesRail);
     await tester.pumpAndSettle();
-    final archaeologyHeader = find
-        .ancestor(of: find.text('Arqueología').last, matching: find.byType(Row))
-        .last;
+    final categoriesList = tester.widget<ListView>(categoriesRail);
+    expect(categoriesList.controller!.offset, 0);
+    await tester.drag(categoriesRail, const Offset(-250, 0));
+    await tester.pumpAndSettle();
+    final categoryRow = find.byKey(const ValueKey('home-category-Arqueología'));
+    await tester.ensureVisible(categoryRow);
+    await tester.pumpAndSettle();
     await tester.tap(
-      find.descendant(of: archaeologyHeader, matching: find.text('Ver más  →')),
+      find.descendant(of: categoryRow, matching: find.text('Arqueología')),
     );
+    await tester.pumpAndSettle();
+    expect(selectedCategory, isNull);
+    final openCategory = find.text('Ver Arqueología (1) →');
+    await tester.ensureVisible(openCategory);
+    await tester.pumpAndSettle();
+    await tester.tap(openCategory);
     expect(selectedCategory, 'Arqueología');
   });
 }

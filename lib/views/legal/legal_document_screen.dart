@@ -14,7 +14,11 @@ class LegalDocumentScreen extends StatelessWidget {
   /// Widgets extra al final (p. ej. acciones de «Mis datos»).
   final List<Widget> footer;
 
-  const LegalDocumentScreen({super.key, required this.doc, this.footer = const []});
+  const LegalDocumentScreen({
+    super.key,
+    required this.doc,
+    this.footer = const [],
+  });
 
   /// Documento por id (ruta /legal/doc/:id). Si no existe, muestra un aviso.
   static Widget byId(String id) {
@@ -39,23 +43,32 @@ class LegalDocumentScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: AppColors.textPrimary,
+          ),
           tooltip: 'Volver',
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
-        title: Text(
-          doc.title,
-          style: AppTextStyles.sectionTitle,
-        ),
+        title: Text(doc.title, style: AppTextStyles.sectionTitle),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(AppSpace.screen, 20, AppSpace.screen, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen,
+            20,
+            AppSpace.screen,
+            32,
+          ),
           children: [
             if (showVersion) ...[
               Text(
                 'Versión $kLegalVersion · Actualizada el $kLegalUpdated',
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
               ),
               const SizedBox(height: AppSpace.related),
             ],
@@ -72,10 +85,7 @@ class LegalDocumentScreen extends StatelessWidget {
       case 'h':
         return Padding(
           padding: const EdgeInsets.only(top: 22, bottom: 8),
-          child: Text(
-            b.text,
-            style: AppTextStyles.cardTitle,
-          ),
+          child: Text(b.text, style: AppTextStyles.cardTitle),
         );
       case 'ul':
         return Column(
@@ -89,7 +99,11 @@ class LegalDocumentScreen extends StatelessWidget {
                   children: [
                     const Padding(
                       padding: EdgeInsets.only(top: 7, right: 10, left: 4),
-                      child: Icon(Icons.circle, size: 5, color: AppColors.accent),
+                      child: Icon(
+                        Icons.circle,
+                        size: 5,
+                        color: AppColors.accent,
+                      ),
                     ),
                     Expanded(
                       child: Text(item, style: AppTextStyles.bodySecondary),

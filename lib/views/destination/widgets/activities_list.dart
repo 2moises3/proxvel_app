@@ -15,17 +15,15 @@ class ActivitiesList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '¿Qué puedes hacer?',
-          style: AppTextStyles.sectionTitle,
-        ),
+        const Text('¿Qué puedes hacer?', style: AppTextStyles.sectionTitle),
         const SizedBox(height: AppSpace.field),
         SizedBox(
           height: 90,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: activities.length,
-            separatorBuilder: (context, index) => const SizedBox(width: AppSpace.card),
+            separatorBuilder: (context, index) =>
+                const SizedBox(width: AppSpace.card),
             itemBuilder: (context, index) {
               return _buildActivityItem(activities[index]);
             },
@@ -49,11 +47,7 @@ class ActivitiesList extends StatelessWidget {
               color: AppColors.accent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              iconData,
-              color: AppColors.accent,
-              size: 24,
-            ),
+            child: Icon(iconData, color: AppColors.accent, size: 24),
           ),
           const SizedBox(height: AppSpace.related),
           Text(
@@ -74,15 +68,31 @@ class ActivitiesList extends StatelessWidget {
 
   IconData _getIconForActivity(String activity) {
     final lower = activity.toLowerCase();
-    if (lower.contains('caminata') || lower.contains('trekking') || lower.contains('senderismo')) return Icons.directions_walk_rounded;
+    if (lower.contains('caminata') ||
+        lower.contains('trekking') ||
+        lower.contains('senderismo')) {
+      return Icons.directions_walk_rounded;
+    }
     if (lower.contains('foto')) return Icons.camera_alt_outlined;
-    if (lower.contains('paisaje') || lower.contains('observación')) return Icons.landscape_rounded;
-    if (lower.contains('cultura') || lower.contains('historia')) return Icons.account_balance_rounded;
+    if (lower.contains('paisaje') || lower.contains('observación')) {
+      return Icons.landscape_rounded;
+    }
+    if (lower.contains('cultura') || lower.contains('historia')) {
+      return Icons.account_balance_rounded;
+    }
     if (lower.contains('investigación')) return Icons.science_outlined;
-    if (lower.contains('sandboard') || lower.contains('buggy')) return Icons.downhill_skiing_rounded; // Close enough for sandboarding
-    if (lower.contains('bote') || lower.contains('navegación')) return Icons.directions_boat_outlined;
-    if (lower.contains('montañismo') || lower.contains('alpinismo')) return Icons.terrain_rounded;
-    if (lower.contains('camping')) return Icons.campaign_outlined; // Close enough
+    if (lower.contains('sandboard') || lower.contains('buggy')) {
+      return Icons.downhill_skiing_rounded; // Close enough for sandboarding
+    }
+    if (lower.contains('bote') || lower.contains('navegación')) {
+      return Icons.directions_boat_outlined;
+    }
+    if (lower.contains('montañismo') || lower.contains('alpinismo')) {
+      return Icons.terrain_rounded;
+    }
+    if (lower.contains('camping')) {
+      return Icons.campaign_outlined; // Close enough
+    }
     if (lower.contains('fauna')) return Icons.pets_rounded;
     if (lower.contains('pesca')) return Icons.phishing_rounded;
     if (lower.contains('gastro')) return Icons.restaurant_outlined;

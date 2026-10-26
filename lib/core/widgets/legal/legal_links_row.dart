@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import '../../theme/app_layout.dart';
 
 /// «Términos · Privacidad» discreto para pantallas previas al inicio de sesión (fondo oscuro).
@@ -9,9 +9,9 @@ class LegalLinksRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = GoogleFonts.poppins(
-      fontSize: 12,
-      color: Colors.white.withValues(alpha: 0.75),
+    final style = AppTypography.style(
+      fontSize: 14,
+      color: Colors.white,
       decoration: TextDecoration.underline,
       decorationColor: Colors.white.withValues(alpha: 0.4),
     );

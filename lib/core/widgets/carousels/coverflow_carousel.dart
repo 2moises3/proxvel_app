@@ -1,237 +1,213 @@
-import 'dart:ui';
-import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
 import '../../../models/destination_model.dart';
-import '../../../controllers/favorites_controller.dart';
 import '../cards/coverflow_destination_card.dart';
-import '../images/adaptive_destination_image.dart';
 
+/// A hand of cards: lateral cards tilt while the selected destination stays flat.
 class CoverflowCarousel extends StatefulWidget {
-  final List<DestinationModel> destinations;
-  final Function(DestinationModel) onDestinationTap;
-
   const CoverflowCarousel({
     super.key,
     required this.destinations,
     required this.onDestinationTap,
   });
-
+  final List<DestinationModel> destinations;
+  final ValueChanged<DestinationModel> onDestinationTap;
   @override
   State<CoverflowCarousel> createState() => _CoverflowCarouselState();
 }
 
-class _CoverflowCarouselState extends State<CoverflowCarousel> {
-  late PageController _pageController;
-  int _currentIndex = 10000;
-  double _currentPage = 10000.0;
+class _CoverflowCarouselState extends State<CoverflowCarousel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _position = AnimationController.unbounded(
+    vsync: this,
+  );
+  double _dragStart = 0;
 
   @override
-  void initState() {
-    super.initState();
-    // viewportFraction limits the hit area for gestures and affects page offset math
-    _pageController = PageController(
-      viewportFraction: 0.65,
-      initialPage: _currentIndex,
-    );
-    _pageController.addListener(_onScroll);
+  void didUpdateWidget(covariant CoverflowCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.destinations.map((d) => d.id).join(',') !=
+        widget.destinations.map((d) => d.id).join(',')) {
+      _position.stop();
+      _position.value = 0;
+    }
   }
 
-  void _onScroll() {
-    setState(() {
-      _currentPage = _pageController.page ?? 0.0;
-    });
+  void _go(double index) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _position.value = index;
+    } else {
+      _position.animateTo(
+        index,
+        duration: const Duration(milliseconds: 460),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
   void dispose() {
-    _pageController.removeListener(_onScroll);
-    _pageController.dispose();
+    _position.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.destinations.isEmpty) return const SizedBox();
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 500, // Ajustado para dar espacio al bloom sin invadir otras secciones
-          child: Stack(
-            clipBehavior: Clip.none, // IMPORTANTE para que el bloom no se corte
-            alignment: Alignment.center,
-            children: [
-              // 1. Las tarjetas visuales, ordenadas por Z-Index (las más lejanas al fondo)
-              ..._buildVisualCards(),
-
-              // 2. El PageView invisible en la parte superior que captura todos los gestos
-              PageView.builder(
-                controller: _pageController,
-                itemCount: null, // Efecto Infinito
-                onPageChanged: (index) {
-                  setState(() => _currentIndex = index);
-                },
-                itemBuilder: (context, index) {
-                  final actualIndex = index % widget.destinations.length;
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      if (_currentIndex == index) {
-                        widget.onDestinationTap(widget.destinations[actualIndex]);
-                      } else {
-                        _pageController.animateToPage(
-                          index,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      }
-                    },
-                    child: const SizedBox.expand(), // Hitbox transparente
-                  );
-                },
-              ),
-
-              // 3. Hitbox del corazón para la tarjeta CENTRADA, ENCIMA de la capa
-              //    de gestos (si no, el PageView se come el tap). El ícono visual
-              //    lo dibuja la propia tarjeta y refleja el estado.
-              _buildActiveFavoriteHitbox(),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpace.section),
-        // Minimalist Dots Indicator
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.destinations.length, (dotIndex) {
-            final isActive = (_currentIndex % widget.destinations.length) == dotIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 6,
-              width: isActive ? 24 : 6,
-              decoration: BoxDecoration(
-                color: isActive ? Colors.black87 : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  /// Tap target invisible sobre el corazón de la tarjeta centrada (300x460),
-  /// colocado encima del PageView para que el toque llegue al favorito.
-  Widget _buildActiveFavoriteHitbox() {
     if (widget.destinations.isEmpty) return const SizedBox.shrink();
-    final dest = widget.destinations[_currentIndex % widget.destinations.length];
-    return Center(
-      child: SizedBox(
-        width: 300,
-        height: 460,
-        child: Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => context.read<FavoritesController>().toggleFavorite(dest.id, dest),
-              child: const SizedBox(width: 46, height: 46),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildVisualCards() {
-    final List<Widget> cards = [];
-    final int baseIndex = _currentPage.round();
-
-    List<int> visibleIndices = [
-      baseIndex - 2,
-      baseIndex - 1,
-      baseIndex,
-      baseIndex + 1,
-      baseIndex + 2,
-    ];
-
-    visibleIndices.sort((a, b) {
-      final distA = (a - _currentPage).abs();
-      final distB = (b - _currentPage).abs();
-      return distB.compareTo(distA);
-    });
-
-    for (int i in visibleIndices) {
-      if (i < 0) continue;
-
-      final double diff = (i - _currentPage);
-      final double absDiff = diff.abs();
-
-      if (absDiff > 1.4) continue; 
-
-      final double scale = (1 - (absDiff * 0.20)).clamp(0.0, 1.0);
-      
-      double offsetMultiplier;
-      if (absDiff <= 1.0) {
-        offsetMultiplier = absDiff;
-      } else {
-        offsetMultiplier = 1.0 + (absDiff - 1.0) * 0.1;
-      }
-      final double translateX = 65.0 * diff.sign * offsetMultiplier;
-
-      final double opacity = (1 - (absDiff * 0.3)).clamp(0.0, 1.0);
-
-      final actualIndex = i % widget.destinations.length;
-
-      cards.add(
-        Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()
-            ..translateByDouble(translateX, 0.0, 0.0, 1.0)
-            ..scaleByDouble(scale, scale, 1.0, 1.0),
-          child: Opacity(
-            opacity: opacity,
-            child: SizedBox(
-              width: 300, // Ligeramente más ancho
-              height: 460, // Un poco más alto
-              child: Stack(
-                clipBehavior: Clip.none, // IMPORTANTE para el bloom
-                fit: StackFit.expand,
-                children: [
-                  // Efecto Bloom iOS (Aura sutil, luminosa, centrada detrás de la tarjeta)
-                  if (absDiff < 1.0)
-                    Positioned(
-                      top: 15, // Más arriba para que escape más
-                      bottom: -20, // Más abajo para iluminar la base
-                      left: -5, // Ligeramente más ancho que la tarjeta
-                      right: -5,
-                      child: Opacity(
-                        // Incrementamos la opacidad a 0.85 para que sea vívido y colorido
-                        opacity: 0.85 * (1 - absDiff).clamp(0.0, 1.0),
-                        child: ImageFiltered(
-                          imageFilter: ImageFilter.blur(sigmaX: 30, sigmaY: 30, tileMode: TileMode.decal),
-                          child: AdaptiveDestinationImage(
-                            imagePath: widget.destinations[actualIndex].imageUrl,
-                            fit: BoxFit.cover,
+    final count = widget.destinations.length;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth * .78).clamp(220.0, 380.0);
+        final height =
+            width * 1.27 +
+            (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(0, 14) * 5;
+        return AnimatedBuilder(
+          animation: _position,
+          builder: (context, _) {
+            final page = _position.value;
+            final center = page.round();
+            final indices = count == 1 ? [0] : [center - 1, center, center + 1]
+              ..sort((a, b) => (b - page).abs().compareTo((a - page).abs()));
+            return Column(
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: count == 1
+                      ? null
+                      : (_) {
+                          _position.stop();
+                          _dragStart = _position.value;
+                        },
+                  onHorizontalDragUpdate: count == 1
+                      ? null
+                      : (details) {
+                          _position.value -= details.delta.dx / (width * .85);
+                        },
+                  onHorizontalDragEnd: count == 1
+                      ? null
+                      : (details) {
+                          final velocity = details.primaryVelocity ?? 0;
+                          final target = velocity.abs() > 300
+                              ? (velocity < 0
+                                    ? _position.value.floor() + 1
+                                    : _position.value.ceil() - 1)
+                              : _position.value.round();
+                          _go(target.toDouble());
+                        },
+                  onHorizontalDragCancel: count == 1
+                      ? null
+                      : () => _go(_dragStart.roundToDouble()),
+                  child: SizedBox(
+                    height: height + 36,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        for (final index in indices)
+                          Builder(
+                            builder: (context) {
+                              final diff = index - page;
+                              final distance = diff.abs().clamp(0.0, 1.0);
+                              final active = index == center;
+                              final destination =
+                                  widget.destinations[index % count];
+                              return Transform(
+                                key: ValueKey(index),
+                                alignment: Alignment.bottomCenter,
+                                transform: Matrix4.identity()
+                                  ..translateByDouble(
+                                    diff.clamp(-1.0, 1.0) * width * .08,
+                                    distance * 7,
+                                    0,
+                                    1,
+                                  )
+                                  ..rotateZ(
+                                    MediaQuery.disableAnimationsOf(context)
+                                        ? 0
+                                        : diff.clamp(-1.0, 1.0) * .065,
+                                  )
+                                  ..scaleByDouble(
+                                    1 - distance * .08,
+                                    1 - distance * .08,
+                                    1,
+                                    1,
+                                  ),
+                                child: ExcludeSemantics(
+                                  excluding: !active,
+                                  child: IgnorePointer(
+                                    ignoring: !active,
+                                    child: HeroMode(
+                                      enabled: active,
+                                      child: SizedBox(
+                                        width: width,
+                                        height: height,
+                                        child: CoverflowDestinationCard(
+                                          destination: destination,
+                                          onTap: () => widget.onDestinationTap(
+                                            destination,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (count > 1)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: 'Destino anterior',
+                        onPressed: () => _go((center - 1).toDouble()),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                      ),
+                      for (var i = 0; i < count; i++)
+                        Semantics(
+                          label: 'Destino ${i + 1} de $count',
+                          selected: center % count == i,
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _go((center + i - center % count).toDouble()),
+                            child: SizedBox(
+                              width: 32,
+                              height: 44,
+                              child: Center(
+                                child: AnimatedContainer(
+                                  duration:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 200),
+                                  width: center % count == i ? 26 : 6,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: center % count == i
+                                        ? AppColors.accent
+                                        : const Color(0xFFDADAD6),
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
+                      IconButton(
+                        tooltip: 'Destino siguiente',
+                        onPressed: () => _go((center + 1).toDouble()),
+                        icon: const Icon(Icons.chevron_right_rounded, size: 20),
                       ),
-                    ),
-
-                  CoverflowDestinationCard(
-                    destination: widget.destinations[actualIndex],
-                    onTap: () {},
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return cards;
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

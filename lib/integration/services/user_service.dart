@@ -82,8 +82,12 @@ class UserService {
       final body = <String, dynamic>{};
       if (name != null) body['name'] = name;
       if (password != null) body['password'] = password;
-      if (residenceDepartment != null) body['residence_department'] = residenceDepartment;
-      if (residenceProvince != null) body['residence_province'] = residenceProvince;
+      if (residenceDepartment != null) {
+        body['residence_department'] = residenceDepartment;
+      }
+      if (residenceProvince != null) {
+        body['residence_province'] = residenceProvince;
+      }
       if (residenceCity != null) body['residence_city'] = residenceCity;
 
       final response = await _api.patch('/users/$userId', body);
@@ -103,29 +107,29 @@ class UserService {
 
   Future<String> uploadAvatar({
     required String userId,
-    required String filePath,
+    String? filePath,
+    List<int>? fileBytes,
+    String? filename,
   }) async {
     try {
       if (kDebugMode) {
         debugPrint('POST MULTIPART URL: /users/$userId/avatar');
       }
-      
+
       final response = await _api.postMultipart(
         '/users/$userId/avatar',
         filePath: filePath,
+        fileBytes: fileBytes,
+        filename: filename,
         fileField: 'file',
       );
-      
-      if (kDebugMode) {
-        debugPrint('POST AVATAR RESPONSE: $response');
-      }
-      
+
       final data = response['data'] as Map<String, dynamic>;
       return data['avatar_url'] as String;
     } on ApiException catch (e) {
-      throw Exception('Error al subir avatar: ${e.message}');
+      throw Exception(e.message);
     } catch (e) {
-      throw Exception('Error inesperado al subir avatar: $e');
+      throw Exception('No pudimos procesar la imagen de perfil.');
     }
   }
 }

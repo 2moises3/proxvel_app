@@ -9,11 +9,7 @@ class KeyInfoGrid extends StatelessWidget {
   final DestinationModel destination;
   final TourismCatalogModel? tourismInfo;
 
-  const KeyInfoGrid({
-    super.key,
-    required this.destination,
-    this.tourismInfo,
-  });
+  const KeyInfoGrid({super.key, required this.destination, this.tourismInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +26,17 @@ class KeyInfoGrid extends StatelessWidget {
           value: '${altitude.toStringAsFixed(0)} m s. n. m.',
         ),
       if (region != null)
-        _KeyInfoItem(icon: Icons.location_on_outlined, label: 'Región', value: region),
+        _KeyInfoItem(
+          icon: Icons.location_on_outlined,
+          label: 'Región',
+          value: region,
+        ),
       if (city != null)
-        _KeyInfoItem(icon: Icons.map_outlined, label: 'Ciudad base', value: city),
+        _KeyInfoItem(
+          icon: Icons.map_outlined,
+          label: 'Ciudad base',
+          value: city,
+        ),
     ];
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -47,10 +51,7 @@ class KeyInfoGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Datos del lugar',
-          style: AppTextStyles.sectionTitle,
-        ),
+        const Text('Datos del lugar', style: AppTextStyles.sectionTitle),
         const SizedBox(height: AppSpace.field),
         LayoutBuilder(
           builder: (context, constraints) => constraints.maxWidth < 330
@@ -103,21 +104,14 @@ class _KeyInfoItem extends StatelessWidget {
             color: AppColors.accent.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: AppColors.textSecondary,
-          ),
+          child: Icon(icon, size: 16, color: AppColors.textSecondary),
         ),
         const SizedBox(width: AppSpace.related),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: AppTextStyles.mutedLabel,
-              ),
+              Text(label, style: AppTextStyles.mutedLabel),
               const SizedBox(height: 2),
               Text(
                 value,

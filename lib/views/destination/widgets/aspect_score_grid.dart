@@ -20,25 +20,19 @@ class AspectScoreGrid extends StatelessWidget {
         if (aspects.length <= 3)
           for (final aspect in aspects) _AspectScoreRow(aspect: aspect),
         if (aspects.length > 3)
-        for (int i = 0; i < aspects.length; i += 2)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: i + 2 < aspects.length ? 4 : 0,
+          for (int i = 0; i < aspects.length; i += 2)
+            Padding(
+              padding: EdgeInsets.only(bottom: i + 2 < aspects.length ? 4 : 0),
+              child: Row(
+                children: [
+                  Expanded(child: _AspectScoreRow(aspect: aspects[i])),
+                  if (i + 1 < aspects.length)
+                    Expanded(child: _AspectScoreRow(aspect: aspects[i + 1]))
+                  else
+                    const Expanded(child: SizedBox()),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _AspectScoreRow(aspect: aspects[i]),
-                ),
-                if (i + 1 < aspects.length)
-                  Expanded(
-                    child: _AspectScoreRow(aspect: aspects[i + 1]),
-                  )
-                else
-                  const Expanded(child: SizedBox()),
-              ],
-            ),
-          ),
 
         const SizedBox(height: AppSpace.field),
 
@@ -64,20 +58,19 @@ class AspectScoreGrid extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: AppSpace.micro),
-        Flexible(child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textMuted,
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
@@ -108,10 +101,7 @@ class _AspectScoreRow extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  aspect.aspect,
-                  style: AppTextStyles.smallLabel,
-                ),
+                child: Text(aspect.aspect, style: AppTextStyles.smallLabel),
               ),
               const SizedBox(width: AppSpace.micro),
               Container(

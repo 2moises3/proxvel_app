@@ -17,7 +17,7 @@ Acceso y registro conservan fotografías y campos translúcidos. Las pantallas i
 
 ## Tipografía
 
-Poppins es la familia común y se hereda del tema.
+Outfit es la familia común y se hereda del tema (`AppTypography`).
 
 | Uso | Rol | Tamaño/peso |
 | --- | --- | --- |
@@ -68,6 +68,15 @@ Primero aparecen identificación, datos de visita y navegación de contenido. En
 
 ## Movimiento
 
+### Continuidad visual obligatoria
+
+- Antes de dar por terminado un cambio visual, revisar la transición completa de ida y vuelta, no solo capturas de los estados finales.
+- Al ocultar controles (por ejemplo, el buscador entre Explorar y Para ti), conservar el encuadre y la escala de la fotografía, y la posición de los elementos que permanecen. No recalcular el `BoxFit.cover` según la altura contraída.
+- Desvanecer el control durante la contracción del espacio: no retirarlo de golpe y luego animar únicamente su contenedor. El espacio sobrante debe desaparecer sin saltos ni escalado del texto.
+- Las inversiones rápidas de dirección deben continuar desde el estado visible actual. Los controles ocultos no reciben pulsaciones ni aparecen como acciones accesibles.
+- Validar cuadros intermedios, cambios rápidos de pestaña, texto ampliado, desplazamiento y reducción de movimiento. Reducir animaciones elimina la transición, pero conserva exactamente el encuadre.
+- En el hero de Inicio, la fotografía mantiene el tamaño natural del diseño expandido y solo se recorta el área del buscador; su contenido se desvanece mientras se libera el espacio.
+
 `AppMotion` define 180 ms para respuesta breve y 260 ms para cambios locales, con `easeOutCubic`. Se usa en foco, selección, expansión de perfil, contenido de ficha y pasos del registro. La opción del sistema de reducir animaciones elimina esos movimientos; el cambio de paso del registro se renderiza directamente. El brillo de botones no se dibuja en ese modo ni durante una operación.
 
 No se añadieron transformaciones a la barra inferior ni nuevas bibliotecas de animación. La animación de marca y los movimientos fotográficos existentes requieren su propia evaluación antes de rediseñarlos.
@@ -87,3 +96,22 @@ El lenguaje prioriza orientación y autonomía: “Destinos para ti”, “Tu fo
 Los datos prácticos se agrupan en una tarjeta con separadores suaves. Las tarjetas editoriales adaptan su alto al texto ampliado. Los ordinales de descubrimiento se retiraron porque el catálogo no representa una tendencia o clasificación de popularidad. Los iconos de preferencias y onboarding usan la familia Material existente.
 
 `DestinationOpening` y `DestinationHero` conectan la imagen de las tarjetas del carrusel, recomendaciones y búsqueda con la ficha. La vista previa procede de la tarjeta real y solo se muestra si coincide el ID solicitado. El detalle vuelve a consultar la API. Las transiciones se omiten con reducción de movimiento; la navegación inferior no incorpora efectos nuevos. Se conserva el desplazamiento de los listados.
+
+
+## Ficha inmersiva y ubicación (octubre 2026)
+
+La ficha abre con una portada de un viewport y miniaturas horizontales. Con texto ampliado, el contenido puede crecer; nunca se corta para conservar una altura estética. El cambio de foto usa una disolución sin modificar su encuadre. Debajo: El lugar, Para ti y Reseñas, siempre en ese orden.
+
+La información breve usa iconos SVG locales de la familia Lucide (`AppIcon`); se reutilizan los existentes y se incluye licencia para nuevos recursos. Los hechos prácticos usan mini tarjetas; las indicaciones largas se despliegan a demanda. Los datos faltantes no se sustituyen por supuestos.
+
+No mezclar distancia y afinidad: la primera se calcula en el dispositivo, en línea recta; la segunda procede del motor. El aviso de ubicación es opcional y respeta la elección de no mostrarlo durante el día. Los datos del GPS no se envían al recomendador.
+
+Los desplegables dentro de un scroll con PageStorageKey deben tener su propia PageStorageKey única: nunca compartir el estado abierto/cerrado con el desplazamiento numérico del padre. Verificar el cambio de pestañas después de desplazar la ficha y volver a abrir cada desplegable.
+
+
+
+### Destino y recomendación: continuidad de interacción
+- El selector mensual conserva el abanico en cada apertura, aunque cambien el scroll o el alto del hero. Ajustar su origen al área visible; en pantallas bajas permitir desplazar el lienzo, sin sustituirlo por otra interacción.
+- Cerrar el selector antes de notificar el cambio de mes: las entradas de los resultados no deben consumirse detrás de una capa opaca.
+- El detalle abierto desde recomendaciones prioriza Para ti; desde Explorar prioriza El lugar. Las pestañas permanecen accesibles durante el scroll.
+- Separar afinidad del perfil, contribuciones al ranking y contexto mensual. No presentar estos valores como probabilidades. Los meses sin datos dejan huecos en el gráfico.

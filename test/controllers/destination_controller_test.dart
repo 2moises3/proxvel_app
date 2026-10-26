@@ -11,19 +11,19 @@ import 'package:proxvell_app/models/review_model.dart';
 import 'package:proxvell_app/models/tourism_catalog_model.dart';
 
 DestinationModel destination(String id) => DestinationModel(
-      id: id,
-      name: id,
-      city: '',
-      region: '',
-      category: '',
-      description: '',
-      imageUrl: '',
-      averageCost: 0,
-      climate: '',
-      crowdLevel: '',
-      rating: 0,
-      aspects: const [],
-    );
+  id: id,
+  name: id,
+  city: '',
+  region: '',
+  category: '',
+  description: '',
+  imageUrl: '',
+  averageCost: 0,
+  climate: '',
+  crowdLevel: '',
+  rating: 0,
+  aspects: const [],
+);
 
 class FakeDestinationService extends DestinationService {
   final Future<DestinationModel?> Function(String id) load;
@@ -34,8 +34,10 @@ class FakeDestinationService extends DestinationService {
       load(id);
 
   @override
-  Future<List<AspectScoreModel>> getAspectScores(String id, {int? month}) async =>
-      [];
+  Future<List<AspectScoreModel>> getAspectScores(
+    String id, {
+    int? month,
+  }) async => [];
 
   @override
   Future<String> getExplanation(String id, {int? month}) async => '';
@@ -44,9 +46,10 @@ class FakeDestinationService extends DestinationService {
   Future<RankingInfo?> getRankingInfo(String id, {int? month}) async => null;
 
   @override
-  Future<Map<String, dynamic>> getDestinationContext(String id,
-          {int? month}) async =>
-      {};
+  Future<Map<String, dynamic>> getDestinationContext(
+    String id, {
+    int? month,
+  }) async => {};
 }
 
 class FakeTourismService extends TourismService {
@@ -59,11 +62,106 @@ class FakeReviewService extends ReviewService {
   Future<List<ReviewModel>> getReviewsForDestination(String id) async => [];
 }
 
+class PendingTourism extends TourismService {
+  final pending = Completer<TourismCatalogModel?>();
+  bool started = false;
+  @override
+  Future<TourismCatalogModel?> getTourismCatalog(String id) {
+    started = true;
+    return pending.future;
+  }
+}
+
+class PendingReviews extends ReviewService {
+  final pending = Completer<List<ReviewModel>>();
+  bool started = false;
+  @override
+  Future<List<ReviewModel>> getReviewsForDestination(String id) {
+    started = true;
+    return pending.future;
+  }
+}
+
 void main() {
+  test(
+    'base content is visible while independent sections are pending',
+    () async {
+      final tourism = PendingTourism();
+      final reviews = PendingReviews();
+      final controller = DestinationController(
+        FakeDestinationService((id) async => destination(id)),
+        tourism,
+        reviews,
+      );
+      final loading = controller.loadDestination('first');
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.destination?.id, 'first');
+      expect(controller.isLoading, isFalse);
+      expect(tourism.started && reviews.started, isTrue);
+      expect(controller.isTourismLoading, isTrue);
+      expect(controller.isReviewsLoading, isTrue);
+      reviews.pending.complete([]);
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.isReviewsLoading, isFalse);
+      expect(controller.isTourismLoading, isTrue);
+      tourism.pending.completeError(StateError('unavailable'));
+      await loading;
+      expect(controller.destination?.id, 'first');
+      expect(controller.hasTourismError, isTrue);
+      expect(controller.error, isNull);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'pending optional responses cannot overwrite a newer missing destination',
+    () async {
+      final tourism = PendingTourism();
+      final reviews = PendingReviews();
+      final controller = DestinationController(
+        FakeDestinationService(
+          (id) async => id == 'first' ? destination(id) : null,
+        ),
+        tourism,
+        reviews,
+      );
+      final loading = controller.loadDestination('first');
+      await Future<void>.delayed(Duration.zero);
+      await controller.loadDestination('missing');
+      tourism.pending.completeError(StateError('late failure'));
+      reviews.pending.complete([]);
+      await loading;
+      expect(controller.destination, isNull);
+      expect(controller.hasTourismError, isFalse);
+      expect(controller.isReviewsLoading, isFalse);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'disposing during optional loading does not notify disposed listeners',
+    () async {
+      final tourism = PendingTourism();
+      final reviews = PendingReviews();
+      final controller = DestinationController(
+        FakeDestinationService((id) async => destination(id)),
+        tourism,
+        reviews,
+      );
+      final loading = controller.loadDestination('first');
+      await Future<void>.delayed(Duration.zero);
+      controller.dispose();
+      tourism.pending.complete(null);
+      reviews.pending.complete([]);
+      await loading;
+    },
+  );
+
   test('un destino inexistente borra la ficha anterior', () async {
     final controller = DestinationController(
-      FakeDestinationService((id) async =>
-          id == 'existente' ? destination(id) : null),
+      FakeDestinationService(
+        (id) async => id == 'existente' ? destination(id) : null,
+      ),
       FakeTourismService(),
       FakeReviewService(),
     );
@@ -79,8 +177,9 @@ void main() {
   test('una respuesta tardía no sustituye el destino abierto', () async {
     final first = Completer<DestinationModel?>();
     final controller = DestinationController(
-      FakeDestinationService((id) =>
-          id == 'primero' ? first.future : Future.value(destination(id))),
+      FakeDestinationService(
+        (id) => id == 'primero' ? first.future : Future.value(destination(id)),
+      ),
       FakeTourismService(),
       FakeReviewService(),
     );

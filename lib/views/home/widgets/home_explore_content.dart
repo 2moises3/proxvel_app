@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/navigation/destination_opening.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/home_controller.dart';
@@ -16,6 +16,8 @@ import '../../../core/widgets/carousels/coverflow_carousel.dart';
 import '../../../controllers/archive_controller.dart'
     as import_archive_controller;
 import 'home_discovery_sections.dart';
+import 'archive_loading_state.dart';
+import '../../../models/recommendation_result_model.dart';
 
 /// Contenido de la pestaña "Explorar" — catálogo abierto.
 /// Solo muestra secciones que tienen datos reales. Nunca rellena la pantalla
@@ -29,17 +31,29 @@ class HomeExploreContent extends StatefulWidget {
   State<HomeExploreContent> createState() => _HomeExploreContentState();
 }
 
-class _HomeExploreContentState extends State<HomeExploreContent> {
+class _HomeExploreContentState extends State<HomeExploreContent>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final controller = context.watch<HomeController>();
     final archiveCtrl = context
         .watch<import_archive_controller.ArchiveController>();
-    final recommendations = context
-        .watch<RecommendationController>()
-        .globalRecommendations;
+    if (!archiveCtrl.hasLoaded) {
+      return SingleChildScrollView(
+        child: ArchiveLoadingState(controller: archiveCtrl),
+      );
+    }
     final personalizeOrder =
         context.watch<ProfileController>().profile?.applyAiGlobally == true;
+    final recommendations = personalizeOrder
+        ? context.select<
+            RecommendationController,
+            List<RecommendationResultModel>
+          >((c) => c.globalRecommendations)
+        : const <RecommendationResultModel>[];
 
     final all = controller.allDestinations
         .where((d) => !archiveCtrl.isArchived(d.id))
@@ -59,12 +73,13 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
       });
     }
     final featured = all.take(5).toList();
-    final categories = controller.categories;
     final recent = controller.recentSearches;
 
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read<HomeController>().loadDestinations();
+        await archiveCtrl.loadArchives();
+        if (!context.mounted) return;
+        await context.read<HomeController>().refreshDestinations();
         if (context.mounted) {
           await context.read<AnnouncementController>().refresh(
             placement: 'home_top',
@@ -73,18 +88,15 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
       },
       child: SingleChildScrollView(
         key: const PageStorageKey('explore-scroll'),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewPaddingOf(context).bottom + 102,
+        ),
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppSpace.card),
-
-            // ═══ SEARCH BAR ═══
-            _buildSearchBar(context),
-            const SizedBox(height: AppSpace.card),
-
             // ═══ ANUNCIO INTERNO (si hay) ═══
             const AnnouncementBanner(),
 
@@ -92,6 +104,18 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
             if (controller.error != null && all.isEmpty) ...[
               _buildError(controller.error!),
               const SizedBox(height: AppSpace.section),
+            ],
+
+            // Baraja del catálogo, sin etiquetas de popularidad inventadas.
+            if (featured.isNotEmpty) ...[
+              CoverflowCarousel(
+                destinations: featured,
+                onDestinationTap: (dest) => context.push(
+                  '/destination/${Uri.encodeComponent(dest.id)}?source=explore',
+                  extra: DestinationOpening(dest, 'coverflow'),
+                ),
+              ),
+              const SizedBox(height: AppSpace.group),
             ],
 
             // ═══ BÚSQUEDAS RECIENTES ═══
@@ -119,47 +143,6 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
               const SizedBox(height: 28),
             ],
 
-            // ═══ CATEGORÍAS (reales) movidas arriba ═══
-            if (categories.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.screen,
-                ),
-                child: Text(
-                  'Explora nuevos horizontes',
-                  style: AppTextStyles.sectionTitle,
-                ),
-              ),
-              const SizedBox(height: AppSpace.field),
-              SizedBox(
-                height: 40,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.screen,
-                  ),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: AppSpace.related),
-                  itemBuilder: (_, i) =>
-                      _categoryChip(context, categories[i], i == 0),
-                ),
-              ),
-              const SizedBox(height: AppSpace.group),
-            ],
-
-            // ═══ DESTINOS DESTACADOS (Coverflow Carousel) ═══
-            if (featured.isNotEmpty) ...[
-              CoverflowCarousel(
-                destinations: featured,
-                onDestinationTap: (dest) => context.push(
-                  '/destination/${dest.id}?source=explore',
-                  extra: DestinationOpening(dest, 'coverflow'),
-                ),
-              ),
-              const SizedBox(height: AppSpace.group),
-            ],
-
             // Secciones editoriales derivadas del catálogo y del motor real.
             if (all.isNotEmpty) ...[
               HomeDiscoverySections(
@@ -177,73 +160,7 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
             ] else if (controller.error == null) ...[
               _buildEmpty(),
             ],
-
-            const SizedBox(height: AppSpace.group),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-      child: GestureDetector(
-        onTap: () => context.push('/search'),
-        child: Container(
-          height: 60,
-          padding: const EdgeInsets.only(left: 24, right: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.search_rounded,
-                color: AppColors.textMuted,
-                size: 24,
-              ),
-              const SizedBox(width: AppSpace.field),
-              Expanded(
-                child: Text(
-                  '¿A dónde viajas hoy?',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.textMuted,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryDark,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryDark.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.tune_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -265,38 +182,14 @@ class _HomeExploreContentState extends State<HomeExploreContent> {
               ),
               child: Text(
                 'Ver más',
-                style: GoogleFonts.poppins(
+                style: AppTypography.style(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMuted,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _categoryChip(BuildContext context, String category, bool isFirst) {
-    return GestureDetector(
-      onTap: () =>
-          context.push('/search?category=${Uri.encodeComponent(category)}'),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-        decoration: BoxDecoration(
-          color: isFirst ? Colors.black : Colors.white,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: isFirst ? null : Border.all(color: Colors.grey.shade300),
-        ),
-        child: Text(
-          category,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
-            color: isFirst ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
       ),
     );
   }

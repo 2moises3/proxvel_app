@@ -10,7 +10,9 @@ class ResidenceFieldsWidget extends StatefulWidget {
   final String? initialProvince;
   final String? initialCity;
   final bool isDarkTheme;
-  final void Function(String? department, String? province, String? city) onChanged;
+  final bool accountStyle;
+  final void Function(String? department, String? province, String? city)
+  onChanged;
 
   const ResidenceFieldsWidget({
     super.key,
@@ -18,6 +20,7 @@ class ResidenceFieldsWidget extends StatefulWidget {
     this.initialProvince,
     this.initialCity,
     this.isDarkTheme = false,
+    this.accountStyle = false,
     required this.onChanged,
   });
 
@@ -38,26 +41,30 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
   @override
   void initState() {
     super.initState();
-    _loadLocations(widget.initialDepartment, widget.initialProvince, widget.initialCity);
+    _loadLocations(
+      widget.initialDepartment,
+      widget.initialProvince,
+      widget.initialCity,
+    );
   }
 
   Future<void> _loadLocations(String? dept, String? prov, String? city) async {
     final service = PeruLocationService();
     await service.init();
-    
+
     if (mounted) {
       setState(() {
         _departments = service.getDepartments();
         _isLocationsLoaded = true;
-        
+
         if (dept != null && _departments.contains(dept)) {
           _selectedDepartment = dept;
           _provinces = service.getProvinces(dept);
-          
+
           if (prov != null && _provinces.contains(prov)) {
             _selectedProvince = prov;
             _cities = service.getDistricts(dept, prov);
-            
+
             if (city != null && _cities.contains(city)) {
               _selectedCity = city;
             }
@@ -74,7 +81,9 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
       _selectedDepartment = value;
       _selectedProvince = null;
       _selectedCity = null;
-      _provinces = value != null ? PeruLocationService().getProvinces(value) : [];
+      _provinces = value != null
+          ? PeruLocationService().getProvinces(value)
+          : [];
       _cities = [];
     });
     widget.onChanged(_selectedDepartment, _selectedProvince, _selectedCity);
@@ -84,8 +93,8 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
     setState(() {
       _selectedProvince = value;
       _selectedCity = null;
-      _cities = value != null && _selectedDepartment != null 
-          ? PeruLocationService().getDistricts(_selectedDepartment!, value) 
+      _cities = value != null && _selectedDepartment != null
+          ? PeruLocationService().getDistricts(_selectedDepartment!, value)
           : [];
     });
     widget.onChanged(_selectedDepartment, _selectedProvince, _selectedCity);
@@ -107,6 +116,7 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
     ProxvelGlassPickerSheet.show(
       context,
       title: title,
+      neutralSurface: widget.accountStyle,
       items: items,
       selectedItem: selectedItem,
       onSelected: onSelected,
@@ -123,6 +133,7 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
   }) {
     if (widget.isDarkTheme) {
       return GlassSelectField(
+        accountStyle: widget.accountStyle,
         label: label,
         value: value,
         placeholder: placeholder,
@@ -132,23 +143,30 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
       );
     } else {
       return GestureDetector(
-        onTap: enabled ? onTap : () {
-          if (!enabled && errorText != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(errorText),
-              backgroundColor: Colors.black87,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ));
-          }
-        },
+        onTap: enabled
+            ? onTap
+            : () {
+                if (!enabled && errorText != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorText),
+                      backgroundColor: Colors.black87,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
             labelStyle: const TextStyle(color: Color(0xFF9CA3AF)),
             filled: true,
             fillColor: enabled ? Colors.white : const Color(0xFFF3F4F6),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -170,11 +188,16 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
                   (value != null && value.isNotEmpty) ? value : placeholder,
                   style: TextStyle(
                     fontSize: 16,
-                    color: (value != null && value.isNotEmpty) ? AppColors.textPrimary : const Color(0xFF9CA3AF),
+                    color: (value != null && value.isNotEmpty)
+                        ? AppColors.textPrimary
+                        : const Color(0xFF9CA3AF),
                   ),
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF9CA3AF)),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF9CA3AF),
+              ),
             ],
           ),
         ),
@@ -185,9 +208,11 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
   @override
   Widget build(BuildContext context) {
     if (!_isLocationsLoaded) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -18,7 +18,12 @@ class ProfileStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpace.screen, 20, AppSpace.screen, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.screen,
+        20,
+        AppSpace.screen,
+        0,
+      ),
       child: Row(
         children: [
           StatsCard(

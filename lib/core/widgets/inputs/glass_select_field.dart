@@ -1,9 +1,10 @@
 import 'dart:ui';
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 
 class GlassSelectField extends StatelessWidget {
+  final bool accountStyle;
   final String label;
   final String? value;
   final String? placeholder;
@@ -14,6 +15,7 @@ class GlassSelectField extends StatelessWidget {
   const GlassSelectField({
     super.key,
     required this.label,
+    this.accountStyle = false,
     this.value,
     this.placeholder,
     this.enabled = true,
@@ -26,6 +28,17 @@ class GlassSelectField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (accountStyle) ...[
+          Text(
+            label,
+            style: AppTypography.style(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         GestureDetector(
           onTap: enabled
               ? onTap
@@ -35,7 +48,7 @@ class GlassSelectField extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           errorText!,
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: AppTypography.style(color: Colors.white),
                         ),
                         backgroundColor: Colors.black87,
                         behavior: SnackBarBehavior.floating,
@@ -45,14 +58,20 @@ class GlassSelectField extends StatelessWidget {
                   }
                 },
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.control),
+            borderRadius: BorderRadius.circular(
+              accountStyle ? 18 : AppRadius.control,
+            ),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: AnimatedContainer(
                 duration: AppMotion.duration(context),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadius.control),
-                  color: Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
+                  borderRadius: BorderRadius.circular(
+                    accountStyle ? 18 : AppRadius.control,
+                  ),
+                  color: accountStyle
+                      ? Colors.black.withValues(alpha: enabled ? 0.36 : 0.2)
+                      : Colors.white.withValues(alpha: enabled ? 0.12 : 0.05),
                   border: Border.all(
                     color: Colors.white.withValues(
                       alpha: enabled ? 0.20 : 0.05,
@@ -67,10 +86,12 @@ class GlassSelectField extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (value != null && value!.isNotEmpty)
+                          if (!accountStyle &&
+                              value != null &&
+                              value!.isNotEmpty)
                             Text(
                               label,
-                              style: GoogleFonts.poppins(
+                              style: AppTypography.style(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -80,15 +101,15 @@ class GlassSelectField extends StatelessWidget {
                             (value != null && value!.isNotEmpty)
                                 ? value!
                                 : (placeholder ?? label),
-                            style: GoogleFonts.poppins(
+                            style: AppTypography.style(
                               color: Colors.white.withValues(
                                 alpha: enabled
                                     ? ((value != null && value!.isNotEmpty)
                                           ? 1.0
-                                          : 0.5)
+                                          : (accountStyle ? 0.8 : 0.5))
                                     : 0.3,
                               ),
-                              fontSize: 14,
+                              fontSize: accountStyle ? 16 : 14,
                             ),
                           ),
                         ],

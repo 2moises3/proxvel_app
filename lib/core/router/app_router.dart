@@ -1,9 +1,13 @@
+import '../navigation/profile_transition.dart';
+import '../../views/profile/widgets/about_proxvel_sheet.dart';
+import '../widgets/navigation/navigation_island_transition.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../navigation/destination_opening.dart';
 import '../../views/auth/welcome_screen.dart';
 import '../../views/auth/widgets/auth_backdrop.dart';
 import '../../views/auth/login_screen.dart';
+import '../../views/auth/session_ready_screen.dart';
 import '../../views/auth/register_screen.dart';
 import '../../views/auth/residence_gate_screen.dart';
 import '../../views/onboarding/onboarding_profile_screen.dart';
@@ -35,7 +39,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  observers: [authRouteObserver],
+  observers: [authRouteObserver, navigationIslandObserver],
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
@@ -49,6 +53,16 @@ final GoRouter appRouter = GoRouter(
       path: '/login',
       pageBuilder: (context, state) =>
           const NoTransitionPage(child: LoginScreen()),
+    ),
+    GoRoute(
+      path: '/session-ready',
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const SessionReadyScreen(),
+        transitionDuration: const Duration(milliseconds: 420),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
     ),
     GoRoute(
       path: '/register',
@@ -79,28 +93,65 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/destination/:id',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
         final source = state.uri.queryParameters['source'] ?? 'explore';
         final month = int.tryParse(state.uri.queryParameters['month'] ?? '');
-        return DestinationDetailScreen(
-          destinationId: id,
-          opening: state.extra is DestinationOpening
-              ? state.extra as DestinationOpening
-              : null,
-          source: source,
-          month: month,
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: DestinationDetailScreen(
+            destinationId: id,
+            opening: state.extra is DestinationOpening
+                ? state.extra as DestinationOpening
+                : null,
+            source: source,
+            month: month,
+          ),
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 240),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.05),
+                end: Offset.zero,
+              ).animate(curved),
+              child: FadeTransition(opacity: curved, child: child),
+            );
+          },
         );
       },
     ),
     GoRoute(
       path: '/search',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final query = state.uri.queryParameters['q'] ?? '';
         final category = state.uri.queryParameters['category'];
-        return SearchResultsScreen(
-          initialQuery: query,
-          initialCategory: category,
+        final autoOpenFilters =
+            state.uri.queryParameters['open_filters'] == 'true';
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: SearchResultsScreen(
+            initialQuery: query,
+            initialCategory: category,
+            autoOpenFilters: autoOpenFilters,
+          ),
+          transitionDuration: const Duration(milliseconds: 320),
+          reverseTransitionDuration: const Duration(milliseconds: 260),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+                reverseCurve: Curves.easeInCubic,
+              ),
+              child: child,
+            );
+          },
         );
       },
     ),
@@ -114,11 +165,13 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/profile/updates',
-      builder: (context, state) => const AppUpdateScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const AppUpdateScreen()),
     ),
     GoRoute(
       path: '/profile/edit',
-      builder: (context, state) => const EditProfileScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const EditProfileScreen()),
     ),
     GoRoute(
       path: '/forgot-password',
@@ -137,19 +190,49 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/notifications',
-      builder: (context, state) => const NotificationsScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const NotificationsScreen(),
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 240),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(curved),
+            child: FadeTransition(opacity: curved, child: child),
+          );
+        },
+      ),
     ),
     GoRoute(
       path: '/profile/change-password',
-      builder: (context, state) => const ChangePasswordScreen(),
+      pageBuilder: (context, state) => profileTransition(
+        context,
+        state.pageKey,
+        const ChangePasswordScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/profile/about',
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const AboutProxvelScreen()),
     ),
     GoRoute(
       path: '/profile/preferences',
-      builder: (context, state) => const PreferencesScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const PreferencesScreen()),
     ),
     GoRoute(
       path: '/profile/my-reviews',
-      builder: (context, state) => const MyReviewsScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const MyReviewsScreen()),
     ),
     GoRoute(
       path: '/feedback/:destinationId',
@@ -172,7 +255,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/legal',
-      builder: (context, state) => const PrivacyLegalScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const PrivacyLegalScreen()),
     ),
     GoRoute(
       path: '/legal/doc/:id',
@@ -181,11 +265,16 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/legal/my-data',
-      builder: (context, state) => const MyDataScreen(),
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const MyDataScreen()),
     ),
     GoRoute(
       path: '/legal/delete-account',
-      builder: (context, state) => const DeleteAccountScreen(),
+      pageBuilder: (context, state) => profileTransition(
+        context,
+        state.pageKey,
+        const DeleteAccountScreen(),
+      ),
     ),
   ],
 );

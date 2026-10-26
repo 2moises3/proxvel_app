@@ -1,7 +1,7 @@
 import 'dart:ui';
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'package:provider/provider.dart';
 import '../../../models/destination_model.dart';
 import '../../../controllers/favorites_controller.dart';
@@ -87,7 +87,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                             ),
                             child: Text(
                               destination.category.toUpperCase(),
-                              style: GoogleFonts.poppins(
+                              style: AppTypography.style(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -143,7 +143,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                       destination.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
+                      style: AppTypography.style(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -162,7 +162,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                               location,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
+                              style: AppTypography.style(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,

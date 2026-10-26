@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -78,7 +78,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     Text(
                       arcCtrl.error!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
+                      style: AppTypography.style(
                         fontSize: 14,
                         color: AppColors.textSecondary,
                       ),
@@ -116,7 +116,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     const SizedBox(height: AppSpace.section),
                     Text(
                       'Sin archivos',
-                      style: GoogleFonts.poppins(
+                      style: AppTypography.style(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -126,7 +126,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     Text(
                       'Aquí aparecerán los destinos que hayas decidido ocultar.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
+                      style: AppTypography.style(
                         fontSize: 16,
                         color: AppColors.textSecondary,
                         height: 1.5,

@@ -1,3 +1,4 @@
+import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -19,6 +20,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final auth = context.read<AuthController>();
       context.read<MyReviewsController>().loadUserReviews(auth.currentUser);
     });
@@ -30,22 +32,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Mis reseñas',
-          style: AppTextStyles.sectionTitle,
-        ),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      appBar: profilePageBar(context, 'Mis reseñas'),
       body: _buildBody(controller),
     );
   }
@@ -100,10 +87,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                     auth.currentUser,
                   );
                 },
-                child: const Text(
-                  'Reintentar',
-                  style: AppTextStyles.button,
-                ),
+                child: const Text('Reintentar', style: AppTextStyles.button),
               ),
             ],
           ),
@@ -143,7 +127,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
       padding: const EdgeInsets.all(20),
       physics: const BouncingScrollPhysics(),
       itemCount: controller.reviews.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpace.field),
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpace.field),
       itemBuilder: (context, index) {
         return MyReviewCard(review: controller.reviews[index]);
       },

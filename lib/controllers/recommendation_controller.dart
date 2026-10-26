@@ -14,6 +14,7 @@ class RecommendationController extends ChangeNotifier {
   String? selectedRegion;
   bool _isStale = false;
   int _generation = 0;
+  int resultsRevision = 0;
   RecommendationController(this._recommendationService);
   void invalidate() {
     _generation++;
@@ -37,7 +38,9 @@ class RecommendationController extends ChangeNotifier {
   }
 
   Future<void> loadRecommendations({bool forceRefresh = false}) async {
-    if (!forceRefresh && !_isStale && (isLoading || recommendations.isNotEmpty)) {
+    if (!forceRefresh &&
+        !_isStale &&
+        (isLoading || recommendations.isNotEmpty)) {
       return;
     }
     final generation = ++_generation;
@@ -59,6 +62,7 @@ class RecommendationController extends ChangeNotifier {
           ? full
           : full.where((r) => r.destination.region == selectedRegion).toList();
       _isStale = false;
+      resultsRevision++;
     } catch (e) {
       if (generation != _generation) return;
       profileIncomplete =

@@ -13,30 +13,42 @@ class ArchiveController extends ChangeNotifier {
   List<ArchiveModel> archives = [];
   Set<String> archivedDestinationIds = {};
   String? error;
+  bool hasLoaded = false;
+  int _sessionGeneration = 0;
+  Future<void>? _pendingLoad;
 
   ArchiveController(this._archiveService);
 
-  Future<void> loadArchives() async {
+  Future<void> loadArchives() =>
+      _pendingLoad ??= _loadArchives(_sessionGeneration);
+
+  Future<void> _loadArchives(int generation) async {
     isLoading = true;
     error = null;
     notifyListeners();
 
     try {
       final arcModels = await _archiveService.getArchives();
+      if (generation != _sessionGeneration) return;
       archives = arcModels;
       archivedDestinationIds = archives.map((a) => a.destinationId).toSet();
+      hasLoaded = true;
     } catch (e) {
+      if (generation != _sessionGeneration) return;
       error = 'No pudimos cargar tus destinos archivados. Intenta nuevamente.';
-      archives = [];
-      archivedDestinationIds = {};
+    } finally {
+      if (generation == _sessionGeneration) {
+        _pendingLoad = null;
+        isLoading = false;
+        notifyListeners();
+      }
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 
   /// Archiva/desarchiva. Optimista en UI, persiste en backend.
   Future<void> toggleArchive(String id, [DestinationModel? model]) async {
+    final generation = _sessionGeneration;
+    error = null;
     final isArc = isArchived(id);
     final previousArchive = isArc
         ? archives.where((a) => a.destinationId == id).firstOrNull
@@ -64,11 +76,16 @@ class ArchiveController extends ChangeNotifier {
 
     try {
       if (isArc) {
-        await _archiveService.removeArchive(id);
+        if (!await _archiveService.removeArchive(id)) {
+          throw StateError('Archive removal rejected');
+        }
       } else {
-        await _archiveService.addArchive(id);
+        if (!await _archiveService.addArchive(id)) {
+          throw StateError('Archive rejected');
+        }
       }
     } catch (_) {
+      if (generation != _sessionGeneration) return;
       // Revertir cambio optimista
       if (isArc) {
         archivedDestinationIds.add(id);
@@ -86,10 +103,19 @@ class ArchiveController extends ChangeNotifier {
 
   /// Limpia todo el estado en memoria. Llamar al logout/cambio de usuario.
   void clearState() {
+    _sessionGeneration++;
+    _pendingLoad = null;
+    hasLoaded = false;
     archives = [];
     archivedDestinationIds = {};
     error = null;
     isLoading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _sessionGeneration++;
+    super.dispose();
   }
 }

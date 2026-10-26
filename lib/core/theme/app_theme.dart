@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'app_colors.dart';
 import 'app_layout.dart';
 import 'app_text_styles.dart';
@@ -8,7 +8,7 @@ import 'app_text_styles.dart';
 // ──────────────────────────────────────────────────────────
 //  PROXVEL — Sistema tipográfico
 //
-//  Todo → Poppins (geométrica, redondeada, premium)
+//  Todo → Outfit (geométrica, redondeada, premium)
 //
 //  USO:
 //   • No hace falta especificar fontFamily en ningún widget.
@@ -18,7 +18,7 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
-  /// Acceso rápido a Poppins con parámetros custom.
+  /// Acceso rápido a Outfit con parámetros custom.
   static TextStyle text({
     double size = 14,
     FontWeight weight = FontWeight.w400,
@@ -27,7 +27,7 @@ class AppTheme {
     double letterSpacing = 0,
     FontStyle fontStyle = FontStyle.normal,
   }) {
-    return GoogleFonts.poppins(
+    return AppTypography.style(
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -37,10 +37,10 @@ class AppTheme {
     );
   }
 
-  // ── TextTheme completo en Poppins ──
+  // ── TextTheme completo en Outfit ──
   static TextTheme _buildTextTheme(Color primaryColor, Color secondaryColor) {
     TextStyle on(TextStyle style) => style.copyWith(color: primaryColor);
-    return GoogleFonts.poppinsTextTheme(
+    return AppTypography.textTheme(
       TextTheme(
         displayLarge: on(AppTextStyles.headingOnDark),
         displayMedium: on(AppTextStyles.headingOnDark),
@@ -72,6 +72,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.family,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
@@ -91,7 +92,7 @@ class AppTheme {
         foregroundColor: AppColors.textOnDark,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: AppTypography.style(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textOnDark,
@@ -112,7 +113,7 @@ class AppTheme {
           backgroundColor: AppColors.accent,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
-          textStyle: GoogleFonts.poppins(
+          textStyle: AppTypography.style(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
@@ -126,7 +127,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(AppSizing.touchTarget, AppSizing.touchTarget),
-          textStyle: GoogleFonts.poppins(
+          textStyle: AppTypography.style(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -142,7 +143,7 @@ class AppTheme {
             vertical: AppSpace.field,
           ),
           side: const BorderSide(color: AppColors.border),
-          textStyle: GoogleFonts.poppins(
+          textStyle: AppTypography.style(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -153,17 +154,17 @@ class AppTheme {
       ),
 
       inputDecorationTheme: InputDecorationTheme(
-        labelStyle: GoogleFonts.poppins(
+        labelStyle: AppTypography.style(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
         ),
-        hintStyle: GoogleFonts.poppins(
+        hintStyle: AppTypography.style(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.textMuted,
         ),
-        errorStyle: GoogleFonts.poppins(
+        errorStyle: AppTypography.style(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: AppColors.error,
@@ -188,13 +189,13 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: Colors.white,
           minimumSize: const Size(AppSizing.touchTarget, AppSizing.button),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.card,
             vertical: AppSpace.field,
           ),
-          textStyle: GoogleFonts.poppins(textStyle: AppTextStyles.button),
+          textStyle: AppTypography.style(textStyle: AppTextStyles.button),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
           ),
@@ -215,10 +216,10 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sheet),
         ),
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: AppTypography.style(
           textStyle: AppTextStyles.sectionTitle,
         ),
-        contentTextStyle: GoogleFonts.poppins(textStyle: AppTextStyles.body1),
+        contentTextStyle: AppTypography.style(textStyle: AppTextStyles.body1),
       ),
       expansionTileTheme: const ExpansionTileThemeData(
         iconColor: AppColors.textSecondary,
@@ -230,7 +231,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
         selectedColor: AppColors.accentSoft,
-        labelStyle: GoogleFonts.poppins(textStyle: AppTextStyles.labelSmall),
+        labelStyle: AppTypography.style(textStyle: AppTextStyles.labelSmall),
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.chip),
@@ -242,11 +243,11 @@ class AppTheme {
         unselectedItemColor: AppColors.navInactive,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: GoogleFonts.poppins(
+        selectedLabelStyle: AppTypography.style(
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.poppins(
+        unselectedLabelStyle: AppTypography.style(
           fontSize: 12,
           fontWeight: FontWeight.w400,
         ),
@@ -275,6 +276,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.family,
       brightness: Brightness.dark,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.primaryDark,
@@ -295,7 +297,7 @@ class AppTheme {
         foregroundColor: AppColors.textOnDark,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: AppTypography.style(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textOnDark,
@@ -316,7 +318,7 @@ class AppTheme {
           backgroundColor: AppColors.accent,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
-          textStyle: GoogleFonts.poppins(
+          textStyle: AppTypography.style(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,

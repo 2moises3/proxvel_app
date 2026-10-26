@@ -1,9 +1,10 @@
 import 'dart:ui';
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 
 class ProxvelGlassPickerSheet extends StatefulWidget {
+  final bool neutralSurface;
   final String title;
   final List<String> items;
   final String? selectedItem;
@@ -12,6 +13,7 @@ class ProxvelGlassPickerSheet extends StatefulWidget {
   const ProxvelGlassPickerSheet({
     super.key,
     required this.title,
+    this.neutralSurface = false,
     required this.items,
     this.selectedItem,
     required this.onSelected,
@@ -20,6 +22,7 @@ class ProxvelGlassPickerSheet extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     required String title,
+    bool neutralSurface = false,
     required List<String> items,
     String? selectedItem,
     required ValueChanged<String> onSelected,
@@ -30,6 +33,7 @@ class ProxvelGlassPickerSheet extends StatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => ProxvelGlassPickerSheet(
         title: title,
+        neutralSurface: neutralSurface,
         items: items,
         selectedItem: selectedItem,
         onSelected: onSelected,
@@ -38,7 +42,8 @@ class ProxvelGlassPickerSheet extends StatefulWidget {
   }
 
   @override
-  State<ProxvelGlassPickerSheet> createState() => _ProxvelGlassPickerSheetState();
+  State<ProxvelGlassPickerSheet> createState() =>
+      _ProxvelGlassPickerSheetState();
 }
 
 class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
@@ -72,11 +77,13 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
@@ -88,13 +95,24 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  const Color(0xFF10141C).withValues(alpha: 0.75),
-                  const Color(0xFF080A0F).withValues(alpha: 0.85),
+                  (widget.neutralSurface
+                          ? const Color(0xFF202020)
+                          : const Color(0xFF10141C))
+                      .withValues(alpha: widget.neutralSurface ? 0.92 : 0.75),
+                  (widget.neutralSurface
+                          ? const Color(0xFF121212)
+                          : const Color(0xFF080A0F))
+                      .withValues(alpha: widget.neutralSurface ? 0.95 : 0.85),
                 ],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.sheet),
+              ),
               border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
               ),
             ),
             child: SafeArea(
@@ -115,10 +133,12 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                     ),
                     const SizedBox(height: AppSpace.section),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.screen,
+                      ),
                       child: Text(
                         widget.title,
-                        style: GoogleFonts.poppins(
+                        style: AppTypography.style(
                           color: Colors.white.withValues(alpha: 0.95),
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -129,15 +149,27 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                     const SizedBox(height: AppSpace.card),
                     if (widget.items.length > 8)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.screen,
+                        ),
                         child: TextField(
                           controller: _searchController,
                           onChanged: _filterItems,
-                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                          style: AppTypography.style(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Buscar...',
-                            hintStyle: GoogleFonts.poppins(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-                            prefixIcon: Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                            hintStyle: AppTypography.style(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              fontSize: 14,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: Colors.white.withValues(alpha: 0.4),
+                              size: 18,
+                            ),
                             filled: true,
                             fillColor: Colors.white.withValues(alpha: 0.06),
                             border: OutlineInputBorder(
@@ -146,22 +178,32 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 0.5),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                width: 0.5,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                width: 1,
+                              ),
                             ),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ),
-                    if (widget.items.length > 8) const SizedBox(height: AppSpace.content),
+                    if (widget.items.length > 8)
+                      const SizedBox(height: AppSpace.content),
                     Flexible(
                       child: ListView.separated(
                         shrinkWrap: true,
-                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         physics: const BouncingScrollPhysics(),
                         itemCount: _filteredItems.length,
                         separatorBuilder: (context, index) => Divider(
@@ -179,17 +221,28 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                               Navigator.pop(context);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                              color: isSelected ? Colors.white.withValues(alpha: 0.03) : Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 18,
+                              ),
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.03)
+                                  : Colors.transparent,
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Text(
                                       item,
-                                      style: GoogleFonts.poppins(
-                                        color: isSelected ? const Color(0xFFFDBA00) : Colors.white.withValues(alpha: 0.8),
+                                      style: AppTypography.style(
+                                        color: isSelected
+                                            ? const Color(0xFFFDBA00)
+                                            : Colors.white.withValues(
+                                                alpha: 0.8,
+                                              ),
                                         fontSize: 15,
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
                                       ),
                                     ),
                                   ),

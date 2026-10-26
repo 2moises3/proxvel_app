@@ -66,10 +66,16 @@ class HomeController extends ChangeNotifier {
       }
       recentSearches = loadedRecents;
     } catch (e) {
-      error = 'No pudimos cargar los destinos. Revisa tu conexión e intenta de nuevo.';
+      error =
+          'No pudimos cargar los destinos. Revisa tu conexión e intenta de nuevo.';
       destinations = [];
     }
     isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> refreshDestinations() async {
+    _service.invalidateDestinationCatalog();
+    await loadDestinations();
   }
 }

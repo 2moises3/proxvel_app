@@ -1,3 +1,4 @@
+import '../profile/widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -15,11 +16,17 @@ class PrivacyLegalScreen extends StatelessWidget {
   Future<void> _contact(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final ok = await launchUrl(
-      Uri(scheme: 'mailto', path: kSupportEmail, queryParameters: {'subject': 'Consulta sobre mis datos'}),
+      Uri(
+        scheme: 'mailto',
+        path: kSupportEmail,
+        queryParameters: {'subject': 'Consulta sobre mis datos'},
+      ),
       mode: LaunchMode.externalApplication,
     );
     if (!ok) {
-      messenger.showSnackBar(const SnackBar(content: Text('Escríbenos a $kSupportEmail')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Escríbenos a $kSupportEmail')),
+      );
     }
   }
 
@@ -28,24 +35,15 @@ class PrivacyLegalScreen extends StatelessWidget {
     Widget divider() => const Divider(height: 1, color: AppColors.divider);
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textPrimary),
-          tooltip: 'Volver',
-          onPressed: () => context.canPop() ? context.pop() : context.go('/main'),
-        ),
-        title: const Text(
-          'Privacidad y legal',
-          style: AppTextStyles.sectionTitle,
-        ),
-      ),
+      appBar: profilePageBar(context, 'Privacidad y legal'),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(AppSpace.screen, 20, AppSpace.screen, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen,
+            20,
+            AppSpace.screen,
+            32,
+          ),
           children: [
             const Text(
               'Qué hacemos con tus datos, tus derechos y cómo eliminar tu cuenta.',
@@ -98,7 +96,8 @@ class PrivacyLegalScreen extends StatelessWidget {
                       context: context,
                       applicationName: 'PROXVEL',
                       applicationVersion: '1.0.0 (beta)',
-                      applicationLegalese: '© 2026 Biznovatech S.A.C. (M3Biznovatech)',
+                      applicationLegalese:
+                          '© 2026 Biznovatech S.A.C. (M3Biznovatech)',
                     ),
                   ),
                   divider(),
@@ -114,7 +113,11 @@ class PrivacyLegalScreen extends StatelessWidget {
             const Text(
               'Biznovatech S.A.C. (M3Biznovatech)\nÑaña, Lurigancho-Chosica, Lima, Perú\n$kSupportEmail',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textMuted),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
             ),
           ],
         ),

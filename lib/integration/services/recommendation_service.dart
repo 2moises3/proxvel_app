@@ -44,7 +44,8 @@ class RecommendationService {
     return [];
   }
 
-  /// Consume el motor real (engine_v0) sin user_id (requiere token JWT activo)
+  /// Consume el motor real tesis V3 sin user_id (requiere token JWT activo).
+  /// Sin month, el backend utiliza el mes actual; no representa todo el año.
   Future<List<RecommendationResultModel>> getMyRecommendations({
     int limit = 10,
     int? month,

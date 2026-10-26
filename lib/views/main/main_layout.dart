@@ -6,12 +6,13 @@ import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../map/map_screen.dart';
 import '../profile/profile_screen.dart';
-import '../../core/widgets/navigation/proxvel_bottom_navigation.dart';
+import '../../core/widgets/navigation/navigation_island_transition.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
-  static MainLayoutState? of(BuildContext context) => context.findAncestorStateOfType<MainLayoutState>();
+  static MainLayoutState? of(BuildContext context) =>
+      context.findAncestorStateOfType<MainLayoutState>();
 
   @override
   State<MainLayout> createState() => MainLayoutState();
@@ -20,15 +21,43 @@ class MainLayout extends StatefulWidget {
 class MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   final Set<int> _visitedTabs = {0};
-  bool _warmPrefetchStarted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startWarmPrefetch();
+      if (!mounted) return;
+      _syncNavigationIsland();
       _checkForUpdate();
     });
+  }
+
+  void _syncNavigationIsland() {
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      navigationIsland.attach(
+        route: route,
+        index: _currentIndex,
+        onTap: changeTab,
+      );
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _syncNavigationIsland(),
+    );
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _syncNavigationIsland(),
+    );
   }
 
   Future<void> _checkForUpdate() async {
@@ -41,7 +70,10 @@ class MainLayoutState extends State<MainLayout> {
           title: const Text('Actualización disponible'),
           content: Text('PROXVEL ${release.versionName} ya está disponible.'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Después')),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Después'),
+            ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
@@ -57,20 +89,17 @@ class MainLayoutState extends State<MainLayout> {
     }
   }
 
-  Future<void> _startWarmPrefetch() async {
-    if (_warmPrefetchStarted) return;
-    _warmPrefetchStarted = true;
-
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _visitedTabs.add(3)); // Perfil
-
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _visitedTabs.add(2)); // Favoritos
+  @override
+  void dispose() {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => navigationIsland.detach(changeTab),
+    );
+    super.dispose();
   }
 
   void changeTab(int index) {
+    if (!mounted) return;
+    navigationIsland.update(index: index);
     setState(() {
       _currentIndex = index;
       _visitedTabs.add(index);
@@ -81,18 +110,24 @@ class MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBody: _currentIndex == 0 || _currentIndex == 1,
       body: IndexedStack(
         index: _currentIndex,
         children: [
           const HomeScreen(),
-          _visitedTabs.contains(1) ? const MapScreen() : const SizedBox.shrink(),
-          _visitedTabs.contains(2) ? const FavoritesScreen() : const SizedBox.shrink(),
-          _visitedTabs.contains(3) ? const ProfileScreen() : const SizedBox.shrink(),
+          _visitedTabs.contains(1)
+              ? const MapScreen(embedded: true)
+              : const SizedBox.shrink(),
+          _visitedTabs.contains(2)
+              ? const FavoritesScreen()
+              : const SizedBox.shrink(),
+          _visitedTabs.contains(3)
+              ? const ProfileScreen()
+              : const SizedBox.shrink(),
         ],
       ),
-      bottomNavigationBar: ProxvelBottomNavigation(
-        currentIndex: _currentIndex,
-        onTap: changeTab,
+      bottomNavigationBar: SizedBox(
+        height: 146 + MediaQuery.viewPaddingOf(context).bottom,
       ),
     );
   }

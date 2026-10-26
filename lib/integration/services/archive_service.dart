@@ -4,7 +4,8 @@ import '../api/api_client.dart';
 class ArchiveService {
   final ApiClient _apiClient;
 
-  ArchiveService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
+  ArchiveService({ApiClient? apiClient})
+    : _apiClient = apiClient ?? ApiClient();
 
   Future<List<ArchiveModel>> getArchives() async {
     try {
@@ -13,7 +14,7 @@ class ArchiveService {
         final List<dynamic> data = response['data'];
         return data.map((json) => ArchiveModel.fromJson(json)).toList();
       }
-      return [];
+      throw StateError('El servidor no confirmó la lista de archivados.');
     } catch (e) {
       throw Exception('Error al cargar archivados: $e');
     }
@@ -55,6 +56,7 @@ class ArchiveService {
     }
   }
 }
+
 class FavoriteModel {
   final String destinationId;
   final String name;
@@ -86,9 +88,13 @@ class FavoriteModel {
       region: json['region'],
       category: json['category'],
       coverImageUrl: json['cover_image_url'],
-      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : null,
+      rating: json['rating'] != null
+          ? (json['rating'] as num).toDouble()
+          : null,
       isFavorite: json['is_favorite'] ?? true,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
     );
   }
 

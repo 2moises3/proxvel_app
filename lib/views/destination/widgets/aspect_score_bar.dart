@@ -21,8 +21,11 @@ class AspectScoreBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(_iconForAspect(aspect.aspect),
-                  size: 16, color: AppColors.textSecondary),
+              Icon(
+                _iconForAspect(aspect.aspect),
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: AppSpace.related),
               Expanded(
                 child: Text(
@@ -35,7 +38,10 @@ class AspectScoreBar extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: barColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -86,11 +92,15 @@ class AspectScoreBar extends StatelessWidget {
     if (lower.contains('seguridad')) return Icons.shield_outlined;
     if (lower.contains('accesibilidad')) return Icons.accessible_rounded;
     if (lower.contains('limpieza')) return Icons.cleaning_services_outlined;
-    if (lower.contains('atención') || lower.contains('servicio')) return Icons.support_agent_rounded;
+    if (lower.contains('atención') || lower.contains('servicio')) {
+      return Icons.support_agent_rounded;
+    }
     if (lower.contains('gastronomía')) return Icons.restaurant_outlined;
     if (lower.contains('alojamiento')) return Icons.hotel_outlined;
     if (lower.contains('clima')) return Icons.wb_sunny_outlined;
-    if (lower.contains('aforo') || lower.contains('multitud')) return Icons.groups_outlined;
+    if (lower.contains('aforo') || lower.contains('multitud')) {
+      return Icons.groups_outlined;
+    }
     return Icons.info_outline_rounded;
   }
 }

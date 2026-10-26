@@ -34,8 +34,11 @@ class ExplanationCard extends StatelessWidget {
                   color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.auto_awesome_rounded,
-                    color: AppColors.accent, size: 18),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: AppColors.accent,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -49,10 +52,7 @@ class ExplanationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpace.content),
-          Text(
-            explanation,
-            style: AppTextStyles.body2,
-          ),
+          Text(explanation, style: AppTextStyles.body2),
         ],
       ),
     );

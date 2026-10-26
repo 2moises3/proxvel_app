@@ -6,6 +6,7 @@ import '../../theme/app_text_styles.dart';
 
 class ProxvelTextField extends StatefulWidget {
   final String label;
+  final String? hintText;
   final TextEditingController? controller;
   final bool isPassword;
   final Function(String)? onChanged;
@@ -21,6 +22,7 @@ class ProxvelTextField extends StatefulWidget {
   const ProxvelTextField({
     super.key,
     required this.label,
+    this.hintText,
     this.controller,
     this.isPassword = false,
     this.onChanged,
@@ -60,6 +62,7 @@ class _ProxvelTextFieldState extends State<ProxvelTextField> {
       inputFormatters: widget.inputFormatters,
       decoration: InputDecoration(
         labelText: widget.label,
+        hintText: widget.hintText,
         labelStyle: TextStyle(
           color: widget.errorText != null
               ? AppColors.error
@@ -106,6 +109,9 @@ class _ProxvelTextFieldState extends State<ProxvelTextField> {
         contentPadding: const EdgeInsets.all(AppSpace.field),
         suffixIcon: widget.isPassword
             ? IconButton(
+                tooltip: _obscureText
+                    ? 'Mostrar contraseña'
+                    : 'Ocultar contraseña',
                 icon: Icon(
                   _obscureText
                       ? Icons.visibility_outlined

@@ -13,7 +13,9 @@ class DestinationGalleryPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. Filtrado estricto de URLs reusando la lógica centralizada
-    final validImages = imageUrls.where((url) => DestinationModel.isValidImageUrl(url)).toList();
+    final validImages = imageUrls
+        .where((url) => DestinationModel.isValidImageUrl(url))
+        .toList();
 
     debugPrint('[Gallery] validImages.length = ${validImages.length}');
 
@@ -27,10 +29,7 @@ class DestinationGalleryPreview extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Galería',
-            style: AppTextStyles.sectionTitle,
-          ),
+          const Text('Galería', style: AppTextStyles.sectionTitle),
           const SizedBox(height: AppSpace.content),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -46,17 +45,14 @@ class DestinationGalleryPreview extends StatelessWidget {
 
     // Caso C: 2 o más imágenes válidas
     final displayImages = validImages.take(3).toList();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Galería',
-              style: AppTextStyles.sectionTitle,
-            ),
+            const Text('Galería', style: AppTextStyles.sectionTitle),
             GestureDetector(
               onTap: () {
                 // Navigate to full gallery
@@ -78,7 +74,8 @@ class DestinationGalleryPreview extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: AppSpace.content),
+            separatorBuilder: (context, index) =>
+                const SizedBox(width: AppSpace.content),
             itemBuilder: (context, index) {
               return ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -97,7 +94,9 @@ class DestinationGalleryPreview extends StatelessWidget {
           children: List.generate(
             displayImages.length,
             (index) => Padding(
-              padding: EdgeInsets.only(right: index < displayImages.length - 1 ? 6.0 : 0),
+              padding: EdgeInsets.only(
+                right: index < displayImages.length - 1 ? 6.0 : 0,
+              ),
               child: _buildDot(index == 0),
             ),
           ),

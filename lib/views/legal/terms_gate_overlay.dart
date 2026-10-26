@@ -32,7 +32,8 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
     if (!ok) {
       setState(() {
         _busy = false;
-        _error = 'No pudimos registrar tu aceptación. Revisa tu conexión e intenta de nuevo.';
+        _error =
+            'No pudimos registrar tu aceptación. Revisa tu conexión e intenta de nuevo.';
       });
     }
   }
@@ -48,7 +49,9 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final user = auth.currentUser;
-    if (user == null || user.acceptedTermsVersion == kLegalVersion) return const SizedBox.shrink();
+    if (user == null || user.acceptedTermsVersion == kLegalVersion) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned.fill(
       child: Material(
@@ -58,13 +61,18 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
             margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
             constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Actualizamos nuestros textos legales',
-                    style: AppTextStyles.sectionTitle),
+                const Text(
+                  'Actualizamos nuestros textos legales',
+                  style: AppTextStyles.sectionTitle,
+                ),
                 const SizedBox(height: 10),
                 const Text(
                   'Para seguir usando PROXVEL necesitamos que leas y aceptes los Términos y Condiciones y la Política de Privacidad, y que confirmes que eres mayor de 18 años.',
@@ -86,14 +94,29 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 10),
-                  Text(_error!, style: const TextStyle(fontSize: 13, color: AppColors.error)),
+                  Text(
+                    _error!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.error,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: AppSpace.field),
                 FilledButton(
                   onPressed: _busy ? null : _accept,
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
                   child: _busy
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Soy mayor de 18 años y acepto'),
                 ),
                 TextButton(

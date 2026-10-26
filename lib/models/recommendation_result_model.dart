@@ -10,9 +10,14 @@ class RecommendationResultModel {
   final double compatibilityPercentage;
   final double finalScore;
   final String label;
-  final String? monthName;        // mes objetivo de la recomendación
-  final String? bestMonthName;    // mejor mes para ir, según el perfil
-  final String? contextStatus;    // "Clima X · Aforo Y · mes"
+  bool get isEligible => const {
+    'recomendado',
+    'parcialmente recomendado',
+    'parcialmente_recomendado',
+  }.contains(label.trim().toLowerCase());
+  final String? monthName; // mes objetivo de la recomendación
+  final String? bestMonthName; // mejor mes para ir, según el perfil
+  final String? contextStatus; // "Clima X · Aforo Y · mes"
   final List<String> reasons;
   final List<AspectScoreModel> aspectScores;
   final List<ContextSignalModel> contextSignals;
@@ -37,26 +42,27 @@ class RecommendationResultModel {
   factory RecommendationResultModel.fromApiJson(Map<String, dynamic> json) {
     // Para /recommendations/me (engine_v0)
     final isEngineV0 = json.containsKey('compatibility_percent');
-    
-    final compat = isEngineV0 
-      ? (json['compatibility_percent'] as num?)?.toDouble() ?? 0.0
-      : (json['compatibility_percentage'] as num?)?.toDouble() ?? 0.0;
-      
+
+    final compat = isEngineV0
+        ? (json['compatibility_percent'] as num?)?.toDouble() ?? 0.0
+        : (json['compatibility_percentage'] as num?)?.toDouble() ?? 0.0;
+
     final score = isEngineV0
-      ? (json['compatibility_score'] as num?)?.toDouble() ?? 0.0
-      : (json['final_score'] as num?)?.toDouble() ?? 0.0;
+        ? (json['compatibility_score'] as num?)?.toDouble() ?? 0.0
+        : (json['final_score'] as num?)?.toDouble() ?? 0.0;
 
     final context = json['context'] as Map<String, dynamic>? ?? {};
 
-    String label = json['label'] ??
+    String label =
+        json['label'] ??
         (compat >= 55
             ? 'Recomendado'
             : compat >= 45
-                ? 'Parcialmente recomendado'
-                : 'No recomendado');
+            ? 'Parcialmente recomendado'
+            : 'No recomendado');
 
     final reasons = <String>[];
-    
+
     ExplanationModel? parsedExplanation;
     if (json.containsKey('explanation') && json['explanation'] != null) {
       parsedExplanation = ExplanationModel.fromJson(json['explanation']);
@@ -75,41 +81,49 @@ class RecommendationResultModel {
     }
 
     final signals = <ContextSignalModel>[];
-    
+
     if (isEngineV0) {
       final contextStatus = json['context_status'];
       if (contextStatus is String && contextStatus.isNotEmpty) {
-        signals.add(ContextSignalModel(
-          type: 'climate', // default for context_status right now
-          value: contextStatus,
-          weight: 0.0,
-        ));
+        signals.add(
+          ContextSignalModel(
+            type: 'climate', // default for context_status right now
+            value: contextStatus,
+            weight: 0.0,
+          ),
+        );
       }
     } else {
       final weatherCat = context['weather_category'];
       final weatherScore = (context['weather_score'] as num?)?.toDouble();
       if (weatherCat is String && weatherCat.isNotEmpty) {
-        signals.add(ContextSignalModel(
-          type: 'climate',
-          value: weatherCat,
-          weight: weatherScore ?? 0.0,
-        ));
+        signals.add(
+          ContextSignalModel(
+            type: 'climate',
+            value: weatherCat,
+            weight: weatherScore ?? 0.0,
+          ),
+        );
       }
       final crowdLevel = context['crowd_level'];
       final crowdScore = (context['crowd_score'] as num?)?.toDouble();
       if (crowdLevel is String && crowdLevel.isNotEmpty) {
-        signals.add(ContextSignalModel(
-          type: 'crowdLevel',
-          value: crowdLevel,
-          weight: crowdScore ?? 0.0,
-        ));
+        signals.add(
+          ContextSignalModel(
+            type: 'crowdLevel',
+            value: crowdLevel,
+            weight: crowdScore ?? 0.0,
+          ),
+        );
       }
     }
 
     final aspects = <AspectScoreModel>[];
     if (parsedExplanation != null) {
       for (var top in parsedExplanation.topAspects) {
-        aspects.add(AspectScoreModel(aspect: top.aspect, score: top.destinationScore));
+        aspects.add(
+          AspectScoreModel(aspect: top.aspect, score: top.destinationScore),
+        );
       }
     } else {
       final aspectMap = json['aspect_scores'] as Map<String, dynamic>?;
@@ -139,7 +153,8 @@ class RecommendationResultModel {
     );
   }
 
-  factory RecommendationResultModel.fromJson(Map<String, dynamic> json) => RecommendationResultModel(
+  factory RecommendationResultModel.fromJson(Map<String, dynamic> json) =>
+      RecommendationResultModel(
         id: json['id'],
         rankingPosition: json['rankingPosition'] as int?,
         destination: DestinationModel.fromJson(json['destination']),
@@ -147,21 +162,27 @@ class RecommendationResultModel {
         finalScore: json['finalScore'].toDouble(),
         label: json['label'],
         reasons: List<String>.from(json['reasons'] ?? []),
-        aspectScores: (json['aspectScores'] as List).map((i) => AspectScoreModel.fromJson(i)).toList(),
-        contextSignals: (json['contextSignals'] as List).map((i) => ContextSignalModel.fromJson(i)).toList(),
-        explanation: json['explanation'] != null ? ExplanationModel.fromJson(json['explanation']) : null,
+        aspectScores: (json['aspectScores'] as List)
+            .map((i) => AspectScoreModel.fromJson(i))
+            .toList(),
+        contextSignals: (json['contextSignals'] as List)
+            .map((i) => ContextSignalModel.fromJson(i))
+            .toList(),
+        explanation: json['explanation'] != null
+            ? ExplanationModel.fromJson(json['explanation'])
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'rankingPosition': rankingPosition,
-        'destination': destination.toJson(),
-        'compatibilityPercentage': compatibilityPercentage,
-        'finalScore': finalScore,
-        'label': label,
-        'reasons': reasons,
-        'aspectScores': aspectScores.map((i) => i.toJson()).toList(),
-        'contextSignals': contextSignals.map((i) => i.toJson()).toList(),
-        'explanation': explanation?.toJson(),
-      };
+    'id': id,
+    'rankingPosition': rankingPosition,
+    'destination': destination.toJson(),
+    'compatibilityPercentage': compatibilityPercentage,
+    'finalScore': finalScore,
+    'label': label,
+    'reasons': reasons,
+    'aspectScores': aspectScores.map((i) => i.toJson()).toList(),
+    'contextSignals': contextSignals.map((i) => i.toJson()).toList(),
+    'explanation': explanation?.toJson(),
+  };
 }

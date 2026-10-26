@@ -29,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<ProfileController>().loadProfileData();
       final auth = context.read<AuthController>();
       context.read<MyReviewsController>().loadUserReviews(auth.currentUser);
@@ -44,18 +45,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
 
     final auth = context.watch<AuthController>();
     final profileCtrl = context.watch<ProfileController>();
-    final favCount = context.watch<FavoritesController>().favorites.length;
-    final reviewCount = context.watch<MyReviewsController>().reviews.length;
-    final recCount = context
-        .watch<RecommendationController>()
-        .recommendations
-        .length;
+    final favCount = context.select<FavoritesController, int>(
+      (c) => c.favorites.length,
+    );
+    final reviewCount = context.select<MyReviewsController, int>(
+      (c) => c.reviews.length,
+    );
+    final recCount = context.select<RecommendationController, int>(
+      (c) => c.recommendations.length,
+    );
 
     final user = auth.currentUser ?? profileCtrl.user;
     final userName = user?.fullName ?? 'Viajero';
@@ -73,10 +77,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   ProfileHeader(
-                    name: userName, 
+                    name: userName,
                     email: userEmail,
                     avatarUrl: user?.avatarUrl,
                     onTapAvatar: _pickAndUploadAvatar,
+                    onEditProfile: () => context.push('/profile/edit'),
                   ),
 
                   if (profileCtrl.error != null)
@@ -100,20 +105,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: AppSpace.section),
                   ProfileMenuSection(
                     onEditProfile: () => context.push('/profile/edit'),
-                    onChangePassword: () => context.push('/profile/change-password'),
-                    onPreferences: () async {
-                      // Capturamos el controller antes del await para no usar
-                      // BuildContext tras un gap asíncrono.
-                      final profileController =
-                          context.read<ProfileController>();
-                      await context.push('/profile/preferences');
-                      if (!mounted) return;
-                      profileController.loadProfileData();
-                    },
+                    onChangePassword: () =>
+                        context.push('/profile/change-password'),
+                    // The shared editor publishes the confirmed backend response.
+                    // Reloading here would duplicate the request and blank the page.
+                    onPreferences: () => context.push('/profile/preferences'),
                     onMyReviews: () => context.push('/profile/my-reviews'),
                     onArchived: () => context.push('/archived'),
                     onPrivacy: () => context.push('/legal'),
                     onAbout: () => showAboutProxvelSheet(context),
+                    onDeleteAccount: () =>
+                        context.push('/legal/delete-account'),
                     onUpdates: () => context.push('/profile/updates'),
                     onLogout: () => showLogoutConfirmSheet(
                       context,
@@ -126,15 +128,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
 
                   const SizedBox(height: AppSpace.group),
-                  Text(
-                    'PROXVEL v1.0.0',
+                  const Text(
+                    'Hecho para descubrir el Perú.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textMuted.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: AppSpace.section),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),

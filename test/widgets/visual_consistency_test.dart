@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:proxvell_app/core/widgets/buttons/shimmer_button.dart';
 import 'package:proxvell_app/core/theme/app_theme.dart';
 import 'package:proxvell_app/core/widgets/states/error_view.dart';
@@ -23,7 +22,6 @@ Widget host(Widget child, Size size, {double keyboard = 0}) => MaterialApp(
 );
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   for (final width in [320.0, 390.0]) {
     testWidgets('login: validación y teclado a $width con texto ampliado', (
       tester,
@@ -36,6 +34,7 @@ void main() {
       await tester.pumpWidget(host(const LoginScreen(), size));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.ensureVisible(find.text('Iniciar sesión'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Iniciar sesión'));
       await tester.pump();
       expect(find.text('El correo es requerido'), findsOneWidget);
@@ -44,6 +43,7 @@ void main() {
       await tester.pumpWidget(host(const LoginScreen(), size, keyboard: 280));
       await tester.pump();
       await tester.ensureVisible(find.text('Iniciar sesión'));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
@@ -65,10 +65,12 @@ void main() {
         'visual@example.test',
       );
       await tester.ensureVisible(find.text('Continuar'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Continuar'));
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Confirmar contraseña'), findsOneWidget);
       await tester.ensureVisible(find.text('Crear mi cuenta'));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
@@ -93,10 +95,10 @@ void main() {
         ),
       );
       expect(
-        find.text('No indica una probabilidad de satisfacción.'),
+        find.textContaining('no una probabilidad de satisfacción'),
         findsOneWidget,
       );
-      await tester.tap(find.text('Entender mi afinidad'));
+      await tester.tap(find.text('Cómo interpretar este resultado'));
       await tester.pumpAndSettle();
       expect(find.textContaining('El orden también considera'), findsOneWidget);
       expect(tester.takeException(), isNull);

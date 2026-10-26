@@ -1,3 +1,4 @@
+import '../../core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -83,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDBA00),
+      backgroundColor: AppColors.accent,
       body: ProxvelBrandedLoading(
         variant: ProxvelLoadingVariant.splash,
         isReady: _isReady,

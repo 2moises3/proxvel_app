@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_layout.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'package:provider/provider.dart';
 import '../../../models/destination_model.dart';
 import '../../../controllers/favorites_controller.dart';
@@ -69,6 +69,7 @@ class ClassicDestinationCard extends StatelessWidget {
                     height: 100,
                     child: AdaptiveDestinationImage(
                       imagePath: destination.imageUrl,
+                      cacheWidth: 300,
                     ),
                   ),
                 ),
@@ -103,7 +104,7 @@ class ClassicDestinationCard extends StatelessWidget {
                                 location,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
+                                style: AppTypography.style(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
                                 ),
@@ -133,7 +134,7 @@ class ClassicDestinationCard extends StatelessWidget {
                                 destination.category,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
+                                style: AppTypography.style(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.primary,

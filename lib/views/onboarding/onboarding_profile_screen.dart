@@ -1,39 +1,46 @@
-import '../../core/widgets/forms/traveler_type_selector.dart';
-import '../../core/theme/app_layout.dart';
-import 'dart:async';
+import '../../core/constants/preference_art.dart';
 import 'package:flutter/material.dart';
-import '../auth/widgets/auth_backdrop.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'widgets/preference_choice.dart';
 import 'package:provider/provider.dart';
+
 import '../../controllers/auth_controller.dart';
 import '../../controllers/onboarding_controller.dart';
 import '../../controllers/recommendation_controller.dart';
 import '../../core/constants/traveler_vocabulary.dart';
 import '../../core/navigation/home_entry_coordinator.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 import '../../models/traveler_profile_model.dart';
-import '../../core/widgets/buttons/proxvel_button.dart';
-import '../../core/widgets/buttons/shimmer_button.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../models/traveler_types.dart';
+import '../auth/widgets/auth_form_page.dart';
+import 'widgets/illustrated_preference_option.dart';
+import 'widgets/travel_style_option.dart';
+import 'widgets/profile_completion_view.dart';
 
-const _kDark = Color(0xFF2B323B);
-const _kGray = Color(0xFF6B7280);
-const _kLightGray = Color(0xFFF3F4F6);
-const _kAmber = Color(0xFFF59E0B);
-const _kBorder = Color(0xFFE5E7EB);
+const _ink = Color(0xFF202020);
+const _muted = Color(0xFF626870);
+const _paper = Color(0xFFFAFAF8);
+const _line = Color(0xFFE7E7E4);
+const _backpack = 'assets/images/onboarding_backpack_peru.png';
+const _climates = 'assets/images/onboarding_climates_peru.png';
+const _crowds = 'assets/images/onboarding_crowds_peru.png';
+const _interestsArt = 'assets/images/onboarding_interests_peru.png';
 
+/// La introducción y cinco decisiones del perfil viajero.
 class OnboardingProfileScreen extends StatefulWidget {
   const OnboardingProfileScreen({super.key});
+
   @override
   State<OnboardingProfileScreen> createState() => _OnboardingState();
 }
 
 class _OnboardingState extends State<OnboardingProfileScreen>
-    with TickerProviderStateMixin {
-  final PageController _pc = PageController();
-  int _page = 0; // 0=intro,1=presupuesto,2=clima,3=comodidad,4=intereses
-
-  late final AnimationController _shimmerCtrl;
+    with SingleTickerProviderStateMixin {
+  final PageController _pages = PageController();
+  late final AnimationController _float;
+  int _page =
+      0; // 0=introducción, 1=estilo, 2=presupuesto, 3=clima, 4=multitudes, 5=intereses.
 
   String? _travelerType;
   String? _budget;
@@ -42,57 +49,63 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   String? _comfort;
   final Set<String> _interests = {};
 
+  bool _saving = false;
   bool _done = false;
-  int _cd = 5;
-  Timer? _timer;
+  bool _enteringHome = false;
 
-  bool get _canProceed {
-    switch (_page) {
-      case 0:
-        return true;
-      case 1:
-        return _budget != null && _travelerType != null;
-      case 2:
-        return _climate != null;
-      case 3:
-        return _comfort != null;
-      case 4:
-        return _interests.isNotEmpty;
-      default:
-        return false;
-    }
-  }
+  bool get _canProceed => switch (_page) {
+    0 => true,
+    1 => _travelerType != null,
+    2 => _budget != null,
+    3 => _climate != null,
+    4 => _comfort != null,
+    5 => _interests.isNotEmpty,
+    _ => false,
+  };
 
   @override
   void initState() {
     super.initState();
-    _shimmerCtrl = AnimationController(
+    _float = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat();
+      duration: const Duration(milliseconds: 3200),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _float.stop();
+    } else if (!_float.isAnimating) {
+      _float.repeat(reverse: true);
+    }
+  }
+
+  void _moveTo(int index) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _pages.jumpToPage(index);
+    } else {
+      _pages.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    setState(() => _page = index);
   }
 
   void _next() {
-    if (!_canProceed) return;
-    if (_page < 4) {
-      _pc.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-      setState(() => _page++);
+    if (!_canProceed || _saving) return;
+    if (_page < 5) {
+      _moveTo(_page + 1);
     } else {
       _saveAndComplete();
     }
   }
 
-  void _prev() {
-    if (_page > 0) {
-      _pc.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-      setState(() => _page--);
-    }
+  void _previous() {
+    if (_page > 0 && !_saving) _moveTo(_page - 1);
   }
 
   Future<void> _saveAndComplete() async {
@@ -100,935 +113,533 @@ class _OnboardingState extends State<OnboardingProfileScreen>
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error: No hay usuario activo.'),
-          backgroundColor: Colors.red,
+          content: Text('No encontramos tu sesión. Vuelve a iniciar sesión.'),
         ),
       );
       return;
     }
 
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
+    setState(() => _saving = true);
     final selectedInterests = _interests.toList();
-    final tipoInteres = selectedInterests.isEmpty
-        ? 'mixto'
-        : (selectedInterests.length == 1
-              ? selectedInterests.first.toLowerCase()
-              : 'mixto');
-
     final profile = TravelerProfileModel(
       perfilTuristico: _travelerType,
       presupuesto: _budget?.toLowerCase() ?? 'medio',
       diasViaje: _days,
       climaPreferido: _climate?.toLowerCase() ?? 'templado',
-      tipoInteres: tipoInteres,
-      intereses: selectedInterests.map((i) => i.toLowerCase()).toList(),
+      tipoInteres: selectedInterests.length == 1
+          ? selectedInterests.first.toLowerCase()
+          : 'mixto',
+      intereses: selectedInterests
+          .map((interest) => interest.toLowerCase())
+          .toList(),
       toleranciaMultitudes: TravelerVocabulary.crowdToleranceValue(
         _comfort ?? 'Media',
       ),
-      // The weights will just use defaults for now, as UI doesn't set them yet
     );
 
-    final success = await context.read<OnboardingController>().saveProfile(
+    final saved = await context.read<OnboardingController>().saveProfile(
       profile,
       user.id,
     );
-
-    // Close loading dialog
-    if (mounted) Navigator.pop(context);
-
-    if (success) {
-      // Invalidar y recargar recomendaciones con el perfil recién creado.
-      if (mounted) {
-        final recCtrl = context.read<RecommendationController>();
-        recCtrl.invalidate();
-        recCtrl.loadRecommendations(forceRefresh: true);
-      }
-      _complete();
-    } else {
-      if (mounted) {
-        final err = context.read<OnboardingController>().error;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              err ?? 'No pudimos guardar tus preferencias. Intenta nuevamente.',
-            ),
-            backgroundColor: Colors.red.shade600,
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!saved) {
+      final error = context.read<OnboardingController>().error;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error ?? 'No pudimos guardar tus preferencias. Intenta otra vez.',
           ),
-        );
-      }
+        ),
+      );
+      return;
     }
-  }
 
-  void _complete() {
+    final recommendations = context.read<RecommendationController>();
+    recommendations.invalidate();
+    recommendations.loadRecommendations(forceRefresh: true);
     setState(() => _done = true);
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_cd <= 1) {
-        t.cancel();
-        if (mounted) {
-          final user = context.read<AuthController>().currentUser;
-          if (user != null) {
-            HomeEntryCoordinator.goToPreparedHome(context);
-          }
-        }
-      } else {
-        setState(() => _cd--);
-      }
-    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _pc.dispose();
-    _shimmerCtrl.dispose();
+    _pages.dispose();
+    _float.dispose();
     super.dispose();
   }
 
-  static const _titles = [
-    'Tu viaje empieza contigo',
-    'Tu estilo de viaje.',
-    'Tu clima preferido',
-    'Viaja a tu ritmo',
-    'Lo que disfrutas',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
     if (_done) return _completionView();
-    final isIntro = _page == 0;
-
-    return Scaffold(
-      backgroundColor: const Color(
-        0xFFF9FAFB,
-      ), // Soft premium iOS native background
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!isIntro)
-              _header(_page)
-            else
-              const SizedBox(height: 48), // Top breathing room for intro
-
-            Padding(
-              padding: EdgeInsets.fromLTRB(32, isIntro ? 16 : 4, 32, 0),
-              child: Text(
-                _titles[_page],
-                textAlign: isIntro ? TextAlign.center : TextAlign.left,
-                style: GoogleFonts.poppins(
-                  fontSize: isIntro ? 32 : 28,
-                  fontWeight: FontWeight.w700,
-                  color: _kDark,
-                  letterSpacing: -0.5,
-                  height: 1.2,
-                ),
-              ),
-            ),
-            if (isIntro)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(32, 12, 32, 0),
-                child: Text(
-                  'Cuéntanos qué disfrutas y qué prefieres encontrar en tu viaje.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    color: _kGray,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            const SizedBox(height: AppSpace.related),
-            Expanded(
-              child: PageView(
-                controller: _pc,
-                physics: const NeverScrollableScrollPhysics(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: _paper,
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
                 children: [
-                  _introView(),
-                  _budgetView(),
-                  _climateView(),
-                  _comfortView(),
-                  _interestsView(),
+                  if (_page > 0) _progressHeader(),
+                  Expanded(
+                    child: PageView(
+                      controller: _pages,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _introView(),
+                        _styleView(),
+                        _budgetView(),
+                        _climateView(),
+                        _crowdView(),
+                        _interestsView(),
+                      ],
+                    ),
+                  ),
+                  _footer(),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpace.screen,
-                8,
-                AppSpace.screen,
-                16,
-              ),
-              child: isIntro ? _introButtons() : _stepButtons(),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _header(int step) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 12, 24, 12),
+  Widget _progressHeader() => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 12, 24, 2),
     child: Row(
       children: [
-        _backBtn(_prev),
-        const SizedBox(width: AppSpace.content),
+        IconButton.outlined(
+          tooltip: 'Volver',
+          onPressed: _previous,
+          icon: const Icon(Icons.arrow_back_rounded, size: 20),
+          style: IconButton.styleFrom(
+            foregroundColor: _ink,
+            side: const BorderSide(color: _line),
+            minimumSize: const Size(44, 44),
+          ),
+        ),
+        const SizedBox(width: 18),
         Expanded(
-          child: Column(
-            children: [
-              Text(
-                '$step de 4',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: _kGray,
+          child: Row(
+            children: List.generate(
+              5,
+              (index) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: index < _page ? AppColors.accent : _line,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: step / 4,
-                  minHeight: 5,
-                  backgroundColor: _kLightGray,
-                  valueColor: const AlwaysStoppedAnimation<Color>(_kDark),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 48),
-      ],
-    ),
-  );
-
-  Widget _backBtn(VoidCallback onTap) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(AppRadius.card),
-    child: Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: _kBorder, width: 1.5),
-      ),
-      child: const Icon(Icons.arrow_back, size: 20, color: _kDark),
-    ),
-  );
-
-  Widget _introButtons() => Column(
-    children: [
-      ShimmerButton(
-        shimmer: _shimmerCtrl,
-        baseColor: _kAmber,
-        hoverColor: const Color(0xFFD97706),
-        text: 'Comenzar',
-        onPressed: _next,
-      ),
-      const SizedBox(height: AppSpace.card),
-      TextButton(
-        onPressed: () => HomeEntryCoordinator.goToPreparedHome(context),
-        style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
-        child: Text(
-          'Omitir por ahora',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: _kGray,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _stepButtons() => Column(
-    children: [
-      ProxvelButton(
-        text: _page == 4 ? 'Terminar' : 'Siguiente',
-        onPressed: _canProceed ? _next : null,
-      ),
-      const SizedBox(height: AppSpace.content),
-      ProxvelButton(text: '←  Volver', isSecondary: true, onPressed: _prev),
-    ],
-  );
-
-  // ── INTRO ──
-  Widget _introView() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-    child: Column(
-      children: [
-        const SizedBox(height: AppSpace.section),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          child: Image.asset(
-            AuthScenes.current,
-            height: 176,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            alignment: const Alignment(0, -.6),
-            cacheWidth: 720,
-          ),
-        ),
-        const SizedBox(height: AppSpace.section),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: [
-            _floatingChip(Icons.explore_outlined, 'Estilo'),
-            _floatingChip(Icons.local_offer_outlined, 'Intereses'),
-            _floatingChip(Icons.wb_sunny_outlined, 'Clima'),
-          ],
-        ),
-        const SizedBox(height: 36),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: _kGray,
-                height: 1.6,
-              ),
-              children: const [
-                TextSpan(
-                  text: 'A tu manera: ',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: _kDark),
-                ),
-                TextSpan(text: 'Destinos según tus preferencias.\n'),
-                TextSpan(
-                  text: 'Puedes cambiar ',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: _kDark),
-                ),
-                TextSpan(text: 'tus elecciones cuando quieras.'),
-              ],
             ),
           ),
         ),
-        const SizedBox(height: AppSpace.section),
-      ],
-    ),
-  );
-
-  Widget _floatingChip(IconData icon, String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: _kDark),
-        const SizedBox(width: AppSpace.related),
+        const SizedBox(width: 12),
         Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
-          ),
+          '$_page de 5',
+          style: _text(13, color: _muted, weight: FontWeight.w600),
         ),
       ],
     ),
   );
 
-  // ── PRESUPUESTO Y DÍAS ──
-  Widget _budgetView() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-    child: Column(
-      children: [
-        const SizedBox(height: AppSpace.related),
-        TravelerTypeSelector(
-          value: _travelerType,
-          onChanged: (value) => setState(() => _travelerType = value),
-        ),
-        const SizedBox(height: AppSpace.group),
-        Text(
-          '¿Cuál es tu presupuesto aproximado?',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
+  Widget _footer() => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 10, 24, 16),
+    child: _page == 0
+        ? Row(
+            children: [
+              Expanded(
+                child: AuthSubmitButton(
+                  text: 'Comenzar',
+                  onPressed: _next,
+                  size: AuthSubmitButtonSize.large,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 64,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        HomeEntryCoordinator.goToPreparedHome(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _ink,
+                      side: const BorderSide(color: Color(0xFFB9BDBF)),
+                      shape: const StadiumBorder(),
+                      textStyle: _text(14, weight: FontWeight.w600),
+                    ),
+                    child: const Text('Omitir por ahora', maxLines: 1),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : AuthSubmitButton(
+            size: AuthSubmitButtonSize.large,
+            text: _page == 5 ? 'Guardar preferencias' : 'Continuar',
+            onPressed: _canProceed ? _next : null,
+            isLoading: _saving,
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Lo guardamos como referencia para planificar, sin cambiar el ranking.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: _kGray),
-        ),
-        const SizedBox(height: AppSpace.section),
-        _opt('Bajo', _budget == 'Bajo', () => setState(() => _budget = 'Bajo')),
-        const SizedBox(height: 14),
-        _opt(
-          'Medio',
-          _budget == 'Medio',
-          () => setState(() => _budget = 'Medio'),
-        ),
-        const SizedBox(height: 14),
-        _opt('Alto', _budget == 'Alto', () => setState(() => _budget = 'Alto')),
-        const SizedBox(height: 14),
-        _opt('Lujo', _budget == 'Lujo', () => setState(() => _budget = 'Lujo')),
-        const SizedBox(height: AppSpace.content),
-        const SizedBox(height: 36),
-        Text(
-          '¿Cuántos días planeas viajar?',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Puedes cambiarlo después.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: _kGray),
-        ),
-        const SizedBox(height: AppSpace.card),
-        Row(
+  );
+
+  Widget _introView() => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight - 24),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _dayBtn(Icons.remove, () {
-              if (_days > 1) setState(() => _days--);
-            }),
-            const SizedBox(width: AppSpace.section),
-            Container(
-              width: 110,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                _days.toString().padLeft(2, '0'),
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: _kDark,
-                ),
-              ),
+            Text(
+              'Tu viaje empieza contigo.',
+              textAlign: TextAlign.center,
+              style: _text(32, weight: FontWeight.w700, height: 1.12),
             ),
-            const SizedBox(width: AppSpace.section),
-            _dayBtn(Icons.add, () {
-              if (_days < 30) setState(() => _days++);
-            }),
+            const SizedBox(height: 12),
+            Text(
+              'Elige lo que disfrutas y descubre destinos a tu manera.',
+              textAlign: TextAlign.center,
+              style: _text(16, color: _muted, height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            _art(_backpack, height: 290),
+            const SizedBox(height: 20),
+            Text(
+              'Son cinco pasos breves. Podrás cambiar tus preferencias después.',
+              textAlign: TextAlign.center,
+              style: _text(14, color: _muted, height: 1.4),
+            ),
           ],
         ),
-        const SizedBox(height: AppSpace.content),
-        Text(
-          'Podrás cambiar estas preferencias después.',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: _kAmber.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ── CLIMA ──
-  Widget _climateView() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-    child: Column(
-      children: [
-        const SizedBox(height: AppSpace.related),
-        Text(
-          '¿Qué clima prefieres para viajar?',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Esto nos ayuda a sugerirte destinos ideales.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: _kGray),
-        ),
-        const SizedBox(height: AppSpace.section),
-        _optDesc(
-          'Frío',
-          'Montañas, nieve y paisajes frescos',
-          _climate == 'Frío',
-          () => setState(() => _climate = 'Frío'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Templado',
-          'Clima agradable y equilibrado',
-          _climate == 'Templado',
-          () => setState(() => _climate = 'Templado'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Cálido',
-          'Sol, playas y destinos tropicales',
-          _climate == 'Cálido',
-          () => setState(() => _climate = 'Cálido'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Seco',
-          'Poca lluvia y cielos despejados',
-          _climate == 'Seco',
-          () => setState(() => _climate = 'Seco'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Indiferente',
-          'Cualquier clima me sirve',
-          _climate == 'Indiferente',
-          () => setState(() => _climate = 'Indiferente'),
-        ),
-        const SizedBox(height: AppSpace.field),
-        Text(
-          'Podrás cambiarlo después.',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: _kAmber.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ── COMODIDAD ──
-  Widget _comfortView() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-    child: Column(
-      children: [
-        const SizedBox(height: AppSpace.related),
-        Text(
-          '¿Qué tan cómodo te sientes\ncon multitudes?',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Esto nos ayuda a sugerirte lugares más\ntranquilos o más movidos.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: _kGray),
-        ),
-        const SizedBox(height: AppSpace.section),
-        _optDesc(
-          'Baja',
-          'Prefiere lugares tranquilos',
-          _comfort == 'Baja',
-          () => setState(() => _comfort = 'Baja'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Media',
-          'Me adapto a cualquier entorno',
-          _comfort == 'Media',
-          () => setState(() => _comfort = 'Media'),
-        ),
-        const SizedBox(height: 14),
-        _optDesc(
-          'Alta',
-          'Me encantan las zonas concurridas',
-          _comfort == 'Alta',
-          () => setState(() => _comfort = 'Alta'),
-        ),
-        const SizedBox(height: AppSpace.field),
-        Text(
-          'Podrás cambiarlo después.',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: _kAmber.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ── INTERESES ──
-  Widget _interestsView() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-    child: Column(
-      children: [
-        const SizedBox(height: AppSpace.related),
-        Text(
-          '¿Qué experiencias prefieres?',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: _kDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Recomendado: elige al menos 3.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: _kAmber.withValues(alpha: 0.9),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: AppSpace.section),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: TravelerVocabulary.interests.map((item) {
-            final sel = _interests.contains(item.label);
-            return GestureDetector(
-              onTap: () => setState(
-                () => sel
-                    ? _interests.remove(item.label)
-                    : _interests.add(item.label),
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: sel ? _kAmber : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    if (!sel)
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    if (sel)
-                      BoxShadow(
-                        color: _kAmber.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (item.svgAsset != null)
-                      SvgPicture.asset(
-                        'assets/icons/${item.svgAsset}',
-                        width: 20,
-                        height: 20,
-                        colorFilter: sel
-                            ? const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
-                              )
-                            : null,
-                      )
-                    else
-                      Icon(item.icon, size: 20, color: _kDark),
-                    const SizedBox(width: AppSpace.related),
-                    Text(
-                      item.label,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: _kDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: AppSpace.section),
-        Center(
-          child: Text(
-            'Podrás cambiarlo después.',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: _kAmber.withValues(alpha: 0.9),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ── FELICIDADES (PREMIUM) ──
-  Widget _completionView() => Scaffold(
-    backgroundColor: _kLightGray,
-    body: SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(flex: 2),
-              Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _kAmber.withValues(alpha: 0.1),
-                ),
-                alignment: Alignment.center,
-                child: Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _kAmber.withValues(alpha: 0.15),
-                  ),
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [_kAmber, _kAmber.withValues(alpha: 0.8)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _kAmber.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: 44,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpace.group),
-              const Text(
-                '¡Felicidades!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: _kDark,
-                ),
-              ),
-              const SizedBox(height: AppSpace.content),
-              Text(
-                'Tu perfil ha sido configurado\ncorrectamente. Prepárate para descubrir\nlos mejores destinos.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: _kGray.withValues(alpha: 0.9),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: AppSpace.hero),
-              SizedBox(
-                width: 56,
-                height: 56,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: _cd / 5,
-                      strokeWidth: 3,
-                      backgroundColor: _kLightGray,
-                      valueColor: AlwaysStoppedAnimation<Color>(_kAmber),
-                    ),
-                    Text(
-                      '$_cd',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: _kDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpace.content),
-              Text(
-                'Redirigiendo...',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _kGray.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: AppSpace.field),
-              TextButton(
-                onPressed: () => HomeEntryCoordinator.goToPreparedHome(context),
-                style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
-                child: const Text(
-                  'Ir ahora',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: _kDark,
-                  ),
-                ),
-              ),
-              const Spacer(flex: 3),
-            ],
-          ),
-        ),
       ),
     ),
   );
 
-  // ── SHARED WIDGETS ──
-  Widget _opt(String label, bool sel, VoidCallback onTap) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+  Widget _stepPage({
+    required String title,
+    required String subtitle,
+    required String artwork,
+    required Widget body,
+  }) => SingleChildScrollView(
+    physics: const ClampingScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(subtitle, style: _text(15, color: _muted, height: 1.4)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Text(
+                title,
+                style: _text(32, weight: FontWeight.w600, height: 1.15),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: _art(artwork, height: 140)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        body,
+      ],
+    ),
+  );
+
+  Widget _art(String asset, {required double height}) {
+    final image = Image.asset(
+      asset,
+      height: height,
       width: double.infinity,
-      height: 56,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: sel ? _kAmber : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          if (!sel)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          if (sel)
-            BoxShadow(
-              color: _kAmber.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-        ],
+      fit: BoxFit.contain,
+      cacheWidth: 640,
+      excludeFromSemantics: true,
+    );
+    if (MediaQuery.disableAnimationsOf(context)) return image;
+    return AnimatedBuilder(
+      animation: _float,
+      child: image,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, _float.value * 8 - 4),
+        child: child,
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: _kDark,
-        ),
+    );
+  }
+
+  Widget _styleView() => _stepPage(
+    title: 'Elige tu\nestilo de viaje',
+    subtitle: '¿Qué tipo de viajero eres? Elige el estilo que más va contigo.',
+    artwork: _backpack,
+    body: LayoutBuilder(
+      builder: (context, constraints) => Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: travelerTypes.entries
+            .map(
+              (entry) => SizedBox(
+                width: (constraints.maxWidth - 12) / 2,
+                child: TravelStyleOption(
+                  label: entry.value,
+                  asset: entry.key == 'economico_mochilero'
+                      ? _backpack
+                      : 'assets/images/onboarding_${preferenceStyleImages[entry.key]!}_scene.webp',
+                  containImage: entry.key == 'economico_mochilero',
+                  selected: _travelerType == entry.key,
+                  onTap: () => setState(() => _travelerType = entry.key),
+                ),
+              ),
+            )
+            .toList(),
       ),
     ),
   );
 
-  Widget _optDesc(String label, String desc, bool sel, VoidCallback onTap) =>
-      GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: sel ? _kAmber : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              if (!sel)
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              if (sel)
-                BoxShadow(
-                  color: _kAmber.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-            ],
+  Widget _budgetView() => _stepPage(
+    title: 'Planea tu\nescapada',
+    subtitle:
+        '¿Cómo será tu próxima escapada? Define tu presupuesto y los días que tienes.',
+    artwork: _backpack,
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Presupuesto aproximado',
+          style: _text(16, weight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) => Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: ['Bajo', 'Medio', 'Alto', 'Lujo']
+                .map(
+                  (value) => SizedBox(
+                    width: (constraints.maxWidth - 10) / 2,
+                    child: _choice(
+                      value,
+                      illustration:
+                          'assets/icons/${switch (value) {
+                            'Bajo' => 'budget_low',
+                            'Medio' => 'budget_medium',
+                            'Alto' => 'budget_high',
+                            _ => 'budget_luxury',
+                          }}.svg',
+                      illustrationLeading: true,
+                      selected: _budget == value,
+                      onTap: () => setState(() => _budget = value),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
-          child: Column(
+        ),
+        const SizedBox(height: 26),
+        Text(
+          '¿Cuántos días planeas viajar?',
+          style: _text(16, weight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: _line),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
             children: [
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: _kDark,
+              IconButton(
+                tooltip: 'Quitar un día',
+                onPressed: _days > 1 ? () => setState(() => _days--) : null,
+                icon: const Icon(Icons.remove_rounded),
+              ),
+              Expanded(
+                child: Text(
+                  '$_days ${_days == 1 ? 'día' : 'días'}',
+                  textAlign: TextAlign.center,
+                  style: _text(20, weight: FontWeight.w500),
                 ),
               ),
-              const SizedBox(height: AppSpace.micro),
-              Text(
-                desc,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: sel ? Colors.white.withValues(alpha: 0.9) : _kGray,
-                ),
+              IconButton(
+                tooltip: 'Añadir un día',
+                onPressed: _days < 30 ? () => setState(() => _days++) : null,
+                icon: const Icon(Icons.add_rounded),
               ),
             ],
           ),
         ),
-      );
-
-  Widget _dayBtn(IconData icon, VoidCallback onTap) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: Icon(icon, color: _kDark, size: 20),
+      ],
     ),
+  );
+
+  Widget _climateView() => _stepPage(
+    title: 'Elige tu\nclima ideal',
+    subtitle:
+        '¿Con qué clima disfrutas más el viaje? Elige tu favorito o explora cualquiera.',
+    artwork: _climates,
+    body: Column(
+      children: [
+        _choice(
+          'Frío',
+          description: 'Temperaturas bajas y aire fresco',
+          illustration: 'assets/icons/weather_ice.svg',
+          selected: _climate == 'Frío',
+          onTap: () => setState(() => _climate = 'Frío'),
+        ),
+        _gap(),
+        _choice(
+          'Templado',
+          description: 'Temperaturas suaves',
+          illustration: 'assets/icons/sun_behind_small_cloud.svg',
+          selected: _climate == 'Templado',
+          onTap: () => setState(() => _climate = 'Templado'),
+        ),
+        _gap(),
+        _choice(
+          'Cálido',
+          description: 'Temperaturas altas',
+          illustration: 'assets/icons/weather_sun.svg',
+          selected: _climate == 'Cálido',
+          onTap: () => setState(() => _climate = 'Cálido'),
+        ),
+        _gap(),
+        _choice(
+          'Seco',
+          description: 'Poca lluvia',
+          illustration: 'assets/icons/weather_dry.svg',
+          selected: _climate == 'Seco',
+          onTap: () => setState(() => _climate = 'Seco'),
+        ),
+        _gap(),
+        _choice(
+          'Indiferente',
+          description: 'Estoy abierto a cualquier clima',
+          illustration: 'assets/icons/weather_any.svg',
+          selected: _climate == 'Indiferente',
+          onTap: () => setState(() => _climate = 'Indiferente'),
+        ),
+      ],
+    ),
+  );
+
+  Widget _crowdView() => _stepPage(
+    title: 'Encuentra\ntu ambiente',
+    subtitle:
+        '¿Dónde te sientes más a gusto? Elige entre la tranquilidad y los lugares con más gente.',
+    artwork: _crowds,
+    body: _illustratedGrid([
+      IllustratedPreferenceOption(
+        label: 'Calma',
+        asset: 'assets/images/onboarding_relax_scene.webp',
+        description: 'Poca gente',
+        selected: _comfort == 'Baja',
+        onTap: () => setState(() => _comfort = 'Baja'),
+      ),
+      IllustratedPreferenceOption(
+        label: 'Me adapto',
+        asset: 'assets/images/onboarding_urban_scene.webp',
+        description: 'Sin preferencia',
+        selected: _comfort == 'Media',
+        onTap: () => setState(() => _comfort = 'Media'),
+      ),
+      IllustratedPreferenceOption(
+        label: 'Movimiento',
+        asset: 'assets/images/onboarding_culture_scene.webp',
+        description: 'Más gente',
+        selected: _comfort == 'Alta',
+        onTap: () => setState(() => _comfort = 'Alta'),
+      ),
+    ]),
+  );
+
+  Widget _interestsView() => _stepPage(
+    title: 'Elige tus\nintereses',
+    subtitle:
+        '¿Qué te gustaría descubrir en Perú? Elige uno o varios intereses para empezar.',
+    artwork: _interestsArt,
+    body: _illustratedGrid(
+      TravelerVocabulary.interests.map((item) {
+        final selected = _interests.contains(item.label);
+        return IllustratedPreferenceOption(
+          label: item.label,
+          asset:
+              'assets/images/onboarding_${preferenceInterestImages[item.label]!}_scene.webp',
+          selected: selected,
+          onTap: () => setState(
+            () => selected
+                ? _interests.remove(item.label)
+                : _interests.add(item.label),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+
+  Widget _illustratedGrid(List<Widget> options) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columns = constraints.maxWidth >= 340 ? 3 : 2;
+      const spacing = 12.0;
+      final width = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+      return Wrap(
+        spacing: spacing,
+        runSpacing: 22,
+        children: options
+            .map((option) => SizedBox(width: width, child: option))
+            .toList(),
+      );
+    },
+  );
+
+  Widget _gap() => const SizedBox(height: 10);
+
+  Widget _choice(
+    String label, {
+    String? description,
+    String? illustration,
+    bool illustrationLeading = false,
+    required bool selected,
+    required VoidCallback onTap,
+  }) => PreferenceChoice(
+    label: label,
+    description: description,
+    illustration: illustration,
+    illustrationLeading: illustrationLeading,
+    selected: selected,
+    onTap: onTap,
+  );
+  Widget _completionView() => ProfileCompletionView(
+    isEntering: _enteringHome,
+    onContinue: () async {
+      if (_enteringHome) return;
+      setState(() => _enteringHome = true);
+      try {
+        await HomeEntryCoordinator.goToPreparedHome(context);
+      } finally {
+        if (mounted) setState(() => _enteringHome = false);
+      }
+    },
+  );
+
+  TextStyle _text(
+    double size, {
+    Color color = _ink,
+    FontWeight weight = FontWeight.w400,
+    double? height,
+  }) => AppTypography.style(
+    fontSize: size,
+    color: color,
+    fontWeight: weight,
+    height: height,
   );
 }

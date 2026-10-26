@@ -4,19 +4,20 @@ import 'package:latlong2/latlong.dart';
 import '../models/map_marker_model.dart';
 import '../integration/services/tourism_map_service.dart';
 
+/// Controlador del mapa turístico de PROXVEL.
+/// Gestiona la carga de marcadores en sesión, selección de destinos y cálculo de distancia GPS.
 class TourismMapController extends ChangeNotifier {
-  final TourismMapService _mapService;
-
   TourismMapController(this._mapService);
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  final TourismMapService _mapService;
 
-  String? _errorMessage;
-  String? get errorMessage => _errorMessage;
+  bool isLoading = false;
+  bool hasLoaded = false;
+  String? errorMessage;
+  bool get detailsUnavailable => _mapService.detailsUnavailable;
 
-  List<MapMarkerModel> _markers = [];
-  List<MapMarkerModel> get markers => _markers;
+  List<MapMarkerModel> markers = [];
+  Future<void>? _pending;
 
   String? _selectedCategory;
   String? get selectedCategory => _selectedCategory;
@@ -30,17 +31,20 @@ class TourismMapController extends ChangeNotifier {
   double? _distanceKm;
   double? get distanceKm => _distanceKm;
 
+  /// true si el viajero prefirió no compartir su ubicación: no se calcula la distancia.
+  bool locationDeclined = false;
+
   List<String> get availableCategories {
-    final categories = _markers.map((m) => m.category).whereType<String>().toSet().toList();
+    final categories = markers.map((m) => m.category).whereType<String>().toSet().toList();
     categories.sort();
     return categories;
   }
 
   List<MapMarkerModel> get filteredMarkers {
     if (_selectedCategory == null) {
-      return _markers;
+      return markers;
     }
-    return _markers.where((m) => m.category == _selectedCategory).toList();
+    return markers.where((m) => m.category == _selectedCategory).toList();
   }
 
   void setCategory(String? category) {
@@ -48,29 +52,34 @@ class TourismMapController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMarkers() async {
-    _isLoading = true;
-    _errorMessage = null;
+  Future<void> loadMarkers({bool refresh = false}) {
+    if (_pending != null) return _pending!;
+    if (hasLoaded && !refresh) return Future.value();
+    final pending = _load();
+    _pending = pending;
+    return pending.whenComplete(() => _pending = null);
+  }
+
+  Future<void> _load() async {
+    isLoading = true;
+    errorMessage = null;
     notifyListeners();
 
     try {
-      _markers = await _mapService.getMapMarkers();
-    } catch (e) {
-      _errorMessage = 'No pudimos cargar el mapa. Intenta de nuevo.';
-      _markers = [];
+      markers = await _mapService.getMapMarkers();
+      hasLoaded = true;
+    } catch (_) {
+      errorMessage = 'No pudimos cargar los destinos. Revisa tu conexión y vuelve a intentar.';
     } finally {
-      _isLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
 
-  /// true si el viajero prefirió no compartir su ubicación: no se calcula la distancia.
-  bool locationDeclined = false;
-
   /// [useLocation]=false selecciona el destino sin pedir permiso ni calcular distancia.
   Future<void> selectDestination(MapMarkerModel marker, {bool useLocation = true}) async {
     _selectedMarker = marker;
-    _errorMessage = null;
+    errorMessage = null;
     _userLocation = null;
     _distanceKm = null;
     locationDeclined = !useLocation;
@@ -78,9 +87,9 @@ class TourismMapController extends ChangeNotifier {
     if (!useLocation) return;
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _errorMessage = "Los servicios de ubicación están deshabilitados.";
+        errorMessage = 'Los servicios de ubicación están deshabilitados.';
         notifyListeners();
         return;
       }
@@ -89,33 +98,31 @@ class TourismMapController extends ChangeNotifier {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _errorMessage = "Permiso de ubicación denegado.";
+          errorMessage = 'Permiso de ubicación denegado.';
           notifyListeners();
           return;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        _errorMessage = "Los permisos de ubicación están denegados permanentemente.";
+        errorMessage = 'Los permisos de ubicación están denegados permanentemente.';
         notifyListeners();
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition();
-          
+      final position = await Geolocator.getCurrentPosition();
       _userLocation = LatLng(position.latitude, position.longitude);
-      
-      const Distance distance = Distance();
+
+      const distance = Distance();
       final double meter = distance(
-          _userLocation!,
-          LatLng(marker.latitude, marker.longitude)
+        _userLocation!,
+        LatLng(marker.latitude, marker.longitude),
       );
       _distanceKm = meter / 1000;
-      
-    } catch (e) {
-      _errorMessage = 'No pudimos obtener tu ubicación. Puedes ver el destino sin compartirla.';
+    } catch (_) {
+      errorMessage = 'No pudimos obtener tu ubicación. Puedes ver el destino sin compartirla.';
     }
-    
+
     notifyListeners();
   }
 
@@ -124,7 +131,7 @@ class TourismMapController extends ChangeNotifier {
     _userLocation = null;
     _distanceKm = null;
     locationDeclined = false;
-    _errorMessage = null;
+    errorMessage = null;
     notifyListeners();
   }
 }

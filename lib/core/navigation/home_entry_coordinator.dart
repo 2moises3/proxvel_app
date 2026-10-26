@@ -14,29 +14,33 @@ class HomeEntryCoordinator {
   static Future<void> prepareHomeForFirstPaint(BuildContext context) async {
     final homeController = context.read<HomeController>();
     if (kDebugMode) {
-      debugPrint('[HomeEntryCoordinator] destinations before: ${homeController.destinations.length}');
+      debugPrint(
+        '[HomeEntryCoordinator] destinations before: ${homeController.destinations.length}',
+      );
     }
 
     try {
       if (homeController.destinations.isEmpty) {
-        if (kDebugMode) debugPrint('[HomeEntryCoordinator] loadDestinations start');
+        if (kDebugMode) {
+          debugPrint('[HomeEntryCoordinator] loadDestinations start');
+        }
         await homeController.loadDestinations();
-        if (kDebugMode) debugPrint('[HomeEntryCoordinator] loadDestinations end');
+        if (kDebugMode) {
+          debugPrint('[HomeEntryCoordinator] loadDestinations end');
+        }
       }
 
+      if (!context.mounted) return;
       final urls = homeController.featuredDestinations
           .map((d) => d.imageUrl.trim())
           .where((url) => url.isNotEmpty)
           .take(5)
           .toSet()
           .toList();
-          
+
       // Agregar assets estáticos críticos de la UI del Home
-      urls.addAll([
-        'assets/images/hero-sky.webp',
-        'assets/images/hero-montanas.webp',
-      ]);
-          
+      urls.addAll(['assets/images/home_andes_lagoon.webp']);
+
       if (kDebugMode) debugPrint('[HomeEntryCoordinator] urls selected: $urls');
 
       await Future.wait(
@@ -46,14 +50,20 @@ class HomeEntryCoordinator {
                 ? NetworkImage(url)
                 : AssetImage(url) as ImageProvider;
             await precacheImage(provider, context);
-            if (kDebugMode) debugPrint('[HomeEntryCoordinator] precache success $url');
+            if (kDebugMode) {
+              debugPrint('[HomeEntryCoordinator] precache success $url');
+            }
           } catch (e) {
-            if (kDebugMode) debugPrint('[HomeEntryCoordinator] precache failed $url: $e');
+            if (kDebugMode) {
+              debugPrint('[HomeEntryCoordinator] precache failed $url: $e');
+            }
           }
         }),
       ).timeout(_homePreparationTimeout);
     } catch (e) {
-      if (kDebugMode) debugPrint('[HomeEntryCoordinator] prepareHome error: $e');
+      if (kDebugMode) {
+        debugPrint('[HomeEntryCoordinator] prepareHome error: $e');
+      }
     }
   }
 

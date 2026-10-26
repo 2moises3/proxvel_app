@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+2
+version: 1.1.0+3
 
 environment:
   sdk: ^3.12.0
@@ -43,12 +43,12 @@ dependencies:
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
   geolocator: ^14.0.3
-  google_fonts: ^8.1.0
   image_picker: ^1.2.2
   url_launcher: ^6.3.3
   package_info_plus: ^10.2.2
   path_provider: ^2.1.6
   open_filex: ^5.0.0
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:
@@ -76,9 +76,32 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/icons/app/
     - assets/data/
     - assets/branding/
-    - assets/google_fonts/
+    - assets/fonts/outfit/OFL.txt
+
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/outfit/Outfit-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/outfit/Outfit-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/outfit/Outfit-Light.ttf
+          weight: 300
+        - asset: assets/fonts/outfit/Outfit-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/outfit/Outfit-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/outfit/Outfit-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/outfit/Outfit-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/outfit/Outfit-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/outfit/Outfit-Black.ttf
+          weight: 900
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -111,5 +134,5 @@ flutter_launcher_icons:
   ios: false
   image_path: "assets/icons/app_icon.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#0E1730"
-  adaptive_icon_foreground: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"

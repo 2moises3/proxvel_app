@@ -53,11 +53,15 @@ class TravelerProfileSummaryCard extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: prefs.map((pref) => _preferenceChip(
-              pref['icon'] as IconData,
-              pref['label'] as String,
-              pref['value'] as String,
-            )).toList(),
+            children: prefs
+                .map(
+                  (pref) => _preferenceChip(
+                    pref['icon'] as IconData,
+                    pref['label'] as String,
+                    pref['value'] as String,
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -126,11 +130,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 16,
-                    color: AppColors.primary,
-                  ),
+                  Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
                   const SizedBox(width: AppSpace.related),
                   Text(
                     'Completar perfil',
@@ -190,9 +190,21 @@ class TravelerProfileSummaryCard extends StatelessWidget {
 
   List<Map<String, dynamic>> _extractPreferences(TravelerProfileModel profile) {
     return [
-      {'icon': Icons.wb_sunny_outlined, 'label': 'Prefiere clima', 'value': profile.climaPreferido},
-      {'icon': Icons.groups_outlined, 'label': 'Tolerancia a multitudes', 'value': profile.toleranciaMultitudes},
-      {'icon': Icons.explore_outlined, 'label': 'Tipo de interés', 'value': profile.tipoInteres},
+      {
+        'icon': Icons.wb_sunny_outlined,
+        'label': 'Prefiere clima',
+        'value': profile.climaPreferido,
+      },
+      {
+        'icon': Icons.groups_outlined,
+        'label': 'Tolerancia a multitudes',
+        'value': profile.toleranciaMultitudes,
+      },
+      {
+        'icon': Icons.explore_outlined,
+        'label': 'Tipo de interés',
+        'value': profile.tipoInteres,
+      },
     ];
   }
 }

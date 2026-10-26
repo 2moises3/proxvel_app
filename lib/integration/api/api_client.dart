@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'api_config.dart';
 import '../local/secure_token_storage.dart';
 
@@ -121,7 +122,9 @@ class ApiClient {
 
   Future<dynamic> postMultipart(
     String endpoint, {
-    required String filePath,
+    String? filePath,
+    List<int>? fileBytes,
+    String? filename,
     required String fileField,
   }) async {
     final uri = Uri.parse('${ApiConfig.apiBaseUrl}$endpoint');
@@ -135,7 +138,21 @@ class ApiClient {
         request.headers['Authorization'] = 'Bearer $token';
       }
       
-      request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+      if (fileBytes != null) {
+        final mediaType = _resolveImageMediaType(bytes: fileBytes, filename: filename);
+        final ext = mediaType.subtype == 'jpeg' ? 'jpg' : mediaType.subtype;
+        final safeFilename = filename ?? 'avatar.$ext';
+        request.files.add(http.MultipartFile.fromBytes(
+          fileField,
+          fileBytes,
+          filename: safeFilename,
+          contentType: mediaType,
+        ));
+      } else if (filePath != null) {
+        request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+      } else {
+        throw ApiException(400, 'No se proporcionó ningún archivo para subir.');
+      }
       
       final streamedResponse = await request
           .send()
@@ -214,4 +231,30 @@ class ApiClient {
 
     throw ApiException(response.statusCode, errorMsg, code: errorCode);
   }
+}
+
+MediaType _resolveImageMediaType({List<int>? bytes, String? filename}) {
+  if (bytes != null && bytes.length >= 8) {
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) {
+      return MediaType('image', 'png');
+    }
+    // JPEG signature: FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return MediaType('image', 'jpeg');
+    }
+    // WEBP signature: RIFF....WEBP
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+        bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+      return MediaType('image', 'webp');
+    }
+  }
+
+  final lower = (filename ?? '').toLowerCase();
+  if (lower.endsWith('.png')) return MediaType('image', 'png');
+  if (lower.endsWith('.webp')) return MediaType('image', 'webp');
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return MediaType('image', 'jpeg');
+
+  return MediaType('image', 'jpeg');
 }

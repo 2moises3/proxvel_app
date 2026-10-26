@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/common/app_icon.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
 import 'package:provider/provider.dart';
@@ -16,12 +17,14 @@ class SeasonalitySection extends StatefulWidget {
   /// Preferencia de clima y tolerancia a multitudes del usuario (null = neutro).
   final String? clima;
   final String? tolerancia;
+  final int? initialMonth;
 
   const SeasonalitySection({
     super.key,
     required this.destinationId,
     this.clima,
     this.tolerancia,
+    this.initialMonth,
   });
 
   @override
@@ -35,13 +38,29 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
   @override
   void initState() {
     super.initState();
-    _selected = DateTime.now().month;
+    _selected = widget.initialMonth ?? DateTime.now().month;
     _future = _load();
   }
 
-  Future<DestinationCalendar?> _load() => context
-      .read<DestinationService>()
-      .getCalendar(widget.destinationId, clima: widget.clima, tolerancia: widget.tolerancia);
+  @override
+  void didUpdateWidget(covariant SeasonalitySection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.destinationId != widget.destinationId ||
+        oldWidget.clima != widget.clima ||
+        oldWidget.tolerancia != widget.tolerancia) {
+      _future = _load();
+    }
+    if (oldWidget.initialMonth != widget.initialMonth) {
+      _selected = widget.initialMonth ?? DateTime.now().month;
+    }
+  }
+
+  Future<DestinationCalendar?> _load() =>
+      context.read<DestinationService>().getCalendar(
+        widget.destinationId,
+        clima: widget.clima,
+        tolerancia: widget.tolerancia,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +74,10 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
               child: SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.accent,
+                ),
               ),
             ),
           );
@@ -68,7 +90,9 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
           );
         }
         final calendar = snapshot.data;
-        if (calendar == null) return const SizedBox.shrink();
+        if (calendar == null || calendar.months.isEmpty) {
+          return const SizedBox.shrink();
+        }
         return _content(calendar);
       },
     );
@@ -80,107 +104,138 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
       orElse: () => cal.months.first,
     );
     final best = cal.bestMonth;
-    final worst = cal.worstMonth;
 
     return Padding(
       padding: const EdgeInsets.only(top: 24),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Mejor época para ir',
-          style: AppTextStyles.cardTitle,
-        ),
-        const SizedBox(height: AppSpace.micro),
-        if (best != null)
-          Text(
-            worst != null
-                ? 'Lo mejor para ti: ${kMonthNames[best - 1]}. Lo menos conveniente: ${kMonthNames[worst - 1]}.'
-                : 'Lo mejor para ti: ${kMonthNames[best - 1]}.',
-            style: AppTextStyles.body2,
-          ),
-        const SizedBox(height: 14),
-        _chart(cal),
-        const SizedBox(height: AppSpace.field),
-        _monthCard(month),
-        const SizedBox(height: AppSpace.content),
-        Text(
-          'Basado en el clima típico (SENAMHI 1991-2020) y las llegadas históricas de '
-          'visitantes (MINCETUR). Personalizado con tu clima '
-          '${_climateLabel(cal.preference)} y tu tolerancia a multitudes ${cal.tolerance}. '
-          'Describe lo habitual de cada mes, no un pronóstico.',
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.4),
-        ),
-      ],
-    ),
-    );
-  }
-
-  String _climateLabel(String key) =>
-      (kClimateOptions[key] ?? (key == 'indiferente' ? 'indiferente' : key)).toLowerCase();
-
-  Widget _chart(DestinationCalendar cal) {
-    return SizedBox(
-      height: 112,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final m in cal.months) Expanded(child: _bar(m, cal)),
+          const Text('Mejor época para ir', style: AppTextStyles.cardTitle),
+          const SizedBox(height: AppSpace.micro),
+          const Text(
+            'Toca un mes y descubre cómo cambia la experiencia.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          if (best != null && best >= 1 && best <= 12)
+            TextButton.icon(
+              onPressed: () => setState(() => _selected = best),
+              icon: const AppIcon(
+                AppIcons.sparkles,
+                color: AppColors.discovery,
+                size: 18,
+              ),
+              label: Text('Tu mejor contexto: ${kMonthNames[best - 1]}'),
+            ),
+          const SizedBox(height: 14),
+          _chart(cal),
+          const SizedBox(height: AppSpace.field),
+          AnimatedSize(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 280),
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 260),
+              child: KeyedSubtree(
+                key: ValueKey(month.month),
+                child: _monthCard(month),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.content),
+          Text(
+            'Basado en el clima típico (SENAMHI 1991-2020) y las llegadas históricas de '
+            'visitantes (MINCETUR). Personalizado con tu clima '
+            '${_climateLabel(cal.preference)} y tu tolerancia a multitudes ${cal.tolerance}. '
+            'Describe lo habitual de cada mes, no un pronóstico.',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _bar(CalendarMonth m, DestinationCalendar cal) {
-    final isBest = m.month == cal.bestMonth;
-    final isWorst = m.month == cal.worstMonth;
-    final isSelected = m.month == _selected;
-    final score = (m.combined ?? 0).clamp(0.0, 1.0);
-    final color = isBest
-        ? AppColors.success
-        : isWorst
-            ? AppColors.error
-            : AppColors.primary.withValues(alpha: 0.35);
+  String _climateLabel(String key) =>
+      (kClimateOptions[key] ?? (key == 'indiferente' ? 'indiferente' : key))
+          .toLowerCase();
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _selected = m.month),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SizedBox(
-              height: 14,
-              child: isBest
-                  ? const Icon(Icons.star_rounded, size: 14, color: AppColors.success)
-                  : null,
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              height: 14 + 52 * score,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(6),
-                border: isSelected
-                    ? Border.all(color: AppColors.primary, width: 2)
-                    : null,
-              ),
-            ),
-            const SizedBox(height: AppSpace.micro),
-            Text(
-              kMonthShort[m.month - 1],
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-              ),
-            ),
-          ],
+  Widget _chart(DestinationCalendar cal) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: _cardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Afinidad del contexto mensual', style: AppTextStyles.label),
+        const SizedBox(height: 6),
+        const Text(
+          'Arriba: más favorable · Abajo: menos favorable',
+          style: AppTextStyles.body2,
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 132,
+          width: double.infinity,
+          child: LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              onTapDown: (details) => setState(
+                () => _selected =
+                    ((details.localPosition.dx / constraints.maxWidth) * 12)
+                        .floor()
+                        .clamp(0, 11) +
+                    1,
+              ),
+              onHorizontalDragUpdate: (details) => setState(
+                () => _selected =
+                    ((details.localPosition.dx / constraints.maxWidth) * 12)
+                        .floor()
+                        .clamp(0, 11) +
+                    1,
+              ),
+              child: CustomPaint(painter: _SeasonCurve(cal.months, _selected)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Two rows retain comfortable targets instead of twelve tiny tap areas.
+        LayoutBuilder(
+          builder: (context, constraints) => Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              for (var month = 1; month <= 12; month++)
+                SizedBox(
+                  width: (constraints.maxWidth - 20) / 6,
+                  child: TextButton(
+                    onPressed: () => setState(() => _selected = month),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: EdgeInsets.zero,
+                      backgroundColor: month == _selected
+                          ? AppColors.accent
+                          : Colors.transparent,
+                      foregroundColor: month == _selected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Text(
+                      kMonthShort[month - 1],
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 
   Color _levelColor(String? level) {
     switch (level) {
@@ -209,16 +264,16 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
   }
 
   Widget _chip(String text, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+    ),
+  );
 
   Widget _monthCard(CalendarMonth m) {
     final monthName = kMonthNames[m.month - 1];
@@ -237,7 +292,8 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
     }
 
     final risk = m.climaRiesgo;
-    final hasRisk = risk != null && risk.isNotEmpty && !risk.startsWith('sin riesgo');
+    final hasRisk =
+        risk != null && risk.isNotEmpty && !risk.startsWith('sin riesgo');
 
     return Container(
       width: double.infinity,
@@ -246,40 +302,104 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: AppSpace.content),
-          Row(children: [
-            const Icon(Icons.wb_sunny_outlined, size: 16, color: AppColors.textSecondary),
-            const SizedBox(width: 6),
-            const Text('Clima', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(width: AppSpace.related),
-            if (m.climaNivel != null) _chip(m.climaNivel!, _levelColor(m.climaNivel)),
-            if (hasRisk) ...[
-              const SizedBox(width: 6),
-              _chip('Ojo: $risk', AppColors.textSecondary),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              if (m.tempProm != null)
+                _metric(
+                  'assets/icons/app/thermometer.svg',
+                  '${m.tempProm!.toStringAsFixed(1)} °C',
+                  'Temperatura media',
+                ),
+              if (m.lluviaMm != null)
+                _metric(
+                  'assets/icons/app/droplets.svg',
+                  '${m.lluviaMm!.toStringAsFixed(0)} mm',
+                  'Lluvia mensual',
+                ),
+              if (m.visitantesMedios != null)
+                _metric(
+                  AppIcons.navProfile,
+                  '${m.visitantesMedios!.round()}',
+                  'Visitantes promedio',
+                ),
             ],
-          ]),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Icon(
+                Icons.wb_sunny_outlined,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Clima',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: AppSpace.related),
+              if (m.climaNivel != null)
+                _chip(m.climaNivel!, _levelColor(m.climaNivel)),
+              if (hasRisk) ...[
+                const SizedBox(width: 6),
+                _chip('Ojo: $risk', AppColors.textSecondary),
+              ],
+            ],
+          ),
           if ((m.climaExplicacion ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               m.climaExplicacion!,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.45),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
             ),
           ],
           const SizedBox(height: 14),
-          Row(children: [
-            const Icon(Icons.groups_outlined, size: 16, color: AppColors.textSecondary),
-            const SizedBox(width: 6),
-            const Text('Afluencia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(width: AppSpace.related),
-            if (m.aforoNivel != null)
-              _chip(kCrowdOptions[m.aforoNivel] ?? m.aforoNivel!, _crowdColor(m.aforoNivel)),
-          ]),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Icon(
+                Icons.groups_outlined,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Afluencia',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: AppSpace.related),
+              if (m.aforoNivel != null)
+                _chip(
+                  kCrowdOptions[m.aforoNivel] ?? m.aforoNivel!,
+                  _crowdColor(m.aforoNivel),
+                ),
+            ],
+          ),
           if ((m.aforoExplicacion ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               m.aforoExplicacion!,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.45),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
             ),
           ],
         ],
@@ -287,9 +407,80 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
     );
   }
 
+  Widget _metric(String icon, String value, String label) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.discovery.withValues(alpha: .05),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppIcon(icon, size: 20, color: AppColors.discovery),
+        const SizedBox(height: 8),
+        Text(value, style: AppTextStyles.cardTitle),
+        Text(label, style: AppTextStyles.body2),
+      ],
+    ),
+  );
+
   BoxDecoration _cardDecoration() => BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+    color: AppColors.surface,
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: AppColors.border, width: 1),
+  );
+}
+
+class _SeasonCurve extends CustomPainter {
+  const _SeasonCurve(this.months, this.selected);
+  final List<CalendarMonth> months;
+  final int selected;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final grid = Paint()
+      ..color = AppColors.border
+      ..strokeWidth = 1;
+    for (var i = 0; i <= 4; i++) {
+      final y = 12 + (size.height - 24) * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+    final x = (selected - .5) * size.width / 12;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(x - size.width / 24, 0, size.width / 12, size.height),
+        const Radius.circular(10),
+      ),
+      Paint()..color = AppColors.discovery.withValues(alpha: .07),
+    );
+    Offset? previous;
+    final stroke = Paint()
+      ..color = AppColors.discovery
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    for (var month = 1; month <= 12; month++) {
+      final found = months.where((m) => m.month == month);
+      final m = found.isEmpty ? null : found.first;
+      if (m == null || !m.hasData || m.combined == null) {
+        previous = null;
+        continue;
+      }
+      final point = Offset(
+        (month - .5) * size.width / 12,
+        12 + (1 - m.combined!.clamp(0, 1)) * (size.height - 24),
       );
+      if (previous != null) canvas.drawLine(previous, point, stroke);
+      canvas.drawCircle(
+        point,
+        month == selected ? 7 : 4,
+        Paint()
+          ..color = month == selected ? AppColors.accent : AppColors.discovery,
+      );
+      canvas.drawCircle(point, 2, Paint()..color = Colors.white);
+      previous = point;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SeasonCurve oldDelegate) =>
+      selected != oldDelegate.selected || months != oldDelegate.months;
 }

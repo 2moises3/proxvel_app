@@ -1,14 +1,14 @@
 import 'dart:async';
 import '../../core/theme/app_layout.dart';
-import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/buttons/proxvel_button.dart';
-import '../../core/widgets/inputs/proxvel_text_field.dart';
+import 'widgets/auth_form_page.dart';
+import 'widgets/auth_backdrop.dart';
+import '../../core/widgets/inputs/glass_text_field.dart';
 
 /// Paso 2: se ingresa el código recibido por correo y la nueva contraseña.
 class ResetPasswordScreen extends StatefulWidget {
@@ -31,6 +31,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   static const int _minPassword = 8;
   static const int _resendSeconds = 60;
 
+  final String _background = AuthScenes.current;
   final _codeController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -72,7 +73,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String? get _newError {
     final v = _newController.text;
     if (v.isEmpty) return _submitted ? 'Ingresa la nueva contraseña.' : null;
-    if (v.length < _minPassword) return 'Debe tener al menos $_minPassword caracteres.';
+    if (v.length < _minPassword) {
+      return 'Debe tener al menos $_minPassword caracteres.';
+    }
     return null;
   }
 
@@ -97,10 +100,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => _isLoading = true);
     final error = await context.read<AuthController>().resetPasswordWithCode(
-          email: widget.email,
-          code: _codeController.text,
-          newPassword: _newController.text,
-        );
+      email: widget.email,
+      code: _codeController.text,
+      newPassword: _newController.text,
+    );
     if (!mounted) return;
     setState(() => _isLoading = false);
 
@@ -122,15 +125,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _resendMessage = null;
       _serverError = null;
     });
-    final result =
-        await context.read<AuthController>().requestPasswordReset(widget.email);
+    final result = await context.read<AuthController>().requestPasswordReset(
+      widget.email,
+    );
     if (!mounted) return;
     if (result.error != null) {
       setState(() => _resendMessage = result.error);
       return;
     }
     if (result.supportEmail != null) _supportEmail = result.supportEmail;
-    setState(() => _resendMessage = 'Te enviamos un código nuevo. El anterior ya no sirve.');
+    setState(
+      () => _resendMessage =
+          'Te enviamos un código nuevo. El anterior ya no sirve.',
+    );
     _startCountdown();
   }
 
@@ -147,121 +154,101 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final canResend = _secondsLeft <= 0;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 20),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Nueva contraseña',
-          style: AppTextStyles.sectionTitle,
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpace.screen),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Si ${widget.email} tiene una cuenta, te enviamos un código de 6 dígitos. '
-              'Vence en ${widget.expiresMinutes} minutos.',
-              style: AppTextStyles.bodySecondary,
+    return AuthFormPage(
+      background: _background,
+      onBack: () => context.pop(),
+      title: 'Restablece tu contraseña',
+      subtitle:
+          'Si ${widget.email} tiene una cuenta, te enviamos un código de 6 dígitos. Vence en ${widget.expiresMinutes} minutos.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GlassTextField(
+            label: 'Código de 6 dígitos',
+            hintText: 'Ej. 123456',
+            controller: _codeController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            errorText: _codeError,
+            onChanged: (_) => setState(() => _serverError = null),
+          ),
+          const SizedBox(height: AppSpace.field),
+          GlassTextField(
+            label: 'Nueva contraseña',
+            hintText: 'Al menos 8 caracteres',
+            controller: _newController,
+            isPassword: true,
+            errorText: _newError,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: AppSpace.field),
+          GlassTextField(
+            label: 'Repite la nueva contraseña',
+            hintText: 'Repite tu nueva contraseña',
+            controller: _confirmController,
+            isPassword: true,
+            errorText: _confirmError,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: AppSpace.field),
+          AuthSubmitButton(
+            text: 'Cambiar contraseña',
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
+          const SizedBox(height: AppSpace.content),
+          Center(
+            child: TextButton(
+              onPressed: canResend ? _resend : null,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.accent,
+                disabledForegroundColor: Colors.white60,
+              ),
+              child: Text(
+                canResend
+                    ? 'Reenviar código'
+                    : 'Reenviar código en ${_secondsLeft}s',
+              ),
             ),
-            const SizedBox(height: AppSpace.section),
-            ProxvelTextField(
-              label: 'Código de 6 dígitos',
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              errorText: _codeError,
-              prefixIcon: const Icon(Icons.pin_outlined,
-                  color: Color(0xFF9CA3AF), size: 20),
-              onChanged: (_) => setState(() => _serverError = null),
+          ),
+          if (_resendMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _resendMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
             ),
-            const SizedBox(height: AppSpace.field),
-            ProxvelTextField(
-              label: 'Nueva contraseña',
-              controller: _newController,
-              isPassword: true,
-              errorText: _newError,
-              helperText: 'Mínimo $_minPassword caracteres',
-              onChanged: (_) => setState(() {}),
+          const SizedBox(height: AppSpace.card),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 16),
+            iconColor: Colors.white,
+            collapsedIconColor: Colors.white,
+            textColor: Colors.white,
+            collapsedTextColor: Colors.white,
+            title: const Text(
+              '¿No recibiste el código?',
+              style: TextStyle(fontSize: 15),
             ),
-            const SizedBox(height: AppSpace.field),
-            ProxvelTextField(
-              label: 'Repite la nueva contraseña',
-              controller: _confirmController,
-              isPassword: true,
-              errorText: _confirmError,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: AppSpace.field),
-            ProxvelButton(
-              text: 'Cambiar contraseña',
-              isLoading: _isLoading,
-              onPressed: _submit,
-            ),
-            const SizedBox(height: AppSpace.content),
-            Center(
-              child: TextButton(
-                onPressed: canResend ? _resend : null,
-                child: Text(
-                  canResend
-                      ? 'Reenviar código'
-                      : 'Reenviar código en ${_secondsLeft}s',
+            children: [
+              Text(
+                _supportEmail != null && _supportEmail!.isNotEmpty
+                    ? 'Revisa spam o promociones. Si necesitas ayuda, escríbenos a $_supportEmail.'
+                    : 'Revisa spam o promociones. Si necesitas ayuda, contacta al equipo de PROXVEL.',
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  color: Colors.white,
                 ),
               ),
-            ),
-            if (_resendMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  _resendMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ),
-            const SizedBox(height: AppSpace.card),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.accentSoft.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.support_agent_rounded,
-                      color: AppColors.accent, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _supportEmail != null && _supportEmail!.isNotEmpty
-                          ? '¿No te llega el correo? Revisa spam o promociones. Si sigue sin llegar, '
-                              'escríbenos a $_supportEmail y un administrador restablecerá tu acceso.'
-                          : '¿No te llega el correo? Revisa spam o promociones. Si sigue sin llegar, '
-                              'contacta a un administrador de PROXVEL para restablecer tu acceso.',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        height: 1.45,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }

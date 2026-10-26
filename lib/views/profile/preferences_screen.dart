@@ -1,9 +1,15 @@
-import '../../core/widgets/forms/traveler_type_selector.dart';
+import '../onboarding/widgets/preference_choice.dart';
+import 'widgets/profile_page_bar.dart';
+import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import '../../core/constants/preference_art.dart';
+import '../../models/traveler_types.dart';
+import '../onboarding/widgets/travel_style_option.dart';
+import '../onboarding/widgets/illustrated_preference_option.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/traveler_vocabulary.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/profile_controller.dart';
 import '../../controllers/recommendation_controller.dart';
@@ -21,6 +27,58 @@ class PreferencesScreen extends StatefulWidget {
 
 class _PreferencesScreenState extends State<PreferencesScreen> {
   bool _isEditing = false;
+  bool _ready = false;
+  String _savedDraft = '';
+  bool _allowExit = false;
+  bool _askingToLeave = false;
+
+  String get _draft => jsonEncode([
+    _travelerType,
+    _budget,
+    _climate,
+    _crowdTolerance,
+    [..._interests]..sort(),
+    _days,
+    _applyAi,
+  ]);
+  bool get _hasChanges => _ready && _isEditing && _draft != _savedDraft;
+
+  Future<void> _requestLeave() async {
+    if (_isSaving || _askingToLeave) return;
+    if (_hasChanges) {
+      _askingToLeave = true;
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('¿Salir sin guardar?'),
+          content: const Text(
+            'Tus preferencias anteriores seguirán activas. Puedes quedarte para guardar los cambios.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Seguir editando'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Salir sin guardar'),
+            ),
+          ],
+        ),
+      );
+      _askingToLeave = false;
+      if (!mounted || discard != true) return;
+    }
+    if (!mounted) return;
+    setState(() => _allowExit = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/main');
+    }
+  }
 
   String? _travelerType;
   String _budget = '';
@@ -41,6 +99,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Si se llega aquí sin el perfil en memoria (recarga o enlace directo), se trae del
       // backend antes de mostrarlo: así nunca se edita ni se guarda sobre datos vacíos.
+      if (!mounted) return;
       final ctrl = context.read<ProfileController>();
       if (ctrl.user == null || ctrl.profile == null) {
         await ctrl.loadProfileData();
@@ -50,16 +109,30 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   }
 
   void _loadCurrentPreferences() {
+    _ready = true;
     final profile = context.read<ProfileController>().profile;
     if (profile == null) {
-      setState(() => _isEditing = true);
+      setState(() {
+        _travelerType = null;
+        _budget = _climate = _crowdTolerance = '';
+        _interests = [];
+        _days = '1';
+        _applyAi = false;
+        _isEditing = true;
+      });
     }
     if (profile != null) {
       setState(() {
         _budget = _matchOption(_budgetOptions, profile.presupuesto) ?? '';
         _climate = _matchOption(_climateOptions, profile.climaPreferido) ?? '';
         _crowdTolerance =
-            _matchOption(_crowdOptions, profile.toleranciaMultitudes) ?? '';
+            _matchOption(
+              _crowdOptions,
+              TravelerVocabulary.crowdToleranceValue(
+                profile.toleranciaMultitudes,
+              ),
+            ) ??
+            '';
 
         final days = profile.diasViaje;
         _days = days.toString();
@@ -76,6 +149,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         if (!profile.isRecommendationReady) _isEditing = true;
       });
     }
+    _savedDraft = _draft;
   }
 
   String _normalize(String text) {
@@ -113,13 +187,14 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     if (_isSaving) return;
     final existing = context.read<ProfileController>().profile;
     if (_travelerType == null ||
+        _budget.isEmpty ||
         _interests.isEmpty ||
         _climate.isEmpty ||
         _crowdTolerance.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Elige tu estilo, intereses, clima y tolerancia a multitudes.',
+            'Completa tu estilo, presupuesto, intereses, clima y tolerancia a multitudes.',
           ),
         ),
       );
@@ -163,6 +238,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       await context.read<ProfileController>().updatePreferences(updated);
 
       if (mounted) {
+        _loadCurrentPreferences();
         // Invalidar y recargar recomendaciones con el perfil actualizado.
         final recCtrl = context.read<RecommendationController>();
         recCtrl.invalidate();
@@ -209,137 +285,206 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
+    return PopScope(
+      canPop: _allowExit || (!_isSaving && !_hasChanges),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestLeave();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: profilePageBar(
+          context,
           'Tu forma de viajar',
-          style: AppTextStyles.sectionTitle,
-        ),
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit_rounded, color: AppColors.accent),
-              onPressed: () {
-                setState(() => _isEditing = true);
-              },
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpace.screen),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Elige lo que disfrutas. Tus preferencias nos ayudan a ordenar los destinos para ti.',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 15,
-                height: 1.4,
+          busy: _isSaving,
+          onBack: _requestLeave,
+          actions: [
+            if (_ready && !_isEditing)
+              IconButton(
+                tooltip: 'Editar preferencias',
+                icon: const Icon(Icons.edit_rounded, color: AppColors.accent),
+                onPressed: () {
+                  setState(() => _isEditing = true);
+                },
               ),
-            ),
-            const SizedBox(height: AppSpace.section),
-
-            _prefCard(
-              title: 'Tu estilo de viajero',
-              icon: Icons.explore_outlined,
-              child: TravelerTypeSelector(
-                value: _travelerType,
-                onChanged: _isEditing
-                    ? (value) => setState(() => _travelerType = value)
-                    : null,
-              ),
-            ),
-            const SizedBox(height: AppSpace.related),
-            // ── Switch maestro de IA ──
-            _buildAiSwitch(),
-            const SizedBox(height: AppSpace.section),
-
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Text(
-                'Presupuesto y días se guardan para planificar; no cambian el orden de las recomendaciones.',
-                style: AppTextStyles.body2,
-              ),
-            ),
-            _prefCard(
-              title: 'Presupuesto de viaje',
-              icon: Icons.account_balance_wallet_rounded,
-              child: _buildSelectionGrid(
-                _budgetOptions,
-                _budget,
-                (val) => setState(() => _budget = val),
-              ),
-            ),
-            _prefCard(
-              title: 'Días de viaje',
-              icon: Icons.calendar_month_rounded,
-              child: _buildDaysSelector(),
-            ),
-            _prefCard(
-              title: 'Clima preferido',
-              icon: Icons.thermostat_rounded,
-              child: _buildSelectionGrid(
-                _climateOptions,
-                _climate,
-                (val) => setState(() => _climate = val),
-              ),
-            ),
-            _prefCard(
-              title: 'Tolerancia a multitudes',
-              icon: Icons.groups_rounded,
-              child: _buildSelectionGrid(
-                _crowdOptions,
-                _crowdTolerance,
-                (val) => setState(() => _crowdTolerance = val),
-              ),
-            ),
-            _prefCard(
-              title: 'Tus intereses',
-              icon: Icons.favorite_rounded,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 12,
-                children: _allInterests
-                    .map((i) => _buildInterestChip(i))
-                    .toList(),
-              ),
-            ),
-
-            const SizedBox(height: AppSpace.section),
-            if (_isEditing) ...[
-              ProxvelButton(
-                text: _isSaving ? 'Guardando...' : 'Guardar Preferencias',
-                isLoading: _isSaving,
-                onPressed: _handleSave,
-              ),
-              const SizedBox(height: AppSpace.field),
-              ProxvelButton(
-                text: 'Cancelar',
-                isSecondary: true,
-                onPressed: _isSaving
-                    ? null
-                    : () {
-                        _loadCurrentPreferences();
-                        setState(() => _isEditing = false);
-                      },
-              ),
-              const SizedBox(height: AppSpace.section),
-            ],
           ],
         ),
+        body: !_ready
+            ? const Center(child: CircularProgressIndicator())
+            : context.watch<ProfileController>().isShowingCachedProfile ||
+                  context.watch<ProfileController>().error != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Conéctate para cargar y editar tus preferencias actuales.',
+                        textAlign: TextAlign.center,
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          setState(() => _ready = false);
+                          await context
+                              .read<ProfileController>()
+                              .loadProfileData();
+                          if (mounted) _loadCurrentPreferences();
+                        },
+                        child: const Text('Volver a intentar'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpace.screen),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Elige lo que disfrutas. Tus preferencias nos ayudan a ordenar los destinos para ti.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.section),
+
+                    _prefCard(
+                      title: 'Tu estilo de viajero',
+                      icon: Icons.explore_outlined,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final entry in travelerTypes.entries)
+                              SizedBox(
+                                width: (constraints.maxWidth - 10) / 2,
+                                child: TravelStyleOption(
+                                  label: entry.value,
+                                  asset:
+                                      preferenceStyleImages.containsKey(
+                                        entry.key,
+                                      )
+                                      ? 'assets/images/onboarding_${preferenceStyleImages[entry.key]}_scene.webp'
+                                      : 'assets/images/onboarding_backpack_peru.png',
+                                  containImage: !preferenceStyleImages
+                                      .containsKey(entry.key),
+                                  selected: _travelerType == entry.key,
+                                  onTap: _isEditing && !_isSaving
+                                      ? () => setState(
+                                          () => _travelerType = entry.key,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.related),
+                    // ── Switch maestro de IA ──
+                    _buildAiSwitch(),
+                    const SizedBox(height: AppSpace.section),
+
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        'Presupuesto y días se guardan para planificar; no cambian el orden de las recomendaciones.',
+                        style: AppTextStyles.body2,
+                      ),
+                    ),
+                    _prefCard(
+                      title: 'Presupuesto de viaje',
+                      icon: Icons.account_balance_wallet_rounded,
+                      child: _buildSelectionGrid(
+                        _budgetOptions,
+                        _budget,
+                        (val) => setState(() => _budget = val),
+                      ),
+                    ),
+                    _prefCard(
+                      title: 'Días de viaje',
+                      icon: Icons.calendar_month_rounded,
+                      child: _buildDaysSelector(),
+                    ),
+                    _prefCard(
+                      title: 'Clima preferido',
+                      icon: Icons.thermostat_rounded,
+                      child: _buildSelectionGrid(
+                        _climateOptions,
+                        _climate,
+                        (val) => setState(() => _climate = val),
+                      ),
+                    ),
+                    _prefCard(
+                      title: 'Tolerancia a multitudes',
+                      icon: Icons.groups_rounded,
+                      child: _buildSelectionGrid(
+                        _crowdOptions,
+                        _crowdTolerance,
+                        (val) => setState(() => _crowdTolerance = val),
+                      ),
+                    ),
+                    _prefCard(
+                      title: 'Tus intereses',
+                      icon: Icons.favorite_rounded,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Wrap(
+                          spacing: 12,
+                          runSpacing: 16,
+                          children: [
+                            for (final interest in _allInterests)
+                              SizedBox(
+                                width: (constraints.maxWidth - 12) / 2,
+                                child: IllustratedPreferenceOption(
+                                  label: interest,
+                                  asset:
+                                      'assets/images/onboarding_${preferenceInterestImages[interest]}_scene.webp',
+                                  selected: _interests.contains(interest),
+                                  onTap: _isEditing && !_isSaving
+                                      ? () => _toggleInterest(interest)
+                                      : null,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpace.section),
+                    if (_isEditing) ...[
+                      ProxvelButton(
+                        text: _isSaving
+                            ? 'Guardando...'
+                            : 'Guardar preferencias',
+                        isLoading: _isSaving,
+                        onPressed: _handleSave,
+                      ),
+                      const SizedBox(height: AppSpace.field),
+                      ProxvelButton(
+                        text: 'Cancelar',
+                        isSecondary: true,
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                _loadCurrentPreferences();
+                                setState(
+                                  () => _isEditing =
+                                      context
+                                          .read<ProfileController>()
+                                          .profile ==
+                                      null,
+                                );
+                              },
+                      ),
+                      const SizedBox(height: AppSpace.section),
+                    ],
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -350,29 +495,48 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    final summary = switch (title) {
+      'Tu estilo de viajero' =>
+        travelerTypes[_travelerType] ?? 'Elige tu estilo',
+      'Presupuesto de viaje' => _budget.isEmpty ? 'Sin definir' : _budget,
+      'Días de viaje' => '$_days días',
+      'Clima preferido' => _climate.isEmpty ? 'Sin definir' : _climate,
+      'Tolerancia a multitudes' =>
+        _crowdTolerance.isEmpty ? 'Sin definir' : _crowdTolerance,
+      _ =>
+        _interests.isEmpty ? 'Elige lo que disfrutas' : _interests.join(' · '),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: ExpansionTile(
+          key: PageStorageKey('preferences/$title'),
+          shape: const Border(),
+          collapsedShape: const Border(),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+          leading: Icon(icon, color: AppColors.discovery),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle(title, icon),
-          const SizedBox(height: 14),
-          child,
-        ],
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              summary,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          children: [child],
+        ),
       ),
     );
   }
@@ -406,7 +570,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               const SizedBox(width: 14),
               const Expanded(
                 child: Text(
-                  'Orden IA en Explorar y búsqueda',
+                  'Personalizar Explorar y búsqueda',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -416,31 +580,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               ),
               Switch(
                 value: _applyAi,
-                activeThumbColor: AppColors.accent,
-                onChanged: (val) async {
-                  setState(() => _applyAi = val);
-                  try {
-                    await context.read<ProfileController>().setApplyAiGlobally(
-                      val,
-                    );
-                  } catch (e) {
-                    if (mounted) {
-                      setState(() => _applyAi = !val); // revertir
-                      String msg =
-                          'Hubo un problema al guardar tus preferencias. Inténtalo nuevamente.';
-                      if (e is ApiException && e.statusCode == 0) {
-                        msg =
-                            'No pudimos guardar tus preferencias por un problema de conexión.';
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(msg),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    }
-                  }
-                },
+                activeThumbColor: Colors.white,
+                activeTrackColor: AppColors.discovery,
+                onChanged: _isEditing && !_isSaving
+                    ? (val) => setState(() => _applyAi = val)
+                    : null,
               ),
             ],
           ),
@@ -455,16 +599,6 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppColors.textPrimary),
-        const SizedBox(width: AppSpace.related),
-        Expanded(child: Text(title, style: AppTextStyles.cardTitle)),
-      ],
     );
   }
 
@@ -484,49 +618,35 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             width: options.length.isOdd && entry.key == options.length - 1
                 ? constraints.maxWidth
                 : (constraints.maxWidth - 8) / 2,
-            child: GestureDetector(
-              onTap: _isEditing ? () => onSelect(opt) : null,
-              child: AnimatedContainer(
-                duration: AppMotion.duration(context),
-                constraints: const BoxConstraints(minHeight: 44),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accent : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.accent : AppColors.border,
-                    width: 1.5,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Text(
-                  opt,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isSelected
-                        ? AppColors.textOnDark
-                        : AppColors.textSecondary,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
+            child: PreferenceChoice(
+              label: opt,
+              selected: isSelected,
+              illustration: _choiceIllustration(opt, options),
+              illustrationLeading: true,
+              onTap: _isEditing && !_isSaving ? () => onSelect(opt) : null,
             ),
           );
         }).toList(),
       ),
     );
+  }
+
+  String? _choiceIllustration(String label, List<String> options) {
+    final name = identical(options, _budgetOptions)
+        ? const {
+            'Bajo': 'budget_low',
+            'Medio': 'budget_medium',
+            'Alto': 'budget_high',
+            'Lujo': 'budget_luxury',
+          }[label]
+        : const {
+            'Frío': 'weather_ice',
+            'Templado': 'sun_behind_small_cloud',
+            'Cálido': 'weather_sun',
+            'Seco': 'weather_dry',
+            'Indiferente': 'weather_any',
+          }[label];
+    return name == null ? null : 'assets/icons/$name.svg';
   }
 
   Widget _buildDaysSelector() {
@@ -535,7 +655,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       children: [
         IconButton.outlined(
           tooltip: 'Un día menos',
-          onPressed: _isEditing && days > 1
+          onPressed: _isEditing && !_isSaving && days > 1
               ? () => setState(() => _days = (days - 1).toString())
               : null,
           icon: const Icon(Icons.remove_rounded),
@@ -549,51 +669,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         ),
         IconButton.outlined(
           tooltip: 'Un día más',
-          onPressed: _isEditing
+          onPressed: _isEditing && !_isSaving
               ? () => setState(() => _days = (days + 1).toString())
               : null,
           icon: const Icon(Icons.add_rounded),
         ),
       ],
-    );
-  }
-
-  Widget _buildInterestChip(String interest) {
-    final isSelected = _interests.contains(interest);
-    return GestureDetector(
-      onTap: _isEditing ? () => _toggleInterest(interest) : null,
-      child: AnimatedContainer(
-        duration: AppMotion.duration(context),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              const Icon(
-                Icons.check_rounded,
-                color: AppColors.accent,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              interest,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

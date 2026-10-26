@@ -1,11 +1,12 @@
+import 'dart:ui';
+import '../../core/widgets/maps/destination_location.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_layout.dart';
 import '../../controllers/notifications_controller.dart';
 import '../main/main_layout.dart';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/announcement_controller.dart';
@@ -20,7 +21,9 @@ import '../legal/terms_gate_overlay.dart';
 import '../../core/legal/legal_texts.dart';
 import '../../models/announcement_model.dart';
 import 'widgets/home_explore_content.dart';
+import 'widgets/explore_hero.dart';
 import 'widgets/home_for_you_content.dart';
+import '../../core/widgets/common/app_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
   late TabController _tabController;
   late HomeController _homeController;
   bool _startModalShown = false;
+  bool _startAnnouncementResolved = false;
   AnnouncementModel? _startAnnouncement;
 
   @override
@@ -44,12 +48,15 @@ class _HomeScreenState extends State<HomeScreen>
     _homeController.addListener(_onHomeControllerUpdated);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_homeController.destinations.isEmpty) {
+      if (_homeController.destinations.isEmpty && !_homeController.isLoading) {
         _homeController.loadDestinations();
       }
       context.read<RecommendationController>().loadRecommendations();
       context.read<FavoritesController>().loadFavorites();
-      context.read<ArchiveController>().loadArchives();
+      final archives = context.read<ArchiveController>();
+      if (!archives.hasLoaded && archives.error == null) {
+        archives.loadArchives();
+      }
       final notifications = context.read<NotificationsController>();
       notifications.refreshCount();
       notifications.startPolling();
@@ -72,12 +79,19 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _maybeShowStartAnnouncement() async {
     if (_startModalShown) return;
     // Primero los textos legales: el anuncio de inicio espera a la próxima sesión.
-    final accepted = context.read<AuthController>().currentUser?.acceptedTermsVersion == kLegalVersion;
+    final accepted =
+        context.read<AuthController>().currentUser?.acceptedTermsVersion ==
+        kLegalVersion;
     if (!accepted) return;
     _startModalShown = true;
     final annCtrl = context.read<AnnouncementController>();
     final ann = await annCtrl.pickStartAnnouncement();
-    if (!mounted || ann == null) return;
+    if (!mounted) return;
+    _startAnnouncementResolved = true;
+    if (ann == null) {
+      setState(() {});
+      return;
+    }
     annCtrl.markViewed(ann);
     setState(() => _startAnnouncement = ann);
   }
@@ -127,63 +141,106 @@ class _HomeScreenState extends State<HomeScreen>
             bottom: false,
             child: Container(
               color: AppColors.background,
-              child: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _CustomHomeHeaderDelegate(
-                        safeAreaTop: MediaQuery.of(context).padding.top,
-                        userName: userName,
-                        avatarUrl: avatarUrl,
+              // NestedScrollView shares its inner controller across the two tabs.
+              // Desktop's automatic interactive Scrollbar requires exactly one
+              // ScrollPosition, so keep that decoration off this subtree.
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(scrollbars: false),
+                child: NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) {
+                    return [
+                      SliverToBoxAdapter(
+                        child: Consumer<NotificationsController>(
+                          builder: (context, notifications, _) =>
+                              AnimatedBuilder(
+                                animation: _tabController,
+                                builder: (context, _) => ExploreHero(
+                                  showSearch: _tabController.index == 0,
+                                  userName: userName,
+                                  avatarUrl: avatarUrl,
+                                  unreadCount: notifications.unreadCount,
+                                  onProfile: () =>
+                                      MainLayout.of(context)?.changeTab(3),
+                                  onNotifications: () =>
+                                      context.push('/notifications'),
+                                  onSearch: () => context.push('/search'),
+                                  onFilter: () =>
+                                      context.push('/search?open_filters=true'),
+                                ),
+                              ),
+                        ),
                       ),
-                    ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _StickyTabBarDelegate(
-                        TabBar(
-                          controller: _tabController,
-                          dividerColor: Colors.transparent,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          indicatorPadding: const EdgeInsets.all(6),
-                          indicator: BoxDecoration(
-                            color: AppColors.primaryDark,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryDark.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _StickyTabBarDelegate(
+                          TabBar(
+                            controller: _tabController,
+                            dividerColor: Colors.transparent,
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            indicatorPadding: EdgeInsets.zero,
+                            splashBorderRadius: BorderRadius.circular(25),
+                            overlayColor: WidgetStateProperty.resolveWith((
+                              states,
+                            ) {
+                              if (states.contains(WidgetState.selected)) {
+                                return Colors.transparent;
+                              }
+                              if (states.contains(WidgetState.hovered) ||
+                                  states.contains(WidgetState.focused)) {
+                                return Colors.black.withValues(alpha: 0.04);
+                              }
+                              return Colors.transparent;
+                            }),
+                            indicator: BoxDecoration(
+                              color: AppColors.accent,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            labelColor: AppColors.textPrimary,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            labelStyle: AppTypography.style(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            unselectedLabelStyle: AppTypography.style(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            tabs: const [
+                              Tab(text: 'Explorar'),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    AppIcon(AppIcons.sparkles, size: 16),
+                                    SizedBox(width: 7),
+                                    Text('Para ti'),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                          labelColor: Colors.white,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          labelStyle: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          unselectedLabelStyle: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          tabs: const [
-                            Tab(text: 'Explorar'),
-                            Tab(text: 'Para ti'),
-                          ],
                         ),
                       ),
-                    ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    HomeExploreContent(
-                      onSwitchToForYou: () => _tabController.animateTo(1),
-                    ),
-                    const HomeForYouContent(),
-                  ],
+                    ];
+                  },
+                  body: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      HomeExploreContent(
+                        onSwitchToForYou: () => _tabController.animateTo(1),
+                      ),
+                      const HomeForYouContent(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -191,6 +248,10 @@ class _HomeScreenState extends State<HomeScreen>
           // Quien ya tenía cuenta acepta una vez los textos legales vigentes.
           const TermsGateOverlay(),
           // Overlay del anuncio de inicio (sobre todo el contenido del home).
+          if (_startAnnouncementResolved &&
+              _startAnnouncement == null &&
+              authController.currentUser?.acceptedTermsVersion == kLegalVersion)
+            const LocationInvitation(),
           if (_startAnnouncement != null)
             AnnouncementModalOverlay(
               announcement: _startAnnouncement!,
@@ -208,10 +269,19 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   _StickyTabBarDelegate(this.tabBar);
 
+  static const double _headerHeight = AppSpace.field + 68;
+
   @override
-  double get minExtent => 76;
+  double get minExtent => _headerHeight;
   @override
-  double get maxExtent => 76;
+  double get maxExtent => _headerHeight;
+
+  static double _blurAt(double position) {
+    final inv = (1.0 - position);
+    if (inv <= 0.18) return 0.0;
+    final t = ((inv - 0.18) / 0.82).clamp(0.0, 1.0);
+    return 10.0 * t * t * (3 - 2 * t);
+  }
 
   @override
   Widget build(
@@ -219,239 +289,80 @@ class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: AppColors.background,
-      alignment: Alignment.center,
-      child: Container(
-        height: 60,
-        margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: tabBar,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _StickyTabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar;
-  }
-}
-
-class _CustomHomeHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double safeAreaTop;
-  final String userName;
-  final String? avatarUrl;
-
-  _CustomHomeHeaderDelegate({
-    required this.safeAreaTop,
-    required this.userName,
-    this.avatarUrl,
-  });
-
-  @override
-  double get minExtent => safeAreaTop + 60 + 32; // App bar height + curve height
-  @override
-  double get maxExtent => 280;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final progress = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
-
-    // Avatar Interpolation
-    final avatarRadius = ui.lerpDouble(22, 18, progress)!;
-    final avatarTop = ui.lerpDouble(safeAreaTop + 16, safeAreaTop + 12, progress)!;
-    final avatarLeft = 24.0;
-
-    // Notification Interpolation
-
-    // Name Interpolation
-    final nameTopExpanded = maxExtent - 32 - 40 - 35; // maxExtent - curve - nameHeight - padding
-    final nameTopCollapsed = safeAreaTop + 18.0;
-    final nameTop = ui.lerpDouble(nameTopExpanded, nameTopCollapsed, progress)!;
-
-    final nameLeftExpanded = 24.0;
-    final nameLeftCollapsed = avatarLeft + (avatarRadius * 2) + 12.0; // Next to avatar
-    final nameLeft = ui.lerpDouble(nameLeftExpanded, nameLeftCollapsed, progress)!;
-
-    final nameFontSize = ui.lerpDouble(28, 18, progress)!;
-
     return Stack(
-      fit: StackFit.expand,
       children: [
-        // Background layer: Deep slate base
-        Container(color: const Color(0xFF0F172A)),
-        
-        // Background layer: Image that parallax scrolls
-        Positioned(
-          top: -shrinkOffset * 0.5,
-          left: 0,
-          right: 0,
-          height: maxExtent,
-          child: Image.asset('assets/images/hero-sky.webp', fit: BoxFit.cover),
-        ),
-        Positioned(
-          top: -shrinkOffset * 0.2,
-          left: 0,
-          right: 0,
-          height: maxExtent,
-          child: Image.asset('assets/images/hero-montanas.webp', fit: BoxFit.cover, alignment: Alignment.bottomCenter),
-        ),
-
-        // Solid background that fades in when collapsing (acts as standard AppBar background)
-        Opacity(
-          opacity: progress,
-          child: Container(color: const Color(0xFF0F172A)),
-        ),
-
-        // Gradient overlay for text readability when expanded
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                const Color(0xFF0F172A).withValues(alpha: 0.5 * (1 - progress)), // Top shadow for icons
-                Colors.transparent,
-                const Color(0xFF0B142E).withValues(alpha: 0.8 * (1 - progress)), // Starts getting dark midway
-                const Color(0xFF0B142E).withValues(alpha: 1.0 * (1 - progress)), // Solid darkness at bottom
-              ],
-              stops: const [0.0, 0.3, 0.7, 1.0],
-            ),
-          ),
-        ),
-
-        // The permanent white curve at the bottom
-        Positioned(
-          bottom: -2,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 32,
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-            ),
-          ),
-        ),
-
-        // Avatar (abre la pestaña Perfil)
-        Positioned(
-          top: avatarTop,
-          left: avatarLeft,
-          child: GestureDetector(
-            onTap: () => MainLayout.of(context)?.changeTab(3),
-            child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
-            ),
-            child: CircleAvatar(
-              radius: avatarRadius,
-              backgroundColor: Colors.black.withValues(alpha: 0.3),
-              backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-              child: avatarUrl == null 
-                  ? Icon(Icons.person, color: Colors.white, size: avatarRadius * 1.2)
-                  : null,
-            ),
-            ),
-          ),
-        ),
-
-        // Campana: abre el centro de notificaciones (anuncios + avisos personales)
-        Positioned(
-          top: avatarTop,
-          right: 24,
-          child: GestureDetector(
-            onTap: () => context.push('/notifications'),
-            child: Consumer<NotificationsController>(
-              builder: (context, notifications, _) => Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: avatarRadius * 2,
-                    height: avatarRadius * 2,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.3),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-                    ),
-                    child: Icon(
-                      notifications.hasUnread
-                          ? Icons.notifications_active_rounded
-                          : Icons.notifications_none,
-                      color: Colors.white,
-                      size: avatarRadius,
-                    ),
-                  ),
-                  if (notifications.hasUnread)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Text(
-                          notifications.unreadCount > 9 ? '9+' : '${notifications.unreadCount}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            height: 1.2,
+        // Eight bounded blur samples; avoid dozens of backdrop passes per frame.
+        // Only blur when content actually scrolls behind the sticky control.
+        if (overlapsContent)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: LayoutBuilder(
+                builder: (context, constraints) => Stack(
+                  children: [
+                    for (var band = 0; band < 8; band++)
+                      Positioned(
+                        top: constraints.maxHeight * band / 8,
+                        left: 0,
+                        right: 0,
+                        height: constraints.maxHeight / 8,
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: _blurAt(band / 7),
+                              sigmaY: _blurAt(band / 7),
+                            ),
+                            child: const SizedBox.expand(),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        // Difuminado gradual a la inversa (de arriba hacia abajo) con AppColors.background
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background.withValues(alpha: 0.98),
+                    AppColors.background.withValues(alpha: 0.92),
+                    AppColors.background.withValues(alpha: 0.72),
+                    AppColors.background.withValues(alpha: 0.40),
+                    AppColors.background.withValues(alpha: 0.12),
+                    AppColors.background.withValues(alpha: 0.0),
+                  ],
+                  stops: const [0.0, 0.28, 0.52, 0.74, 0.90, 1.0],
+                ),
               ),
             ),
           ),
         ),
-
-        // User Name
-        Positioned(
-          top: nameTop,
-          left: nameLeft,
-          child: Text(
-            userName,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: nameFontSize,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-
-        // "Usuario" subtitle (only visible when expanded)
-        Positioned(
-          top: nameTop + 36,
-          left: nameLeft,
-          child: Opacity(
-            opacity: 1.0 - progress,
-            child: Row(
-              children: [
-                const Icon(Icons.person_outline, color: Colors.white70, size: 14),
-                const SizedBox(width: 6),
-                Text(
-                  'Usuario',
-                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
-                ),
-              ],
+        // Cápsula flotante con padding interno para alinear exactamente el hover y el indicador
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpace.field, bottom: 8),
+          child: Center(
+            child: Container(
+              height: 56,
+              margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: tabBar,
             ),
           ),
         ),
@@ -460,7 +371,7 @@ class _CustomHomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant _CustomHomeHeaderDelegate oldDelegate) {
-    return safeAreaTop != oldDelegate.safeAreaTop || userName != oldDelegate.userName || avatarUrl != oldDelegate.avatarUrl;
+  bool shouldRebuild(covariant _StickyTabBarDelegate oldDelegate) {
+    return tabBar != oldDelegate.tabBar;
   }
 }

@@ -1,314 +1,227 @@
 import 'package:flutter/material.dart';
-import '../../../core/navigation/destination_opening.dart';
-import '../../../core/theme/app_layout.dart';
-import '../../../core/theme/app_text_styles.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/recommendation_controller.dart';
-import '../../../controllers/auth_controller.dart';
+import '../../../controllers/archive_controller.dart';
+import '../../../core/navigation/destination_opening.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/cards/destination_recommendation_card.dart';
-import '../../../core/widgets/states/ai_ranking_loader.dart';
-import '../../../core/widgets/states/ai_ranking_skeleton.dart';
 import '../../../core/widgets/states/empty_profile_for_ai_state.dart';
-import '../../../controllers/archive_controller.dart'
-    as import_archive_controller;
-import 'profile_summary_card.dart';
+import 'month_fan_picker.dart';
+import 'archive_loading_state.dart';
+import 'recommendation_motion.dart';
 
-/// Scrollable content for the "Para Ti" tab, showing personalized recommendations.
-class HomeForYouContent extends StatelessWidget {
+class HomeForYouContent extends StatefulWidget {
   const HomeForYouContent({super.key});
+  @override
+  State<HomeForYouContent> createState() => _HomeForYouContentState();
+}
 
+class _HomeForYouContentState extends State<HomeForYouContent>
+    with AutomaticKeepAliveClientMixin {
+  final _entered = <String>{};
+  int _revision = -1;
+  @override
+  bool get wantKeepAlive => true;
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final controller = context.watch<RecommendationController>();
-    final archiveCtrl = context
-        .watch<import_archive_controller.ArchiveController>();
-    final userName =
-        context.watch<AuthController>().currentUser?.fullName ?? 'Viajero';
-
-    if (controller.isLoading && controller.recommendations.isEmpty) {
-      return const AiRankingLoader();
+    final archives = context.watch<ArchiveController>();
+    if (_revision != controller.resultsRevision) {
+      _revision = controller.resultsRevision;
+      _entered.clear();
     }
-
-    final filteredRecs = controller.recommendations
-        .where((r) => !archiveCtrl.isArchived(r.destination.id))
-        .take(3)
+    final eligible = controller.recommendations
+        .where((r) => r.isEligible)
         .toList();
-
-    if (filteredRecs.isEmpty) {
-      final err = controller.error;
-      // Caso perfil incompleto (o sin error): empty state honesto con acción.
-      final isProfileIssue = controller.profileIncomplete;
-      if (isProfileIssue) {
-        return const EmptyProfileForAiState();
-      }
-      return _errorState(
-        context,
-        err ??
-            'No hay destinos disponibles con estos filtros. Prueba otra región.',
-      );
-    }
-
+    final items = eligible
+        .where((r) => !archives.isArchived(r.destination.id))
+        .toList();
     return RefreshIndicator(
-      onRefresh: () => controller.loadRecommendations(forceRefresh: true),
-      color: AppColors.accent,
-      child: SingleChildScrollView(
+      onRefresh: () async {
+        await Future.wait([
+          archives.loadArchives(),
+          controller.loadRecommendations(forceRefresh: true),
+        ]);
+      },
+      color: AppColors.discovery,
+      child: CustomScrollView(
         key: const PageStorageKey('for-you-scroll'),
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: AppSpace.section),
-
-            // ── Profile Summary Card ──
-            ProfileSummaryCard(userName: userName),
-
-            // ── Background Refresh Error Banner ──
-            if (controller.error != null &&
-                controller.recommendations.isNotEmpty) ...[
-              const SizedBox(height: AppSpace.field),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpace.screen,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.red.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(width: AppSpace.content),
-                      const Expanded(
-                        child: Text(
-                          'No pudimos actualizar tus recomendaciones. Inténtalo otra vez.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: AppSpace.group),
-
-            // ── Section Title ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+        scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Destinos para ti', style: AppTextStyles.h2),
-                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.accent,
-                          shape: BoxShape.circle,
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => context.push('/profile/preferences'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.discovery,
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 14,
+                            ),
+                          ),
+                          icon: const Icon(Icons.tune_rounded, size: 19),
+                          label: const Text('Editar preferencias'),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${filteredRecs.length} lugares seleccionados',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
+                      const SizedBox(width: 8),
+                      MonthFanPicker(
+                        month: controller.selectedMonth,
+                        onChanged: controller.setMonth,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Destinos para ti',
+                    style: AppTypography.style(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                      height: 1.15,
+                      color: const Color(0xFF202020),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    !archives.hasLoaded
+                        ? 'Recuperando tu selección…'
+                        : controller.isLoading
+                        ? 'Buscando coincidencias con tus preferencias…'
+                        : '${items.length} ${items.length == 1 ? 'destino para explorar' : 'destinos para explorar'}',
+                    style: AppTypography.style(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (controller.isLoading) const RecommendationWorkingState(),
+                  if (archives.hasLoaded && archives.error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        archives.error!,
+                        style: const TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                  if (!archives.hasLoaded)
+                    ArchiveLoadingState(controller: archives)
+                  else if (controller.profileIncomplete)
+                    const EmptyProfileForAiState()
+                  else if (controller.error != null)
+                    _message(
+                      controller.error!,
+                      'Reintentar',
+                      () => controller.loadRecommendations(forceRefresh: true),
+                    )
+                  else if (!controller.isLoading && items.isEmpty)
+                    _message(
+                      eligible.isNotEmpty
+                          ? 'Has ocultado estos destinos. Puedes recuperarlos desde Archivados.'
+                          : 'No encontramos destinos recomendados con estas preferencias. Puedes probar otro mes o ajustar tus intereses.',
+                      eligible.isNotEmpty
+                          ? 'Ver archivados'
+                          : 'Editar preferencias',
+                      () => context.push(
+                        eligible.isNotEmpty
+                            ? '/archived'
+                            : '/profile/preferences',
+                      ),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpace.field),
-
-            // ── Selector de mes (clima/aforo del mes objetivo) ──
-            _MonthSelectorBar(selected: controller.selectedMonth),
-            const SizedBox(height: AppSpace.field),
-
-            // ── Recommendation cards ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 600),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: controller.isLoading
-                    ? Column(
-                        key: const ValueKey('skeletons'),
-                        children: List.generate(
-                          3,
-                          (index) => const AiRankingSkeletonCard(),
-                        ),
-                      )
-                    : Column(
-                        key: const ValueKey('cards'),
-                        children: filteredRecs.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final rec = entry.value;
-                          return DestinationRecommendationCard(
-                            recommendation: rec,
-                            index: index,
-                            onTap: () {
-                              // Lleva el mes elegido al detalle, para que clima/aforo allí
-                              // muestren la misma temporada que el ranking.
-                              final m = controller.selectedMonth;
-                              final q = m != null ? '&month=$m' : '';
-                              context.push(
-                                '/destination/${rec.destination.id}?source=ai_recommendation$q',
-                                extra: DestinationOpening(
-                                  rec.destination,
-                                  'recommendation',
-                                ),
-                              );
-                            },
-                          );
-                        }).toList(),
-                      ),
+          ),
+          if (archives.hasLoaded && !controller.isLoading)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverList.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final rec = items[index];
+                  final entryKey =
+                      '${controller.resultsRevision}/${rec.destination.id}';
+                  final animate = _entered.add(entryKey);
+                  return RecommendationArrival(
+                    key: ValueKey(entryKey),
+                    index: index,
+                    animate: animate,
+                    child: DestinationRecommendationCard(
+                      recommendation: rec,
+                      onTap: () {
+                        final month = controller.selectedMonth;
+                        context.push(
+                          '/destination/${Uri.encodeComponent(rec.destination.id)}?source=ai_recommendation${month == null ? '' : '&month=$month'}',
+                          extra: DestinationOpening(
+                            rec.destination,
+                            'recommendation',
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
             ),
-
-            const SizedBox(height: AppSpace.group),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _errorState(BuildContext context, String error) {
-    final controller = context.read<RecommendationController>();
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpace.screen),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.travel_explore_rounded,
-            size: 40,
-            color: AppColors.accent,
-          ),
-          const SizedBox(height: AppSpace.field),
-          Text(
-            error,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary,
-          ),
-          const SizedBox(height: AppSpace.field),
-          TextButton(
-            onPressed: () => controller.loadRecommendations(forceRefresh: true),
-            child: const Text('Reintentar'),
-          ),
-          if (controller.selectedRegion != null)
-            TextButton(
-              onPressed: () => controller.setRegion(null),
-              child: const Text('Ver todas las regiones'),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              0,
+              24,
+              MediaQuery.viewPaddingOf(context).bottom + 120,
             ),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  if (archives.hasLoaded && items.isNotEmpty) ...[
+                    const Text(
+                      'El clima y la afluencia se basan en datos históricos, no en un pronóstico. La recomendación orienta tu elección.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => context.push('/archived'),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                      label: const Text('Gestionar destinos ocultos'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.discovery,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
-}
 
-/// Barra horizontal para elegir el mes objetivo del viaje.
-/// Al tocar un mes, recarga las recomendaciones con el clima/aforo de ese mes.
-class _MonthSelectorBar extends StatelessWidget {
-  final int? selected;
-  const _MonthSelectorBar({required this.selected});
-
-  static const _names = [
-    'Ene',
-    'Feb',
-    'Mar',
-    'Abr',
-    'May',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dic',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = context.read<RecommendationController>();
-    final activeMonth = selected ?? DateTime.now().month;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _message(String text, String action, VoidCallback onTap) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 24),
+    child: Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(AppSpace.screen, 0, AppSpace.screen, 10),
-          child: Text(
-            '¿Para qué mes viajas?',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-            itemCount: 12,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpace.related),
-            itemBuilder: (context, i) {
-              final month = i + 1;
-              final isSel = activeMonth == month;
-              return GestureDetector(
-                onTap: () => ctrl.setMonth(month),
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  decoration: BoxDecoration(
-                    color: isSel ? AppColors.accent : Colors.white,
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(
-                      color: isSel
-                          ? AppColors.accent
-                          : AppColors.textSecondary.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  child: Text(
-                    _names[i],
-                    style: TextStyle(
-                      color: isSel ? Colors.white : AppColors.primaryDark,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+        const SizedBox(height: 12),
+        OutlinedButton(onPressed: onTap, child: Text(action)),
       ],
-    );
-  }
+    ),
+  );
 }

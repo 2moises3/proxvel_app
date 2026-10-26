@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/common/app_icon.dart';
 import 'profile_menu_item.dart';
 
 /// Sección de menú del perfil (editar, preferencias, reseñas, sobre, logout).
@@ -16,6 +17,7 @@ class ProfileMenuSection extends StatelessWidget {
   final VoidCallback onAbout;
   final VoidCallback onUpdates;
   final VoidCallback onLogout;
+  final VoidCallback? onDeleteAccount;
 
   const ProfileMenuSection({
     super.key,
@@ -28,90 +30,111 @@ class ProfileMenuSection extends StatelessWidget {
     required this.onAbout,
     required this.onUpdates,
     required this.onLogout,
+    this.onDeleteAccount,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: AppColors.border, width: 1),
-            ),
-            child: Column(
-              children: [
-                ProfileMenuItem(
-                  icon: Icons.edit_rounded,
-                  label: 'Editar perfil',
-                  onTap: onEditProfile,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.lock_outline_rounded,
-                  label: 'Cambiar contraseña',
-                  onTap: onChangePassword,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.tune_rounded,
-                  label: 'Tu forma de viajar',
-                  onTap: onPreferences,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.rate_review_rounded,
-                  label: 'Mis reseñas',
-                  onTap: onMyReviews,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.archive_outlined,
-                  label: 'Archivados',
-                  onTap: onArchived,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.privacy_tip_outlined,
-                  label: 'Privacidad y legal',
-                  onTap: onPrivacy,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.info_outline_rounded,
-                  label: 'Sobre PROXVEL',
-                  onTap: onAbout,
-                ),
-                const Divider(height: 1, color: AppColors.divider),
-                ProfileMenuItem(
-                  icon: Icons.system_update_rounded,
-                  label: 'Actualizar app',
-                  onTap: onUpdates,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpace.field),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: ProfileMenuItem(
-              icon: Icons.logout_rounded,
-              label: 'Cerrar sesión',
-              isDestructive: true,
-              onTap: onLogout,
-            ),
-          ),
-        ],
+  Widget _group(String title, List<Widget> rows) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 10),
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
       ),
-    );
-  }
+      Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Column(
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 1,
+                    indent: 60,
+                    color: AppColors.divider,
+                  ),
+                rows[i],
+              ],
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _group('Tu experiencia', [
+          ProfileMenuItem(
+            svgIcon: AppIcons.sliders,
+            label: 'Preferencias de viaje',
+            onTap: onPreferences,
+          ),
+          ProfileMenuItem(
+            svgIcon: AppIcons.star,
+            label: 'Mis reseñas',
+            onTap: onMyReviews,
+          ),
+          ProfileMenuItem(
+            svgIcon: AppIcons.compass,
+            label: 'Destinos archivados',
+            onTap: onArchived,
+          ),
+        ]),
+        _group('Cuenta y privacidad', [
+          ProfileMenuItem(
+            svgIcon: AppIcons.navProfile,
+            label: 'Datos personales',
+            onTap: onEditProfile,
+          ),
+          ProfileMenuItem(
+            svgIcon: AppIcons.lock,
+            label: 'Cambiar contraseña',
+            onTap: onChangePassword,
+          ),
+          ProfileMenuItem(
+            svgIcon: AppIcons.info,
+            label: 'Privacidad y mis datos',
+            onTap: onPrivacy,
+          ),
+        ]),
+        _group('PROXVEL', [
+          ProfileMenuItem(
+            svgIcon: AppIcons.info,
+            label: 'Conoce PROXVEL',
+            onTap: onAbout,
+          ),
+          ProfileMenuItem(
+            svgIcon: AppIcons.externalLink,
+            label: 'Actualizaciones',
+            onTap: onUpdates,
+          ),
+        ]),
+        _group('Gestionar mi cuenta', [
+          ProfileMenuItem(
+            svgIcon: AppIcons.logOut,
+            label: 'Cerrar sesión',
+            onTap: onLogout,
+          ),
+          if (onDeleteAccount != null)
+            ProfileMenuItem(
+              svgIcon: AppIcons.navProfile,
+              label: 'Eliminar mi cuenta',
+              isDestructive: true,
+              onTap: onDeleteAccount!,
+            ),
+        ]),
+      ],
+    ),
+  );
 }

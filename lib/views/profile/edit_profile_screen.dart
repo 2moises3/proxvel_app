@@ -1,3 +1,5 @@
+import 'widgets/profile_avatar.dart';
+import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -21,11 +23,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
-  
+
   String? _selectedDepartment;
   String? _selectedProvince;
   String? _selectedCity;
-  
+
   String? _initialDepartment;
   String? _initialProvince;
   String? _initialCity;
@@ -37,6 +39,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final user = context.read<AuthController>().currentUser;
       if (user != null) {
         final fullName = user.fullName.trim();
@@ -58,6 +61,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _initialDepartment = user.residenceDepartment;
           _initialProvince = user.residenceProvince;
           _initialCity = user.residenceCity;
+          _selectedDepartment = user.residenceDepartment;
+          _selectedProvince = user.residenceProvince;
+          _selectedCity = user.residenceCity;
           _isInit = true;
         });
       } else {
@@ -67,6 +73,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _handleSave() async {
+    if (_isLoading) return;
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escribe tu nombre para continuar.')),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await context.read<AuthController>().updateUserProfile(
@@ -90,7 +103,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.'),
+            content: Text(
+              'No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.',
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -105,103 +120,65 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!_isInit) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Editar perfil',
-          style: AppTextStyles.sectionTitle,
-        ),
-      ),
+      appBar: profilePageBar(context, 'Datos personales', busy: _isLoading),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpace.screen),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: GestureDetector(
-                onTap: () => pickAndUploadAvatar(context),
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppColors.accentSoft,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.accent, width: 2),
-                        image: context.watch<AuthController>().currentUser?.avatarUrl != null
-                            ? DecorationImage(
-                                image: NetworkImage(context.watch<AuthController>().currentUser!.avatarUrl!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      alignment: Alignment.center,
-                      child: context.watch<AuthController>().currentUser?.avatarUrl == null
-                          ? const Icon(
-                              Icons.person_rounded,
-                              size: 50,
-                              color: AppColors.accent,
-                            )
-                          : null,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
+              child: Selector<AuthController, ({String name, String? avatar})>(
+                selector: (_, auth) => (
+                  name: auth.currentUser?.fullName ?? '',
+                  avatar: auth.currentUser?.avatarUrl,
+                ),
+                builder: (context, user, _) => ProfileAvatar(
+                  name: user.name,
+                  url: user.avatar,
+                  size: 100,
+                  onEdit: _isLoading
+                      ? null
+                      : () => pickAndUploadAvatar(context),
                 ),
               ),
             ),
             const SizedBox(height: AppSpace.group),
-            ProxvelTextField(label: 'Nombre', controller: _nameController),
+            ProxvelTextField(
+              label: 'Nombre',
+              hintText: 'Tu nombre',
+              controller: _nameController,
+              readOnly: _isLoading,
+            ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
               label: 'Apellidos',
+              hintText: 'Tus apellidos',
+              readOnly: _isLoading,
               controller: _lastNameController,
             ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
-              label: 'Email',
+              label: 'Correo electrónico',
               controller: _emailController,
               readOnly: true,
               fillColor: const Color(0xFFF3F4F6),
-              prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF9CA3AF), size: 20),
+              prefixIcon: const Icon(
+                Icons.lock_outline_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 20,
+              ),
               helperText: 'El correo no se puede modificar',
             ),
             const SizedBox(height: AppSpace.group),
-            const Text(
-              'Residencia',
-              style: AppTextStyles.sectionTitle,
-            ),
+            const Text('Residencia', style: AppTextStyles.sectionTitle),
             const SizedBox(height: AppSpace.field),
             ResidenceFieldsWidget(
               initialDepartment: _initialDepartment,

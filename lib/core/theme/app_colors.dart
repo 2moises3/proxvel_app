@@ -8,11 +8,14 @@ class AppColors {
   static const Color primaryDark = Color(0xFF141821);
   static const Color primaryLight = Color(0xFF252B3B);
 
-  // ── Accent ──
-  static const Color accent = Color(0xFFF59E0B);
-  static const Color accentPressed = Color(0xFFD97706);
-  static const Color accentLight = Color(0xFFFBBF24);
+  // ── Brand accent: shared by splash and all yellow UI accents ──
+  static const Color accent = Color(0xFFFDBA00);
+  static const Color accentPressed = Color(0xFFD99F00);
+  static const Color accentLight = Color(0xFFFFCD4D);
   static const Color accentSoft = Color(0xFFFEF3C7);
+
+  // Secondary brand accent for discovery and preference selections.
+  static const Color discovery = Color(0xFF7756C5);
 
   // ── Backgrounds ──
   static const Color background = Color(0xFFF9FAFB);
@@ -41,5 +44,5 @@ class AppColors {
   static const Color navInactive = Color(0xFF9CA3AF);
 
   // ── Legacy aliases (backward compat) ──
-  static const Color secondary = Color(0xFFF59E0B);
+  static const Color secondary = accent;
 }

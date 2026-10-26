@@ -13,6 +13,7 @@ class AdaptiveDestinationImage extends StatelessWidget {
   final Alignment alignment;
   final double? width;
   final double? height;
+  final int? cacheWidth;
 
   const AdaptiveDestinationImage({
     super.key,
@@ -21,15 +22,18 @@ class AdaptiveDestinationImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.width,
     this.height,
+    this.cacheWidth,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (imagePath.isEmpty || imagePath == 'PENDIENTE') return _placeholder();
+    final path = imagePath.trim();
+    if (path.isEmpty || path == 'PENDIENTE') return _placeholder();
 
-    if (imagePath.startsWith('http')) {
+    if (path.startsWith('http')) {
       return Image.network(
-        imagePath,
+        path,
+        cacheWidth: cacheWidth,
         width: width,
         height: height,
         fit: fit,
@@ -63,6 +67,7 @@ class AdaptiveDestinationImage extends StatelessWidget {
 
     return Image.asset(
       imagePath,
+      cacheWidth: cacheWidth,
       width: width,
       height: height,
       fit: fit,

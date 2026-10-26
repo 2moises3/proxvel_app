@@ -1,17 +1,15 @@
+import 'widgets/auth_progress_indicator.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_layout.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:proxvell_app/core/theme/app_typography.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../core/utils/formatters.dart';
 import 'widgets/auth_backdrop.dart';
-import 'widgets/auth_back_button.dart';
-import '../../core/widgets/buttons/shimmer_button.dart';
+import 'widgets/auth_form_page.dart';
 import '../../core/widgets/inputs/glass_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -21,8 +19,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> {
   // Animación manual para evitar PageView rígido
   int _currentStep = 0;
 
@@ -41,25 +38,13 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _isStep1Valid = false;
   static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  // Password Strength State
-  int _passwordStrength = 0; // 0: Weak, 1: Medium, 2: Strong
-  String _passwordStrengthText = '';
-  Color _passwordStrengthColor = Colors.transparent;
   bool _passwordsMatch = false;
 
   static const Color _amber = AppColors.accent;
-  static const Color _amberDark = AppColors.accentPressed;
-
-  late final AnimationController _shimmerCtrl;
 
   @override
   void initState() {
     super.initState();
-    _shimmerCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat();
-
     _nameController.addListener(_validateStep1);
     _lastnameController.addListener(_validateStep1);
     _emailController.addListener(_validateStep1);
@@ -78,47 +63,10 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   void _validatePassword() {
-    final pass = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
-
-    // Calculate strength
-    int strength = 0;
-    if (pass.length >= 8) strength++; // mínimo que exige el backend
-    if (pass.length >= 8 &&
-        pass.contains(RegExp(r'[A-Z]')) &&
-        pass.contains(RegExp(r'[0-9]'))) {
-      strength++;
-    }
-    if (pass.length >= 10 && pass.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-      strength++;
-    }
-
-    String text = '';
-    Color color = Colors.transparent;
-
-    if (pass.isEmpty) {
-      strength = 0;
-      text = '';
-      color = Colors.transparent;
-    } else if (strength == 0) {
-      text = 'Mínimo 8 caracteres';
-      color = const Color(0xFFEF4444); // Red
-    } else if (strength == 1) {
-      text = 'Débil';
-      color = const Color(0xFFEF4444); // Red
-    } else if (strength == 2) {
-      text = 'Segura';
-      color = AppColors.accent; // Amber
-    } else {
-      text = 'Fuerte';
-      color = const Color(0xFF10B981); // Green
-    }
-
     setState(() {
-      _passwordStrength = strength;
-      _passwordStrengthText = text;
-      _passwordStrengthColor = color;
-      _passwordsMatch = pass.isNotEmpty && confirm == pass;
+      final password = _passwordController.text;
+      _passwordsMatch =
+          password.isNotEmpty && _confirmPasswordController.text == password;
     });
   }
 
@@ -213,7 +161,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _shimmerCtrl.dispose();
     super.dispose();
   }
 
@@ -226,9 +173,9 @@ class _RegisterScreenState extends State<RegisterScreen>
         onTap: () => context.push(route),
         child: Text(
           label,
-          style: GoogleFonts.poppins(
+          style: AppTypography.style(
             color: _amber,
-            fontSize: 12.5,
+            fontSize: 14,
             height: 1.45,
             fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
@@ -240,111 +187,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          Positioned.fill(child: AuthBackdrop(imagePath: _background)),
-
-          // ── Content ──
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Top Action Bar
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: AuthBackButton(onPressed: _prevStep),
-                            ),
-                          ),
-
-                          const Spacer(),
-
-                          // Title
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpace.screen,
-                            ),
-                            child: Text(
-                              'Comienza tu\naventura.',
-                              style: GoogleFonts.poppins(
-                                textStyle: AppTextStyles.headingOnDark,
-                                letterSpacing: -0.2,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpace.content),
-
-                          // Subtitle
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpace.screen,
-                            ),
-                            child: Text(
-                              'Descubre el Perú a tu manera',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.white.withValues(alpha: 0.85),
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpace.section),
-
-                          // Forms AnimatedSwitcher
-                          _buildSteps(),
-
-                          const SizedBox(height: AppSpace.section),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AuthFormPage(
+    background: _background,
+    onBack: _prevStep,
+    progress: AuthProgressIndicator(step: _currentStep, count: 3),
+    title: _currentStep == 0 ? 'Crea tu cuenta' : 'Crea tu contraseña',
+    subtitle: _currentStep == 0 ? null : 'Usa al menos 8 caracteres.',
+    child: _buildSteps(),
+  );
 
   Widget _buildSteps() {
     final child = _currentStep == 0
@@ -361,11 +211,12 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildStep1() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           GlassTextField(
             label: 'Nombre',
+            hintText: 'Ej. María',
             controller: _nameController,
             textCapitalization: TextCapitalization.words,
             inputFormatters: [TitleCaseTextInputFormatter()],
@@ -373,6 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           const SizedBox(height: AppSpace.card),
           GlassTextField(
             label: 'Apellidos',
+            hintText: 'Ej. García López',
             controller: _lastnameController,
             textCapitalization: TextCapitalization.words,
             inputFormatters: [TitleCaseTextInputFormatter()],
@@ -380,6 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           const SizedBox(height: AppSpace.card),
           GlassTextField(
             label: 'Correo electrónico',
+            hintText: 'nombre@correo.com',
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
           ),
@@ -387,10 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           const SizedBox(height: AppSpace.group),
 
           // Next Button
-          ShimmerButton(
-            shimmer: _shimmerCtrl,
-            baseColor: _amber,
-            hoverColor: _amberDark,
+          AuthSubmitButton(
             text: 'Continuar',
             onPressed: () {
               if (_isStep1Valid) {
@@ -400,7 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   SnackBar(
                     content: Text(
                       'Completa tus datos e ingresa un correo válido.',
-                      style: GoogleFonts.poppins(color: Colors.white),
+                      style: AppTypography.style(color: Colors.white),
                     ),
                     backgroundColor: Colors.black87,
                     behavior: SnackBarBehavior.floating,
@@ -418,7 +268,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             children: [
               Text(
                 '¿Ya tienes una cuenta? ',
-                style: GoogleFonts.poppins(
+                style: AppTypography.style(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
@@ -432,7 +282,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 ),
                 child: Text(
                   'Inicia sesión',
-                  style: GoogleFonts.poppins(
+                  style: AppTypography.style(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                     fontSize: 14,
@@ -448,60 +298,23 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildStep2() {
     final bool isReadyToSubmit =
-        _acceptTerms && _passwordStrength > 0 && _passwordsMatch;
+        _acceptTerms && _passwordController.text.length >= 8 && _passwordsMatch;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           GlassTextField(
             label: 'Contraseña',
+            hintText: 'Al menos 8 caracteres',
             controller: _passwordController,
             isPassword: true,
           ),
 
-          // Password Strength Bar
-          if (_passwordController.text.isNotEmpty) ...[
-            const SizedBox(height: AppSpace.content),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: List.generate(3, (index) {
-                        return Expanded(
-                          child: Container(
-                            height: 4,
-                            margin: const EdgeInsets.only(right: 4),
-                            decoration: BoxDecoration(
-                              color: index < _passwordStrength
-                                  ? _passwordStrengthColor
-                                  : Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpace.content),
-                  Text(
-                    _passwordStrengthText,
-                    style: GoogleFonts.poppins(
-                      color: _passwordStrengthColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
           const SizedBox(height: AppSpace.field),
           GlassTextField(
             label: 'Confirmar contraseña',
+            hintText: 'Repite tu contraseña',
             controller: _confirmPasswordController,
             isPassword: true,
           ),
@@ -516,7 +329,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Las contraseñas no coinciden',
-                  style: GoogleFonts.poppins(
+                  style: AppTypography.style(
                     color: const Color(0xFFEF4444),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -525,7 +338,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
             ),
 
-          const SizedBox(height: AppSpace.section),
+          const SizedBox(height: 20),
 
           // Términos, Privacidad y declaración de mayoría de edad (casilla sin marcar de forma predeterminada)
           Row(
@@ -551,9 +364,9 @@ class _RegisterScreenState extends State<RegisterScreen>
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.75),
-                      fontSize: 12.5,
+                    style: AppTypography.style(
+                      color: Colors.white,
+                      fontSize: 14,
                       height: 1.45,
                     ),
                     children: [
@@ -576,27 +389,11 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppSpace.content),
-          Padding(
-            padding: const EdgeInsets.only(left: 52),
-            child: Text(
-              'Tu nombre, correo y residencia forman parte de tu cuenta. Tus preferencias de viaje orientan las recomendaciones.',
-              style: GoogleFonts.poppins(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 11.5,
-                height: 1.4,
-              ),
-            ),
-          ),
-
           const SizedBox(height: AppSpace.group),
 
           // Submit Button
-          ShimmerButton(
+          AuthSubmitButton(
             isLoading: _isLoading,
-            shimmer: _shimmerCtrl,
-            baseColor: _amber,
-            hoverColor: _amberDark,
             text: 'Crear mi cuenta',
             onPressed: () {
               if (isReadyToSubmit) {
@@ -606,6 +403,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                 if (!_acceptTerms) {
                   msg =
                       'Debes aceptar los Términos y la Política de Privacidad';
+                } else if (_passwordController.text.length < 8) {
+                  msg = 'Usa al menos 8 caracteres';
                 } else if (!_passwordsMatch) {
                   msg = 'Las contraseñas no coinciden';
                 }
@@ -614,7 +413,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   SnackBar(
                     content: Text(
                       msg,
-                      style: GoogleFonts.poppins(color: Colors.white),
+                      style: AppTypography.style(color: Colors.white),
                     ),
                     backgroundColor: Colors.black87,
                     behavior: SnackBarBehavior.floating,
@@ -625,9 +424,6 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
 
           const SizedBox(height: AppSpace.group),
-
-          // Invisible spacer to match step 1 height
-          const SizedBox(height: AppSpace.card),
         ],
       ),
     );

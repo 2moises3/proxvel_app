@@ -1,109 +1,55 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_layout.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/common/app_icon.dart';
 
-/// Bottom sheet de confirmación de cierre de sesión.
-/// Llama [onConfirm] solo si el usuario confirma (tras cerrar el sheet).
 void showLogoutConfirmSheet(
   BuildContext context, {
   required VoidCallback onConfirm,
 }) {
-  showModalBottomSheet(
+  showModalBottomSheet<bool>(
     context: context,
-    backgroundColor: AppColors.surface,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
-    builder: (sheetContext) => Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpace.screen, 16, AppSpace.screen, 32),
+    builder: (sheetContext) => SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: AppSpace.section),
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.logout_rounded,
-              color: AppColors.error,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: AppSpace.field),
+          const AppIcon(AppIcons.logOut, size: 32, color: AppColors.discovery),
+          const SizedBox(height: 16),
           const Text(
             '¿Cerrar sesión?',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Tus preferencias y destinos guardados seguirán en tu cuenta cuando vuelvas.',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 14,
+              height: 1.5,
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: AppSpace.related),
-          const Text(
-            'Podrás volver a iniciar sesión\nen cualquier momento.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary,
-          ),
-          const SizedBox(height: AppSpace.section),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(sheetContext),
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border, width: 1.5),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Cancelar',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(sheetContext, false),
+                  child: const Text('Quedarme'),
                 ),
               ),
-              const SizedBox(width: AppSpace.content),
+              const SizedBox(width: 12),
               Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    onConfirm();
-                  },
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Cerrar sesión',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(sheetContext, true),
+                  child: const Text('Cerrar sesión'),
                 ),
               ),
             ],
@@ -111,5 +57,7 @@ void showLogoutConfirmSheet(
         ],
       ),
     ),
-  );
+  ).then((confirmed) {
+    if (confirmed == true && context.mounted) onConfirm();
+  });
 }

@@ -1,3 +1,4 @@
+import 'core/widgets/navigation/navigation_island_transition.dart';
 import 'controllers/notifications_controller.dart';
 import 'integration/services/notification_service.dart';
 import 'package:flutter/material.dart' hide SearchController;
@@ -180,6 +181,7 @@ class _ProxvelMaterialApp extends StatelessWidget {
       title: 'PROXVEL',
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
+      builder: (context, child) => NavigationIslandHost(controller: navigationIsland, child: child!),
       debugShowCheckedModeBanner: false,
     );
   }

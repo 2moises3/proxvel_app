@@ -22,14 +22,23 @@ class _MyDataScreenState extends State<MyDataScreen> {
   bool _busy = false;
 
   Future<void> _logoutAll() async {
+    if (_busy) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Cerrar sesión en todos tus dispositivos'),
-        content: const Text('Se cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas entrado. Podrás volver a iniciar sesión cuando quieras.'),
+        content: const Text(
+          'Se cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas entrado. Podrás volver a iniciar sesión cuando quieras.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cerrar sesiones')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cerrar sesiones'),
+          ),
         ],
       ),
     );
@@ -44,17 +53,31 @@ class _MyDataScreenState extends State<MyDataScreen> {
       // Si la sesión ya había vencido, el resultado es el mismo: terminar la sesión local.
       if (e.statusCode != 401) {
         if (mounted) setState(() => _busy = false);
-        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No pudimos cerrar las sesiones. Revisa tu conexión e inténtalo nuevamente.',
+            ),
+          ),
+        );
         return;
       }
     } catch (_) {
       if (mounted) setState(() => _busy = false);
-      messenger.showSnackBar(const SnackBar(content: Text('No pudimos cerrar las sesiones. Revisa tu conexión.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No pudimos cerrar las sesiones. Revisa tu conexión.'),
+        ),
+      );
       return;
     }
     await auth.logout();
     router.go('/welcome');
-    messenger.showSnackBar(const SnackBar(content: Text('Cerramos tu sesión en todos tus dispositivos.')));
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Cerramos tu sesión en todos tus dispositivos.'),
+      ),
+    );
   }
 
   @override
@@ -67,7 +90,9 @@ class _MyDataScreenState extends State<MyDataScreen> {
           onPressed: _busy ? null : _logoutAll,
           icon: const Icon(Icons.devices_rounded, size: 18),
           label: const Text('Cerrar sesión en todos mis dispositivos'),
-          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+          ),
         ),
         const SizedBox(height: AppSpace.section),
         FilledButton.icon(
