@@ -20,6 +20,7 @@ import 'integration/services/favorites_service.dart';
 import 'integration/services/tourism_map_service.dart';
 import 'integration/services/announcement_service.dart';
 import 'integration/services/archive_service.dart';
+import 'integration/services/visit_service.dart';
 import 'controllers/archive_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/announcement_controller.dart';
@@ -33,6 +34,7 @@ import 'controllers/profile_controller.dart';
 import 'controllers/feedback_controller.dart';
 import 'controllers/my_reviews_controller.dart';
 import 'controllers/tourism_map_controller.dart';
+import 'controllers/visit_controller.dart';
 
 class ProxvelApp extends StatelessWidget {
   final LocalStorageService storageService;
@@ -89,6 +91,9 @@ class ProxvelApp extends StatelessWidget {
         ),
         ProxyProvider<ApiClient, AnnouncementService>(
           update: (_, api, previous) => AnnouncementService(apiClient: api),
+        ),
+        ProxyProvider<ApiClient, VisitService>(
+          update: (_, api, previous) => VisitService(apiClient: api),
         ),
 
         // Controllers
@@ -163,6 +168,10 @@ class ProxvelApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AnnouncementService, AnnouncementController>(
           create: (context) => AnnouncementController(context.read<AnnouncementService>()),
           update: (context, annSvc, ctl) => ctl ?? AnnouncementController(annSvc),
+        ),
+        ChangeNotifierProxyProvider<VisitService, VisitController>(
+          create: (context) => VisitController(context.read<VisitService>()),
+          update: (context, visitSvc, ctl) => ctl ?? VisitController(visitSvc),
         ),
       ],
       child: const _SessionManager(
@@ -240,6 +249,7 @@ class _SessionManagerState extends State<_SessionManager> {
     context.read<MyReviewsController>().clearState();
     context.read<NotificationsController>().clearState();
     context.read<DestinationService>().clearPersonalizedCache();
+    context.read<VisitController>().clearSession();
     // Si hay otros controladores con estado en memoria, se agregarían aquí
   }
 

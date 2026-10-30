@@ -7,7 +7,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/tourism_map_controller.dart';
+import '../../controllers/visit_controller.dart';
 import '../../models/map_marker_model.dart';
+import '../../models/visit_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/widgets/common/app_icon.dart';
@@ -897,12 +899,30 @@ class _TourismMapViewState extends State<TourismMapView>
         locationBusy: _location.busy,
         isPinned: selected.destinationId == _pinnedDestinationId,
         onTogglePin: () {
+          final nextPinned = (_pinnedDestinationId == selected.destinationId)
+              ? null
+              : selected.destinationId;
           setState(() {
-            _pinnedDestinationId =
-                (_pinnedDestinationId == selected.destinationId)
-                    ? null
-                    : selected.destinationId;
+            _pinnedDestinationId = nextPinned;
           });
+          try {
+            final visitCtrl = Provider.of<VisitController?>(context, listen: false);
+            if (visitCtrl != null) {
+              if (nextPinned != null) {
+                visitCtrl.setPendingDestination(
+                  PendingSealDestination(
+                    destinationId: selected.destinationId,
+                    destinationName: selected.destination,
+                    latitude: selected.latitude,
+                    longitude: selected.longitude,
+                    region: selected.region,
+                  ),
+                );
+              } else {
+                visitCtrl.clearPendingDestination();
+              }
+            }
+          } catch (_) {}
         },
         onLocate: () => _locate(center: false),
         onGoogleMaps: () => _googleMaps(selected),
@@ -1088,6 +1108,97 @@ class _TourismMapViewState extends State<TourismMapView>
                 ),
               ),
               const SizedBox(width: 6),
+              Builder(
+                builder: (context) {
+                  VisitController? visitCtrl;
+                  try {
+                    visitCtrl = context.watch<VisitController>();
+                  } catch (_) {
+                    visitCtrl = null;
+                  }
+                  if (visitCtrl == null) return const SizedBox.shrink();
+                  final ctrl = visitCtrl;
+
+                  final active = ctrl.activeVisit;
+                  final isVisitingThis = active != null &&
+                      active.destinationId == pinnedPlace.destinationId &&
+                      active.isInProgress;
+
+                  if (isVisitingThis) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.accent),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.water_drop_rounded, size: 12, color: AppColors.accent),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${active.remainingMinutes} min',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final isInside = distanceMeters != null && distanceMeters <= 250;
+                  if (isInside) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ElevatedButton.icon(
+                        onPressed: ctrl.isActionLoading
+                            ? null
+                            : () async {
+                                final lat = _location.position?.latitude ?? pinnedPlace.latitude;
+                                final lon = _location.position?.longitude ?? pinnedPlace.longitude;
+                                final ok = await ctrl.startCheckIn(
+                                  destinationId: pinnedPlace.destinationId,
+                                  latitude: lat,
+                                  longitude: lon,
+                                );
+                                if (context.mounted && ok) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '📍 ¡Check-in iniciado en ${pinnedPlace.destination}! Cargando en tu Atlas.',
+                                      ),
+                                      backgroundColor: AppColors.primary,
+                                    ),
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.location_on_rounded, size: 14),
+                        label: const Text(
+                          'Check-in',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
               IconButton(
                 tooltip: 'Desfijar destino',
                 padding: EdgeInsets.zero,

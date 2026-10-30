@@ -49,4 +49,5 @@ class ApiConfig {
 
   // Endpoints
   static const String favorites = '/favorites';
+  static const String visits = '/visits';
 }
