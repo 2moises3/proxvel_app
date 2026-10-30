@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -78,8 +79,13 @@ class _MonthFanPickerState extends State<MonthFanPicker>
                   opacity: _animation,
                   child: GestureDetector(
                     onTap: _close,
-                    child: ColoredBox(
-                      color: Colors.white.withValues(alpha: .94),
+                    child: ClipRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: ColoredBox(
+                          color: Colors.white.withValues(alpha: .72),
+                        ),
+                      ),
                     ),
                   ),
                 ),
