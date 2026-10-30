@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -35,6 +36,8 @@ class DestinationLocation extends ChangeNotifier {
   Future<void> locate({bool requestPermission = true}) async {
     if (busy) return;
     busy = true;
+    position = null;
+    measuredAt = null;
     error = null;
     needsSettings = false;
     serviceDisabled = false;
@@ -42,7 +45,11 @@ class DestinationLocation extends ChangeNotifier {
     try {
       bool isEnabled = true;
       try {
-        isEnabled = await Geolocator.isLocationServiceEnabled();
+        isEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+          const Duration(seconds: 6),
+        );
+      } on TimeoutException {
+        rethrow;
       } catch (_) {
         isEnabled = !kIsWeb ? false : true;
       }
@@ -50,9 +57,13 @@ class DestinationLocation extends ChangeNotifier {
         serviceDisabled = true;
         throw 'Activa la ubicación del dispositivo para calcular la distancia.';
       }
-      var permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission().timeout(
+        const Duration(seconds: 6),
+      );
       if (permission == LocationPermission.denied && requestPermission) {
-        permission = await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission().timeout(
+          const Duration(seconds: 15),
+        );
       }
       if (permission == LocationPermission.deniedForever) {
         needsSettings = true;
@@ -69,16 +80,18 @@ class DestinationLocation extends ChangeNotifier {
       }
       position = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
-          accuracy: kIsWeb ? LocationAccuracy.low : LocationAccuracy.medium,
+          accuracy: kIsWeb ? LocationAccuracy.low : LocationAccuracy.high,
           timeLimit: const Duration(seconds: 20),
         ),
-      );
+      ).timeout(const Duration(seconds: 22));
       measuredAt = DateTime.now();
     } catch (e) {
       position = null;
       measuredAt = null;
       error = e is String
           ? e
+          : e is TimeoutException
+          ? 'La ubicación tardó demasiado. Comprueba el GPS y vuelve a intentarlo.'
           : 'No pudimos obtener tu ubicación. Inténtalo otra vez.';
     } finally {
       busy = false;
@@ -198,7 +211,10 @@ class _LocationInvitationState extends State<LocationInvitation> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: const Color(0xFFEBECEF), width: 1.0),
+                  border: Border.all(
+                    color: const Color(0xFFEBECEF),
+                    width: 1.0,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
@@ -222,7 +238,9 @@ class _LocationInvitationState extends State<LocationInvitation> {
                             color: AppColors.discovery.withValues(alpha: 0.10),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.discovery.withValues(alpha: 0.22),
+                              color: AppColors.discovery.withValues(
+                                alpha: 0.22,
+                              ),
                               width: 1.5,
                             ),
                           ),
@@ -272,23 +290,33 @@ class _LocationInvitationState extends State<LocationInvitation> {
                     ),
                     const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9FAFB),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: 1.0,
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Padding(
                             padding: EdgeInsets.only(top: 2),
-                            child: AppIcon(AppIcons.info, size: 16, color: AppColors.discovery),
+                            child: AppIcon(
+                              AppIcons.info,
+                              size: 16,
+                              color: AppColors.discovery,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Es opcional. La distancia se calcula en tu dispositivo; tu ubicación no se envía al motor de recomendaciones.',
+                              'Es opcional. La distancia se calcula en tu dispositivo y no se envía al motor de recomendaciones. Si registras una visita en tu Atlas, enviamos tu ubicación al servidor para verificarla.',
                               style: AppTypography.style(
                                 fontSize: 12.5,
                                 height: 1.4,
@@ -304,7 +332,10 @@ class _LocationInvitationState extends State<LocationInvitation> {
                       onTap: () => setState(() => _hideToday = !_hideToday),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 2,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -313,12 +344,16 @@ class _LocationInvitationState extends State<LocationInvitation> {
                               height: 22,
                               child: Checkbox(
                                 value: _hideToday,
-                                onChanged: (v) => setState(() => _hideToday = v ?? true),
+                                onChanged: (v) =>
+                                    setState(() => _hideToday = v ?? true),
                                 activeColor: AppColors.discovery,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(5),
                                 ),
-                                side: const BorderSide(color: Color(0xFF9CA3AF), width: 1.4),
+                                side: const BorderSide(
+                                  color: Color(0xFF9CA3AF),
+                                  width: 1.4,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -353,7 +388,11 @@ class _LocationInvitationState extends State<LocationInvitation> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const AppIcon(AppIcons.compass, size: 18, color: AppColors.textPrimary),
+                            const AppIcon(
+                              AppIcons.compass,
+                              size: 18,
+                              color: AppColors.textPrimary,
+                            ),
                             const SizedBox(width: 8),
                             const Text('Activar ubicación'),
                           ],
@@ -369,7 +408,10 @@ class _LocationInvitationState extends State<LocationInvitation> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
                           backgroundColor: Colors.transparent,
-                          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.4),
+                          side: const BorderSide(
+                            color: Color(0xFFD1D5DB),
+                            width: 1.4,
+                          ),
                           shape: const StadiumBorder(),
                           textStyle: AppTypography.style(
                             fontSize: 15,

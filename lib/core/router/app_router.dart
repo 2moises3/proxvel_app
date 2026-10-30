@@ -21,6 +21,7 @@ import '../../views/notifications/notifications_screen.dart';
 import '../../views/auth/forgot_password_screen.dart';
 import '../../views/auth/reset_password_screen.dart';
 import '../../views/profile/profile_screen.dart';
+import '../../views/profile/atlas_screen.dart';
 import '../../views/profile/app_update_screen.dart';
 import '../../views/profile/edit_profile_screen.dart';
 import '../../views/profile/preferences_screen.dart';
@@ -162,6 +163,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/profile/atlas',
+      pageBuilder: (context, state) =>
+          profileTransition(context, state.pageKey, const AtlasScreen()),
     ),
     GoRoute(
       path: '/profile/updates',

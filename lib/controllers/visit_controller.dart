@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../integration/services/visit_service.dart';
+import '../integration/api/api_client.dart';
 import '../models/visit_model.dart';
 
 class VisitController extends ChangeNotifier {
@@ -18,7 +19,7 @@ class VisitController extends ChangeNotifier {
   Timer? _tickerTimer;
 
   VisitController([VisitService? visitService])
-      : _visitService = visitService ?? VisitService();
+    : _visitService = visitService ?? VisitService();
 
   @override
   void dispose() {
@@ -50,10 +51,7 @@ class VisitController extends ChangeNotifier {
 
   /// Carga el Atlas y consulta si hay visita activa
   Future<void> initVisitState() async {
-    await Future.wait([
-      loadAtlas(),
-      checkActiveVisit(),
-    ]);
+    await Future.wait([loadAtlas(), checkActiveVisit()]);
   }
 
   Future<void> loadAtlas() async {
@@ -106,7 +104,9 @@ class VisitController extends ChangeNotifier {
       _setupTickerIfNeeded();
       return true;
     } catch (e) {
-      error = e.toString().replaceAll('Exception: ', '');
+      error = e is ApiException
+          ? e.message
+          : 'No pudimos iniciar la visita. Inténtalo nuevamente.';
       return false;
     } finally {
       isActionLoading = false;
@@ -133,12 +133,15 @@ class VisitController extends ChangeNotifier {
       );
       activeVisit = null;
       _tickerTimer?.cancel();
-      actionMessage = '🎉 ¡Felicitaciones! Visita sellada en tu Atlas de viajes.';
+      actionMessage =
+          '🎉 ¡Felicitaciones! Visita sellada en tu Atlas de viajes.';
       // Recargar el atlas con el nuevo sello
       await loadAtlas();
       return true;
     } catch (e) {
-      error = e.toString().replaceAll('Exception: ', '');
+      error = e is ApiException
+          ? e.message
+          : 'No pudimos sellar la visita. Inténtalo nuevamente.';
       return false;
     } finally {
       isActionLoading = false;

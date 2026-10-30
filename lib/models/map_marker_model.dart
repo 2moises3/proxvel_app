@@ -13,6 +13,8 @@ class MapMarkerModel {
   final double? rating;
   final String? description;
   final String? recommendedDuration;
+  final int geofenceRadiusMeters;
+  final int minDwellMinutes;
 
   MapMarkerModel({
     required this.destinationId,
@@ -27,6 +29,8 @@ class MapMarkerModel {
     this.rating,
     this.description,
     this.recommendedDuration,
+    this.geofenceRadiusMeters = 250,
+    this.minDwellMinutes = 20,
   });
 
   bool get hasValidCoordinates =>
@@ -53,6 +57,9 @@ class MapMarkerModel {
     coverImageUrl: item['cover_image_url'] as String?,
     description: item['description'] as String?,
     recommendedDuration: item['recommended_duration'] as String?,
+    geofenceRadiusMeters:
+        (item['geofence_radius_meters'] as num?)?.toInt() ?? 250,
+    minDwellMinutes: (item['min_dwell_minutes'] as num?)?.toInt() ?? 20,
     // The tourism catalog does not supply review ratings.
     rating: rating,
   );
@@ -71,6 +78,9 @@ class MapMarkerModel {
       rating: (json['rating'] as num?)?.toDouble(),
       description: json['description'] as String?,
       recommendedDuration: json['recommended_duration'] as String?,
+      geofenceRadiusMeters:
+          (json['geofence_radius_meters'] as num?)?.toInt() ?? 250,
+      minDwellMinutes: (json['min_dwell_minutes'] as num?)?.toInt() ?? 20,
     );
   }
 
@@ -88,6 +98,8 @@ class MapMarkerModel {
       'rating': rating,
       'description': description,
       'recommended_duration': recommendedDuration,
+      'geofence_radius_meters': geofenceRadiusMeters,
+      'min_dwell_minutes': minDwellMinutes,
     };
   }
 }

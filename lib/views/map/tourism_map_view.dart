@@ -203,10 +203,6 @@ class _TourismMapViewState extends State<TourismMapView>
 
   Future<void> _locate({bool center = true}) async {
     FocusScope.of(context).unfocus();
-    final cached = _location.position;
-    if (cached != null && center) {
-      _fly(LatLng(cached.latitude, cached.longitude), 13);
-    }
     await _location.locate(requestPermission: true);
     if (!mounted) return;
     final point = _location.position;
@@ -382,15 +378,11 @@ class _TourismMapViewState extends State<TourismMapView>
             final pinnedPlace = _pinnedDestinationId == null
                 ? null
                 : (places
-                        .where(
-                          (p) => p.destinationId == _pinnedDestinationId,
-                        )
-                        .firstOrNull ??
-                    controller.markers
-                        .where(
-                          (p) => p.destinationId == _pinnedDestinationId,
-                        )
-                        .firstOrNull);
+                          .where((p) => p.destinationId == _pinnedDestinationId)
+                          .firstOrNull ??
+                      controller.markers
+                          .where((p) => p.destinationId == _pinnedDestinationId)
+                          .firstOrNull);
             return Stack(
               children: [
                 Positioned.fill(
@@ -452,7 +444,8 @@ class _TourismMapViewState extends State<TourismMapView>
                                     _selectedId,
                                 pinned: group.items.any(
                                   (item) =>
-                                      item.destinationId == _pinnedDestinationId,
+                                      item.destinationId ==
+                                      _pinnedDestinationId,
                                 ),
                                 onTap: () {
                                   if (group.items.length == 1) {
@@ -906,7 +899,10 @@ class _TourismMapViewState extends State<TourismMapView>
             _pinnedDestinationId = nextPinned;
           });
           try {
-            final visitCtrl = Provider.of<VisitController?>(context, listen: false);
+            final visitCtrl = Provider.of<VisitController?>(
+              context,
+              listen: false,
+            );
             if (visitCtrl != null) {
               if (nextPinned != null) {
                 visitCtrl.setPendingDestination(
@@ -916,6 +912,8 @@ class _TourismMapViewState extends State<TourismMapView>
                     latitude: selected.latitude,
                     longitude: selected.longitude,
                     region: selected.region,
+                    geofenceRadiusMeters: selected.geofenceRadiusMeters,
+                    minDwellMinutes: selected.minDwellMinutes,
                   ),
                 );
               } else {
@@ -1120,14 +1118,18 @@ class _TourismMapViewState extends State<TourismMapView>
                   final ctrl = visitCtrl;
 
                   final active = ctrl.activeVisit;
-                  final isVisitingThis = active != null &&
+                  final isVisitingThis =
+                      active != null &&
                       active.destinationId == pinnedPlace.destinationId &&
                       active.isInProgress;
 
                   if (isVisitingThis) {
                     return Container(
                       margin: const EdgeInsets.only(right: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
@@ -1136,7 +1138,11 @@ class _TourismMapViewState extends State<TourismMapView>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.water_drop_rounded, size: 12, color: AppColors.accent),
+                          const Icon(
+                            Icons.water_drop_rounded,
+                            size: 12,
+                            color: AppColors.accent,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${active.remainingMinutes} min',
@@ -1151,7 +1157,9 @@ class _TourismMapViewState extends State<TourismMapView>
                     );
                   }
 
-                  final isInside = distanceMeters != null && distanceMeters <= 250;
+                  final isInside =
+                      distanceMeters != null &&
+                      distanceMeters <= pinnedPlace.geofenceRadiusMeters;
                   if (isInside) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -1159,12 +1167,25 @@ class _TourismMapViewState extends State<TourismMapView>
                         onPressed: ctrl.isActionLoading
                             ? null
                             : () async {
-                                final lat = _location.position?.latitude ?? pinnedPlace.latitude;
-                                final lon = _location.position?.longitude ?? pinnedPlace.longitude;
+                                await _location.locate(requestPermission: true);
+                                final position = _location.position;
+                                if (position == null) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          _location.error ??
+                                              'Activa tu ubicación para iniciar la visita.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
                                 final ok = await ctrl.startCheckIn(
                                   destinationId: pinnedPlace.destinationId,
-                                  latitude: lat,
-                                  longitude: lon,
+                                  latitude: position.latitude,
+                                  longitude: position.longitude,
                                 );
                                 if (context.mounted && ok) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1175,12 +1196,24 @@ class _TourismMapViewState extends State<TourismMapView>
                                       backgroundColor: AppColors.primary,
                                     ),
                                   );
+                                } else if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ctrl.error ??
+                                            'No pudimos iniciar la visita.',
+                                      ),
+                                    ),
+                                  );
                                 }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: RoundedRectangleBorder(
@@ -1190,7 +1223,10 @@ class _TourismMapViewState extends State<TourismMapView>
                         icon: const Icon(Icons.location_on_rounded, size: 14),
                         label: const Text(
                           'Check-in',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     );
@@ -1202,10 +1238,7 @@ class _TourismMapViewState extends State<TourismMapView>
               IconButton(
                 tooltip: 'Desfijar destino',
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 28,
-                  minHeight: 28,
-                ),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 icon: const Icon(
                   Icons.close_rounded,
                   size: 17,

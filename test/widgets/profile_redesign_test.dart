@@ -59,6 +59,7 @@ void main() {
                   onEditProfile: () {},
                   onChangePassword: () {},
                   onPreferences: () {},
+                  onAtlas: () {},
                   onMyReviews: () {},
                   onArchived: () {},
                   onPrivacy: () {},

@@ -88,7 +88,77 @@ class MapLocation extends DestinationLocation {
   }
 }
 
+class RetryMapLocation extends DestinationLocation {
+  bool enabled = false;
+  int attempts = 0;
+
+  @override
+  Future<void> locate({bool requestPermission = true}) async {
+    if (!requestPermission) return;
+    attempts++;
+    busy = true;
+    position = null;
+    notifyListeners();
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    if (enabled) {
+      position = Position(
+        latitude: -12.1,
+        longitude: -77.02,
+        timestamp: DateTime.now(),
+        accuracy: 30,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+      error = null;
+    } else {
+      error = 'Activa la ubicación del dispositivo para calcular la distancia.';
+    }
+    busy = false;
+    notifyListeners();
+  }
+}
+
 void main() {
+  testWidgets('permite reintentar distancia tras activar ubicación', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final location = RetryMapLocation();
+    final controller = TourismMapController(MapData());
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: controller,
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: TourismMapView(
+            tileProvider: NoNetworkTiles(),
+            location: location,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(MapPhotoPin).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ver mi distancia'));
+    await tester.pumpAndSettle();
+    expect(location.attempts, 1);
+    expect(find.text('Ver mi distancia'), findsOneWidget);
+    location.enabled = true;
+    await tester.tap(find.text('Ver mi distancia'));
+    await tester.pumpAndSettle();
+    expect(location.attempts, 2);
+    expect(find.textContaining('en línea recta'), findsOneWidget);
+  });
+
   testWidgets(
     'map filters, selects a photo, shows GPS and navigates to destination',
     (tester) async {

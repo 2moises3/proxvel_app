@@ -11,6 +11,7 @@ class ProfileMenuSection extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onChangePassword;
   final VoidCallback onPreferences;
+  final VoidCallback onAtlas;
   final VoidCallback onMyReviews;
   final VoidCallback onArchived;
   final VoidCallback onPrivacy;
@@ -24,6 +25,7 @@ class ProfileMenuSection extends StatelessWidget {
     required this.onEditProfile,
     required this.onChangePassword,
     required this.onPreferences,
+    required this.onAtlas,
     required this.onMyReviews,
     required this.onArchived,
     required this.onPrivacy,
@@ -75,6 +77,11 @@ class ProfileMenuSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _group('Tu experiencia', [
+          ProfileMenuItem(
+            svgIcon: AppIcons.compass,
+            label: 'Atlas de visitas',
+            onTap: onAtlas,
+          ),
           ProfileMenuItem(
             svgIcon: AppIcons.sliders,
             label: 'Preferencias de viaje',

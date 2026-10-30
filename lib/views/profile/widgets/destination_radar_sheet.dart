@@ -15,10 +15,7 @@ import '../../../models/visit_model.dart';
 class DestinationRadarSheet extends StatefulWidget {
   final VoidCallback? onTargetSelected;
 
-  const DestinationRadarSheet({
-    super.key,
-    this.onTargetSelected,
-  });
+  const DestinationRadarSheet({super.key, this.onTargetSelected});
 
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet(
@@ -66,10 +63,19 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
 
     final mapService = context.read<TourismMapService>();
     final location = DestinationLocation.shared;
-    if (location.position == null) {
-      await location.locate(requestPermission: true);
-    }
+    await location.locate(requestPermission: true);
     if (!mounted) return;
+    if (location.position == null) {
+      setState(() {
+        _isScanning = false;
+        _nearbyDestinations = [];
+        _selectedTarget = null;
+        _statusText =
+            location.error ??
+            'Activa la ubicación para buscar destinos cerca de ti.';
+      });
+      return;
+    }
 
     try {
       final markers = await mapService.getMapMarkers();
@@ -79,25 +85,22 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
       await Future.delayed(const Duration(milliseconds: 2100));
       if (!mounted) return;
 
-      final userLat = location.position?.latitude ?? -12.0694;
-      final userLon = location.position?.longitude ?? -77.0346;
-
-      // Ordenar por distancia ortodrómica
+      // Ordenar por distancia desde la ubicación real del dispositivo.
       final withDistance = markers.map((m) {
-        final dist = location.distance(m.latitude, m.longitude) ??
-            _estimateDistance(userLat, userLon, m.latitude, m.longitude);
+        final dist = location.distance(m.latitude, m.longitude)!;
         return _MarkerDistance(m, dist);
-      }).toList()
-        ..sort((a, b) => a.distance.compareTo(b.distance));
+      }).toList()..sort((a, b) => a.distance.compareTo(b.distance));
 
       if (mounted) {
         setState(() {
           _isScanning = false;
-          _nearbyDestinations = withDistance.take(4).map((e) => e.marker).toList();
-          _selectedTarget = _nearbyDestinations.isNotEmpty ? _nearbyDestinations.first : null;
+          _nearbyDestinations = withDistance.map((e) => e.marker).toList();
+          _selectedTarget = _nearbyDestinations.isNotEmpty
+              ? _nearbyDestinations.first
+              : null;
           _statusText = _selectedTarget != null
-              ? '🎯 ¡Atractivos turísticos detectados en tu radar!'
-              : 'No se detectaron destinos en el radio inmediato.';
+              ? 'Destinos cercanos a tu ubicación actual'
+              : 'No hay destinos con ubicación disponible.';
         });
       }
     } catch (e) {
@@ -110,19 +113,6 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
     }
   }
 
-  double _estimateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const r = 6371000.0;
-    final dLat = (lat2 - lat1) * math.pi / 180.0;
-    final dLon = (lon2 - lon1) * math.pi / 180.0;
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1 * math.pi / 180.0) *
-            math.cos(lat2 * math.pi / 180.0) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return r * c;
-  }
-
   String _formatDistance(double? meters) {
     if (meters == null) return 'Distancia calculándose';
     if (meters < 1000) return 'A ${meters.toInt()} metros de ti';
@@ -133,13 +123,16 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
   Widget build(BuildContext context) {
     final location = DestinationLocation.shared;
     final distance = _selectedTarget != null
-        ? location.distance(_selectedTarget!.latitude, _selectedTarget!.longitude)
+        ? location.distance(
+            _selectedTarget!.latitude,
+            _selectedTarget!.longitude,
+          )
         : null;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.82,
       decoration: const BoxDecoration(
-        color: Color(0xFF0D1B2A), // Azul marino nocturno espacial
+        color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -150,14 +143,17 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
             width: 44,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.25),
+              color: AppColors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
 
           // Título de cabecera
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.screen,
+              vertical: 8,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -166,11 +162,17 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.cyanAccent.withValues(alpha: 0.15),
+                        color: AppColors.accentSoft,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.accent.withValues(alpha: 0.5),
+                        ),
                       ),
-                      child: const Icon(Icons.radar_rounded, color: Colors.cyanAccent, size: 20),
+                      child: const Icon(
+                        Icons.radar_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Column(
@@ -179,7 +181,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                         Text(
                           'Radar de Destinos',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -187,7 +189,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                         Text(
                           'Búsqueda activa de sellado por GPS',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: AppColors.textSecondary,
                             fontSize: 11.5,
                           ),
                         ),
@@ -197,7 +199,10 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -229,11 +234,13 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                                 width: 14,
                                 height: 14,
                                 decoration: BoxDecoration(
-                                  color: Colors.cyanAccent,
+                                  color: AppColors.accent,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                                      color: AppColors.accent.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       blurRadius: 10,
                                       spreadRadius: 3,
                                     ),
@@ -254,30 +261,64 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                     _statusText ?? 'Escaneando...',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _isScanning ? Colors.cyanAccent : Colors.white,
+                      color: _isScanning
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  if (!_isScanning && location.position == null)
+                    TextButton.icon(
+                      onPressed: _performScan,
+                      icon: const Icon(Icons.my_location_rounded),
+                      label: const Text('Reintentar ubicación'),
+                    ),
 
                   const SizedBox(height: 16),
 
                   // ── Tarjeta del destino detectado ──
                   if (!_isScanning && _selectedTarget != null) ...[
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.screen,
+                      ),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          for (final marker in _nearbyDestinations)
+                            ChoiceChip(
+                              label: Text(marker.destination),
+                              selectedColor: AppColors.accentSoft,
+                              backgroundColor: AppColors.surface,
+                              labelStyle: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 12,
+                              ),
+                              selected:
+                                  marker.destinationId ==
+                                  _selectedTarget!.destinationId,
+                              onSelected: (_) =>
+                                  setState(() => _selectedTarget = marker),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.screen,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.cyanAccent.withValues(alpha: 0.4),
-                            width: 1.5,
-                          ),
+                          border: Border.all(color: AppColors.border),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.cyanAccent.withValues(alpha: 0.1),
+                              color: Colors.black.withValues(alpha: 0.06),
                               blurRadius: 20,
                               offset: const Offset(0, 6),
                             ),
@@ -289,20 +330,27 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.cyanAccent.withValues(alpha: 0.2),
+                                    color: AppColors.accentSoft,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.near_me_rounded, size: 12, color: Colors.cyanAccent),
+                                      const Icon(
+                                        Icons.near_me_rounded,
+                                        size: 12,
+                                        color: AppColors.primary,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         _formatDistance(distance),
                                         style: const TextStyle(
-                                          color: Colors.cyanAccent,
+                                          color: AppColors.primary,
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -315,7 +363,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                                   Text(
                                     _selectedTarget!.region!.toUpperCase(),
                                     style: const TextStyle(
-                                      color: Colors.white60,
+                                      color: AppColors.textMuted,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.5,
@@ -329,19 +377,32 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              '🎯 Radio de geocerca: 250 m | ⏱️ Permanencia: 20 min',
-                              style: TextStyle(
-                                color: Colors.white70,
+                            Text(
+                              'Radio: ${_selectedTarget!.geofenceRadiusMeters} m · Permanencia: ${_selectedTarget!.minDwellMinutes} min',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
                                 fontSize: 11.5,
                               ),
                             ),
+                            if (distance != null) ...[
+                              const SizedBox(height: 5),
+                              Text(
+                                distance <=
+                                        _selectedTarget!.geofenceRadiusMeters
+                                    ? 'Estás dentro del radio de este destino.'
+                                    : 'Aún estás fuera del radio de este destino.',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 14),
 
                             // Botón de Fijar como Objetivo
@@ -349,15 +410,23 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () {
-                                  final visitCtrl = context.read<VisitController>();
+                                  final visitCtrl = context
+                                      .read<VisitController>();
                                   final pending = PendingSealDestination(
-                                    destinationId: _selectedTarget!.destinationId,
-                                    destinationName: _selectedTarget!.destination,
+                                    destinationId:
+                                        _selectedTarget!.destinationId,
+                                    destinationName:
+                                        _selectedTarget!.destination,
                                     latitude: _selectedTarget!.latitude,
                                     longitude: _selectedTarget!.longitude,
                                     region: _selectedTarget!.region,
-                                    coverImageUrl: _selectedTarget!.coverImageUrl,
+                                    coverImageUrl:
+                                        _selectedTarget!.coverImageUrl,
                                     distanceMeters: distance,
+                                    geofenceRadiusMeters:
+                                        _selectedTarget!.geofenceRadiusMeters,
+                                    minDwellMinutes:
+                                        _selectedTarget!.minDwellMinutes,
                                   );
                                   visitCtrl.setPendingDestination(pending);
                                   Navigator.of(context).pop();
@@ -372,18 +441,26 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.cyanAccent,
-                                  foregroundColor: Colors.black87,
+                                  backgroundColor: AppColors.accent,
+                                  foregroundColor: AppColors.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  elevation: 6,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  elevation: 0,
                                 ),
-                                icon: const Icon(Icons.track_changes_rounded, size: 18),
+                                icon: const Icon(
+                                  Icons.track_changes_rounded,
+                                  size: 18,
+                                ),
                                 label: const Text(
                                   'Fijar como objetivo de sellado',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -428,7 +505,7 @@ class _RadarPainter extends CustomPainter {
     final maxRadius = size.width / 2;
 
     final linePaint = Paint()
-      ..color = Colors.cyanAccent.withValues(alpha: 0.22)
+      ..color = AppColors.primary.withValues(alpha: 0.14)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -454,7 +531,7 @@ class _RadarPainter extends CustomPainter {
     final waveRadius = maxRadius * progress;
     final waveOpacity = (1.0 - progress).clamp(0.0, 1.0) * 0.45;
     final wavePaint = Paint()
-      ..color = Colors.cyanAccent.withValues(alpha: waveOpacity)
+      ..color = AppColors.accent.withValues(alpha: waveOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
     canvas.drawCircle(center, waveRadius, wavePaint);
@@ -467,8 +544,8 @@ class _RadarPainter extends CustomPainter {
           startAngle: 0.0,
           endAngle: math.pi / 2,
           colors: [
-            Colors.cyanAccent.withValues(alpha: 0.0),
-            Colors.cyanAccent.withValues(alpha: 0.35),
+            AppColors.accent.withValues(alpha: 0.0),
+            AppColors.accent.withValues(alpha: 0.35),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: maxRadius));
 
@@ -487,7 +564,10 @@ class _RadarPainter extends CustomPainter {
 
     // Punto objetivo detectado ("blip")
     if (hasTarget && !isScanning) {
-      final blipOffset = Offset(center.dx + maxRadius * 0.52, center.dy - maxRadius * 0.42);
+      final blipOffset = Offset(
+        center.dx + maxRadius * 0.52,
+        center.dy - maxRadius * 0.42,
+      );
       final blipPaint = Paint()
         ..color = AppColors.accent
         ..style = PaintingStyle.fill;

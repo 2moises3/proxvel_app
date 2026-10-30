@@ -15,8 +15,6 @@ import 'widgets/preferences_summary_card.dart';
 import 'widgets/profile_menu_section.dart';
 import 'widgets/about_proxvel_sheet.dart';
 import 'widgets/logout_confirm_sheet.dart';
-import 'widgets/atlas_passport_section.dart';
-import '../../controllers/visit_controller.dart';
 import '../../core/utils/avatar_picker_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -35,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context.read<ProfileController>().loadProfileData();
       final auth = context.read<AuthController>();
       context.read<MyReviewsController>().loadUserReviews(auth.currentUser);
-      context.read<VisitController>().initVisitState();
     });
   }
 
@@ -101,9 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               recommendationsCount: recCount,
             ),
 
-            const SizedBox(height: AppSpace.section),
-            const AtlasPassportSection(),
-
             if (profile != null) ...[
               const SizedBox(height: AppSpace.section),
               PreferencesSummaryCard(profile: profile),
@@ -116,6 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // The shared editor publishes the confirmed backend response.
               // Reloading here would duplicate the request and blank the page.
               onPreferences: () => context.push('/profile/preferences'),
+              onAtlas: () => context.push('/profile/atlas'),
               onMyReviews: () => context.push('/profile/my-reviews'),
               onArchived: () => context.push('/archived'),
               onPrivacy: () => context.push('/legal'),

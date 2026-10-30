@@ -14,20 +14,22 @@ class VisitService {
     required double longitude,
   }) async {
     try {
-      final response = await _apiClient.post(
-        '${ApiConfig.visits}/check-in',
-        {
-          'destination_id': destinationId,
-          'latitude': latitude,
-          'longitude': longitude,
-        },
-      );
+      final response = await _apiClient.post('${ApiConfig.visits}/check-in', {
+        'destination_id': destinationId,
+        'latitude': latitude,
+        'longitude': longitude,
+      });
       if (response['success'] == true && response['data'] != null) {
         return VisitModel.fromJson(response['data'] as Map<String, dynamic>);
       }
       throw Exception(response['message'] ?? 'No se pudo iniciar el check-in');
-    } catch (e) {
-      throw Exception('Error al registrar check-in: $e');
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        0,
+        'No pudimos iniciar la visita. Inténtalo nuevamente.',
+      );
     }
   }
 
@@ -38,20 +40,22 @@ class VisitService {
     required double longitude,
   }) async {
     try {
-      final response = await _apiClient.post(
-        '${ApiConfig.visits}/verify',
-        {
-          'visit_id': visitId,
-          'latitude': latitude,
-          'longitude': longitude,
-        },
-      );
+      final response = await _apiClient.post('${ApiConfig.visits}/verify', {
+        'visit_id': visitId,
+        'latitude': latitude,
+        'longitude': longitude,
+      });
       if (response['success'] == true && response['data'] != null) {
         return VisitModel.fromJson(response['data'] as Map<String, dynamic>);
       }
       throw Exception(response['message'] ?? 'No se pudo verificar la visita');
-    } catch (e) {
-      throw Exception('Error al certificar visita: $e');
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        0,
+        'No pudimos sellar la visita. Inténtalo nuevamente.',
+      );
     }
   }
 
@@ -73,9 +77,15 @@ class VisitService {
     try {
       final response = await _apiClient.get('${ApiConfig.visits}/atlas');
       if (response['success'] == true && response['data'] != null) {
-        return AtlasSummaryModel.fromJson(response['data'] as Map<String, dynamic>);
+        return AtlasSummaryModel.fromJson(
+          response['data'] as Map<String, dynamic>,
+        );
       }
-      return AtlasSummaryModel(totalVerifiedVisits: 0, regionsVisited: 0, visits: []);
+      return AtlasSummaryModel(
+        totalVerifiedVisits: 0,
+        regionsVisited: 0,
+        visits: [],
+      );
     } catch (e) {
       throw Exception('Error al cargar Atlas de visitas: $e');
     }

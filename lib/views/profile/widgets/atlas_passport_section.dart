@@ -62,7 +62,10 @@ class AtlasPassportSection extends StatelessWidget {
                     onTap: () => DestinationRadarSheet.show(context),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -93,7 +96,10 @@ class AtlasPassportSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(20),
@@ -122,17 +128,40 @@ class AtlasPassportSection extends StatelessWidget {
             isVerifying: visitCtrl.isActionLoading,
             onVerify: () async {
               final loc = DestinationLocation.shared;
-              final lat = loc.position?.latitude ?? -12.0694;
-              final lon = loc.position?.longitude ?? -77.0346;
+              await loc.locate(requestPermission: true);
+              final position = loc.position;
+              if (position == null) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        loc.error ??
+                            'Activa tu ubicación para sellar la visita.',
+                      ),
+                    ),
+                  );
+                }
+                return;
+              }
               final ok = await visitCtrl.verifyActiveVisit(
-                latitude: lat,
-                longitude: lon,
+                latitude: position.latitude,
+                longitude: position.longitude,
               );
               if (context.mounted && ok) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('🎉 ¡Tu visita ha sido sellada con éxito en tu Atlas!'),
+                    content: Text(
+                      '🎉 ¡Tu visita ha sido sellada con éxito en tu Atlas!',
+                    ),
                     backgroundColor: AppColors.accent,
+                  ),
+                );
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      visitCtrl.error ?? 'No pudimos sellar la visita.',
+                    ),
                   ),
                 );
               }
@@ -142,7 +171,11 @@ class AtlasPassportSection extends StatelessWidget {
         ]
         // ── 2. Si no hay visita en progreso pero sí un objetivo en espera ──
         else if (pending != null) ...[
-          _buildPendingDestinationCard(context, visitCtrl, pending),
+          AnimatedBuilder(
+            animation: DestinationLocation.shared,
+            builder: (context, _) =>
+                _buildPendingDestinationCard(context, visitCtrl, pending),
+          ),
           const SizedBox(height: 12),
         ],
 
@@ -164,10 +197,14 @@ class AtlasPassportSection extends StatelessWidget {
   ) {
     final location = DestinationLocation.shared;
     final dist = location.distance(pending.latitude, pending.longitude);
-    final isInside = dist != null && dist <= 250;
+    final radius = pending.geofenceRadiusMeters;
+    final isInside = dist != null && dist <= radius;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen, vertical: 4),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpace.screen,
+        vertical: 4,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -180,7 +217,9 @@ class AtlasPassportSection extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isInside ? AppColors.accent : AppColors.primary).withValues(alpha: 0.08),
+            color: (isInside ? AppColors.accent : AppColors.primary).withValues(
+              alpha: 0.08,
+            ),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -194,7 +233,8 @@ class AtlasPassportSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (isInside ? AppColors.accent : AppColors.primary).withValues(alpha: 0.12),
+                  color: (isInside ? AppColors.accent : AppColors.primary)
+                      .withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -209,7 +249,9 @@ class AtlasPassportSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isInside ? '🎯 ¡LLEGASTE AL DESTINO!' : '🎯 OBJETIVO EN ESPERA DE SELLADO',
+                      isInside
+                          ? '🎯 ¡LLEGASTE AL DESTINO!'
+                          : '🎯 OBJETIVO EN ESPERA DE SELLADO',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -259,13 +301,17 @@ class AtlasPassportSection extends StatelessWidget {
                   child: Text(
                     dist != null
                         ? isInside
-                            ? 'Estás a solo ${dist.round()} m (dentro del radio de 250 m)'
-                            : 'Estás a ${dist.round()} m. Acércate a menos de 250 m para iniciar el conteo.'
-                        : 'Calculando distancia por GPS…',
+                              ? 'Estás a ${dist.round()} m (radio permitido: $radius m)'
+                              : 'Estás a ${dist.round()} m. Acércate a menos de $radius m para iniciar el conteo.'
+                        : 'Activa tu ubicación para calcular la distancia.',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: isInside ? FontWeight.w600 : FontWeight.normal,
-                      color: isInside ? AppColors.accent : AppColors.textSecondary,
+                      fontWeight: isInside
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                      color: isInside
+                          ? AppColors.accent
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -280,18 +326,42 @@ class AtlasPassportSection extends StatelessWidget {
                     onPressed: visitCtrl.isActionLoading
                         ? null
                         : () async {
-                            final lat = location.position?.latitude ?? pending.latitude;
-                            final lon = location.position?.longitude ?? pending.longitude;
+                            await location.locate(requestPermission: true);
+                            final position = location.position;
+                            if (position == null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      location.error ??
+                                          'Activa tu ubicación para iniciar la visita.',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
                             final ok = await visitCtrl.startCheckIn(
                               destinationId: pending.destinationId,
-                              latitude: lat,
-                              longitude: lon,
+                              latitude: position.latitude,
+                              longitude: position.longitude,
                             );
                             if (context.mounted && ok) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('⏱️ ¡Conteo iniciado! La card de agua se irá llenando.'),
+                                  content: Text(
+                                    '⏱️ ¡Conteo iniciado! La card de agua se irá llenando.',
+                                  ),
                                   backgroundColor: AppColors.accent,
+                                ),
+                              );
+                            } else if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    visitCtrl.error ??
+                                        'No pudimos iniciar la visita.',
+                                  ),
                                 ),
                               );
                             }
@@ -320,7 +390,9 @@ class AtlasPassportSection extends StatelessWidget {
                     onPressed: () => DestinationRadarSheet.show(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -329,7 +401,10 @@ class AtlasPassportSection extends StatelessWidget {
                     icon: const Icon(Icons.radar_rounded, size: 18),
                     label: const Text(
                       'Abrir Radar GPS',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
           ),
@@ -340,7 +415,10 @@ class AtlasPassportSection extends StatelessWidget {
 
   Widget _buildEmptyAtlas(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpace.screen, vertical: 6),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpace.screen,
+        vertical: 6,
+      ),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -397,7 +475,9 @@ class AtlasPassportSection extends StatelessWidget {
               onPressed: () => DestinationRadarSheet.show(context),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -468,7 +548,10 @@ class AtlasPassportSection extends StatelessWidget {
                 ),
                 if (stamp.region != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
