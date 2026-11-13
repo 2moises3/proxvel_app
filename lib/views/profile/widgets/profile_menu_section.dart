@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/localization/app_language.dart';
+import '../../../core/localization/language_picker.dart';
+import '../../../core/localization/l10n.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common/app_icon.dart';
@@ -17,6 +21,7 @@ class ProfileMenuSection extends StatelessWidget {
   final VoidCallback onPrivacy;
   final VoidCallback onAbout;
   final VoidCallback onUpdates;
+  final bool updateAvailable;
   final VoidCallback onLogout;
   final VoidCallback? onDeleteAccount;
 
@@ -31,6 +36,7 @@ class ProfileMenuSection extends StatelessWidget {
     required this.onPrivacy,
     required this.onAbout,
     required this.onUpdates,
+    this.updateAvailable = false,
     required this.onLogout,
     this.onDeleteAccount,
   });
@@ -76,67 +82,75 @@ class ProfileMenuSection extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _group('Tu experiencia', [
+        _group(context.l10n.yourExperience, [
           ProfileMenuItem(
             svgIcon: AppIcons.compass,
-            label: 'Atlas de visitas',
+            label: context.l10n.visitAtlas,
             onTap: onAtlas,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.sliders,
-            label: 'Preferencias de viaje',
+            label: context.l10n.travelPreferences,
             onTap: onPreferences,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.star,
-            label: 'Mis reseñas',
+            label: context.l10n.myReviews,
             onTap: onMyReviews,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.compass,
-            label: 'Destinos archivados',
+            label: context.l10n.archivedPlaces,
             onTap: onArchived,
           ),
         ]),
-        _group('Cuenta y privacidad', [
+        _group(context.l10n.accountPrivacy, [
           ProfileMenuItem(
             svgIcon: AppIcons.navProfile,
-            label: 'Datos personales',
+            label: context.l10n.personalData,
             onTap: onEditProfile,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.lock,
-            label: 'Cambiar contraseña',
+            label: context.l10n.changePassword,
             onTap: onChangePassword,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.info,
-            label: 'Privacidad y mis datos',
+            label: context.l10n.privacyData,
             onTap: onPrivacy,
           ),
         ]),
         _group('PROXVEL', [
+          if (context.watch<AppLanguage?>() != null)
+            ProfileMenuItem(
+              icon: Icons.language_rounded,
+              label: context.l10n.language,
+              onTap: () => showLanguagePicker(context),
+            ),
           ProfileMenuItem(
             svgIcon: AppIcons.info,
-            label: 'Conoce PROXVEL',
+            label: context.l10n.aboutProxvel,
             onTap: onAbout,
           ),
           ProfileMenuItem(
             svgIcon: AppIcons.externalLink,
-            label: 'Actualizaciones',
+            label: updateAvailable
+                ? context.l10n.uiActualizacionDisponible
+                : context.l10n.updates,
             onTap: onUpdates,
           ),
         ]),
-        _group('Gestionar mi cuenta', [
+        _group(context.l10n.manageAccount, [
           ProfileMenuItem(
             svgIcon: AppIcons.logOut,
-            label: 'Cerrar sesión',
+            label: context.l10n.signOut,
             onTap: onLogout,
           ),
           if (onDeleteAccount != null)
             ProfileMenuItem(
               svgIcon: AppIcons.navProfile,
-              label: 'Eliminar mi cuenta',
+              label: context.l10n.deleteAccount,
               isDestructive: true,
               onTap: onDeleteAccount!,
             ),

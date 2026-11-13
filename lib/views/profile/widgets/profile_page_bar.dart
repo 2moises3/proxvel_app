@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -22,7 +23,7 @@ PreferredSizeWidget profilePageBar(
     padding: const EdgeInsets.only(left: 16),
     child: Center(
       child: IconButton.filledTonal(
-        tooltip: 'Volver',
+        tooltip: context.l10n.back,
         style: IconButton.styleFrom(
           backgroundColor: Colors.white,
           foregroundColor: AppColors.textPrimary,

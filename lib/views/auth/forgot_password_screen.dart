@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/auth_form_page.dart';
 import 'widgets/auth_backdrop.dart';
 import '../../core/widgets/inputs/glass_text_field.dart';
@@ -8,7 +9,8 @@ import '../../controllers/auth_controller.dart';
 
 /// Paso 1 de recuperar la contraseña: se pide el correo y se envía un código de 6 dígitos.
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({super.key, this.initialEmail = ''});
+  final String initialEmail;
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -16,7 +18,9 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final String _background = AuthScenes.current;
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    text: widget.initialEmail,
+  );
   bool _isLoading = false;
   bool _submitted = false;
   String? _serverError;
@@ -24,11 +28,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   String? get _emailError {
-    if (_serverError != null) return _serverError;
+    if (_serverError != null) return context.errorText(_serverError!);
     final value = _emailController.text.trim();
     if (!_submitted) return null;
-    if (value.isEmpty) return 'Ingresa tu correo.';
-    if (!_emailRegex.hasMatch(value)) return 'Ingresa un correo válido.';
+    if (value.isEmpty) return context.l10n.uiIngresaTuCorreo;
+    if (!_emailRegex.hasMatch(value)) {
+      return context.l10n.uiIngresaUnCorreoValido;
+    }
     return null;
   }
 
@@ -72,13 +78,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) => AuthFormPage(
     background: _background,
     onBack: () => context.pop(),
-    title: 'Recupera\ntu acceso.',
-    subtitle: 'Ingresa el correo de tu cuenta para solicitar un código.',
+    title: context.l10n.uiRecuperaTuAcceso,
+    subtitle: context.l10n.uiIngresaElCorreoDeTuCuenta,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GlassTextField(
-          label: 'Correo electrónico',
+          label: context.l10n.email,
           hintText: 'nombre@correo.com',
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
@@ -87,7 +93,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 28),
         AuthSubmitButton(
-          text: 'Enviar código',
+          text: context.l10n.uiEnviarCodigo,
           isLoading: _isLoading,
           onPressed: _send,
         ),
@@ -95,7 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         TextButton(
           onPressed: () => context.pop(),
           style: TextButton.styleFrom(foregroundColor: Colors.white),
-          child: const Text('Volver a iniciar sesión'),
+          child: Text(context.l10n.uiVolverAIniciarSesion),
         ),
       ],
     ),

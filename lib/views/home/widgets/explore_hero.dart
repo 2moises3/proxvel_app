@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../../../core/theme/app_colors.dart';
@@ -120,7 +121,7 @@ class _ExploreHeroState extends State<ExploreHero>
                     Expanded(
                       child: Semantics(
                         button: true,
-                        label: 'Abrir perfil de $userName',
+                        label: context.l10n.openUserProfile(userName),
                         child: InkWell(
                           onTap: onProfile,
                           borderRadius: BorderRadius.circular(24),
@@ -175,7 +176,7 @@ class _ExploreHeroState extends State<ExploreHero>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Descubre destinos increíbles y vive experiencias inolvidables en Perú.',
+                  context.l10n.discoverPeru,
                   style: AppTypography.style(
                     fontSize: 26,
                     fontWeight: FontWeight.w500,
@@ -229,7 +230,7 @@ class _ExploreHeroState extends State<ExploreHero>
                                               const SizedBox(width: 8),
                                               Expanded(
                                                 child: Text(
-                                                  '¿A dónde quieres ir?',
+                                                  context.l10n.searchHint,
                                                   style: AppTypography.style(
                                                     fontSize: 14,
                                                     color: const Color(
@@ -251,7 +252,8 @@ class _ExploreHeroState extends State<ExploreHero>
                                   child: Material(
                                     color: Colors.transparent,
                                     child: IconButton.filled(
-                                      tooltip: 'Buscar y filtrar destinos',
+                                      tooltip:
+                                          context.l10n.searchFilterDestinations,
                                       onPressed: onFilter ?? onSearch,
                                       style: IconButton.styleFrom(
                                         backgroundColor: AppColors.accent,

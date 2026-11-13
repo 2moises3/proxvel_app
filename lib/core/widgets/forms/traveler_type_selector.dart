@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_layout.dart';
@@ -16,7 +17,7 @@ class TravelerTypeSelector extends StatelessWidget {
         key: ValueKey(value),
         initialValue: travelerTypes.containsKey(value) ? value : null,
         isExpanded: true,
-        hint: const Text('Elige tu estilo de viaje'),
+        hint: Text(context.l10n.uiEligeTuEstiloDeViaje),
         decoration: InputDecoration(
           filled: true,
           fillColor: AppColors.surface,
@@ -42,8 +43,8 @@ class TravelerTypeSelector extends StatelessWidget {
         onChanged: onChanged,
       ),
       const SizedBox(height: AppSpace.content),
-      const Text(
-        'Tu elección define qué aspectos prioriza la recomendación. Puedes cambiarla después.',
+      Text(
+        context.l10n.uiTuEleccionDefineQueAspectosPrioriza,
         style: AppTextStyles.body2,
       ),
     ],

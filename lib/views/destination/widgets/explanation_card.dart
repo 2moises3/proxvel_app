@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -41,8 +42,8 @@ class ExplanationCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
-                '¿Por qué se recomienda?',
+              Text(
+                context.l10n.uiPorQueSeRecomienda,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,

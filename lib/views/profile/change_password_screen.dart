@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
@@ -30,9 +31,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   _serverError; // error devuelto por el backend (contraseña actual incorrecta, etc.)
 
   String? get _currentError {
-    if (_serverError != null) return _serverError;
+    if (_serverError != null) return context.errorText(_serverError!);
     if (_submitted && _currentController.text.isEmpty) {
-      return 'Ingresa tu contraseña actual.';
+      return context.l10n.uiIngresaTuContrasenaActual;
     }
     return null;
   }
@@ -40,21 +41,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   String? get _newError {
     final value = _newController.text;
     if (value.isEmpty) {
-      return _submitted ? 'Ingresa la nueva contraseña.' : null;
+      return _submitted ? context.l10n.uiIngresaLaNuevaContrasena : null;
     }
     if (value.length < kMinPasswordLength) {
       return 'Debe tener al menos $kMinPasswordLength caracteres.';
     }
     if (value == _currentController.text) {
-      return 'Debe ser distinta de la actual.';
+      return context.l10n.uiDebeSerDistintaDeLaActual;
     }
     return null;
   }
 
   String? get _confirmError {
     final value = _confirmController.text;
-    if (value.isEmpty) return _submitted ? 'Repite la nueva contraseña.' : null;
-    if (value != _newController.text) return 'Las contraseñas no coinciden.';
+    if (value.isEmpty) return _submitted ? context.l10n.uiRepiteLaNuevaContrasena : null;
+    if (value != _newController.text) return context.l10n.uiLasContrasenasNoCoinciden2;
     return null;
   }
 
@@ -89,8 +90,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() => _isLoading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Contraseña actualizada. Cerramos tus otras sesiones.'),
+      SnackBar(
+        content: Text(context.l10n.uiContrasenaActualizadaCerramosTusOtrasSesiones),
         backgroundColor: AppColors.success,
       ),
     );
@@ -109,20 +110,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Cambiar contraseña', busy: _isLoading),
+      appBar: profilePageBar(context, context.l10n.changePassword, busy: _isLoading),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpace.screen),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Por seguridad, ingresa tu contraseña actual y elige una nueva de al menos $kMinPasswordLength caracteres.',
+            Text(
+              context.l10n.passwordChangeHelp(kMinPasswordLength),
               style: AppTextStyles.bodySecondary,
             ),
             const SizedBox(height: AppSpace.section),
             ProxvelTextField(
-              label: 'Contraseña actual',
-              hintText: 'Escribe tu contraseña actual',
+              label: context.l10n.uiContrasenaActual,
+              hintText: context.l10n.uiEscribeTuContrasenaActual,
               readOnly: _isLoading,
               controller: _currentController,
               isPassword: true,
@@ -131,19 +132,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
-              label: 'Nueva contraseña',
-              hintText: 'Al menos 8 caracteres',
+              label: context.l10n.uiNuevaContrasena,
+              hintText: context.l10n.eightCharacters,
               readOnly: _isLoading,
               controller: _newController,
               isPassword: true,
               errorText: _newError,
-              helperText: 'Mínimo $kMinPasswordLength caracteres',
+              helperText: context.l10n.passwordMin(kMinPasswordLength),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
-              label: 'Repite la nueva contraseña',
-              hintText: 'Vuelve a escribirla',
+              label: context.l10n.uiRepiteLaNuevaContrasena2,
+              hintText: context.l10n.uiVuelveAEscribirla,
               readOnly: _isLoading,
               controller: _confirmController,
               isPassword: true,
@@ -152,7 +153,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
             const SizedBox(height: AppSpace.section),
             ProxvelButton(
-              text: 'Cambiar contraseña',
+              text: context.l10n.changePassword,
               isLoading: _isLoading,
               onPressed: _handleSave,
             ),

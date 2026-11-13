@@ -5,6 +5,7 @@ class AnnouncementModel {
   final int id;
   final String title;
   final String message;
+  final String? contentLanguage;
 
   /// app_start | home_top | destination_detail | global_modal
   final String placement;
@@ -31,6 +32,7 @@ class AnnouncementModel {
     required this.id,
     required this.title,
     required this.message,
+    this.contentLanguage,
     required this.placement,
     required this.templateType,
     this.backgroundImageUrl,
@@ -47,6 +49,7 @@ class AnnouncementModel {
       id: json['id'] as int,
       title: (json['title'] ?? '') as String,
       message: (json['message'] ?? '') as String,
+      contentLanguage: json['content_language'] as String?,
       placement: (json['placement'] ?? 'home_top') as String,
       templateType: (json['template_type'] ?? 'gradient_card') as String,
       backgroundImageUrl: json['background_image_url'] as String?,

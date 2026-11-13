@@ -4,6 +4,7 @@ class TourismCatalogModel {
   final String? category;
   final double? altitudeM;
   final String? description;
+  final String? contentLanguage;
   final String? activitiesSummary;
   final String? visitorInfoSummary;
   final String? accessibilitySummary;
@@ -32,6 +33,7 @@ class TourismCatalogModel {
     this.category,
     this.altitudeM,
     this.description,
+    this.contentLanguage,
     this.activitiesSummary,
     this.visitorInfoSummary,
     this.accessibilitySummary,
@@ -88,6 +90,7 @@ class TourismCatalogModel {
       category: _clean(json['category']),
       altitudeM: (json['altitude_m'] as num?)?.toDouble(),
       description: _clean(json['description']),
+      contentLanguage: _clean(json['content_language']),
       activitiesSummary: _clean(json['activities_summary']),
       visitorInfoSummary: _clean(json['visitor_info_summary']),
       accessibilitySummary: _clean(json['accessibility_summary']),
@@ -98,13 +101,20 @@ class TourismCatalogModel {
       costLevel: _clean(json['cost_level']),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      galleryImages: (json['gallery_images'] as List<dynamic>?)
+      galleryImages:
+          (json['gallery_images'] as List<dynamic>?)
               ?.whereType<String>()
-              .where((url) => url.isNotEmpty && !url.contains('wikimedia.org/wiki/File:'))
+              .where(
+                (url) =>
+                    url.isNotEmpty && !url.contains('wikimedia.org/wiki/File:'),
+              )
               .toList() ??
           [],
       interestTags:
-          (json['interest_tags'] as List<dynamic>?)?.whereType<String>().toList() ?? [],
+          (json['interest_tags'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          [],
       dataStatus: json['data_status'] as String?,
     );
   }

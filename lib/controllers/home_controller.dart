@@ -1,3 +1,4 @@
+import '../integration/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../models/destination_model.dart';
 import '../integration/services/destination_service.dart';
@@ -12,6 +13,7 @@ class HomeController extends ChangeNotifier {
 
   bool isLoading = false;
   String? error;
+  bool connectionUnavailable = false;
   List<DestinationModel> destinations = [];
   List<DestinationModel> recentSearches = [];
 
@@ -50,6 +52,7 @@ class HomeController extends ChangeNotifier {
   Future<void> loadDestinations() async {
     isLoading = true;
     error = null;
+    connectionUnavailable = false;
     notifyListeners();
     try {
       destinations = await _service.getDestinations();
@@ -66,9 +69,9 @@ class HomeController extends ChangeNotifier {
       }
       recentSearches = loadedRecents;
     } catch (e) {
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
       error =
           'No pudimos cargar los destinos. Revisa tu conexión e intenta de nuevo.';
-      destinations = [];
     }
     isLoading = false;
     notifyListeners();

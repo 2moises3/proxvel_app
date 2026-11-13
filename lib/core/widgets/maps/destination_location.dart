@@ -1,3 +1,5 @@
+import 'map_presentation.dart';
+import '../../../core/localization/l10n.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +9,14 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../common/app_icon.dart';
 
+enum LocationIssue {
+  permissionDenied,
+  permissionBlocked,
+  gpsOff,
+  imprecise,
+  unavailable,
+}
+
 /// Location stays in memory. Only the invitation's dismissal date is persisted.
 class DestinationLocation extends ChangeNotifier {
   static final shared = DestinationLocation();
@@ -14,6 +24,30 @@ class DestinationLocation extends ChangeNotifier {
   DateTime? measuredAt;
   bool busy = false;
   String? error;
+  LocationIssue? issue;
+
+  String message(BuildContext context, {String? fallback}) => switch (issue) {
+    LocationIssue.permissionDenied => context.l10n.locationDenied,
+    LocationIssue.permissionBlocked =>
+      kIsWeb
+          ? context.errorText(
+              error ?? '',
+              fallback: context.l10n.locationDenied,
+            )
+          : context.l10n.locationDenied,
+    LocationIssue.gpsOff => context.l10n.gpsDisabled,
+    LocationIssue.imprecise => context.l10n.locationImprecise,
+    _ => context.errorText(error ?? '', fallback: fallback),
+  };
+
+  bool tooImpreciseFor(double radius) {
+    final accuracy = position?.accuracy;
+    return accuracy != null && (!accuracy.isFinite || accuracy > radius);
+  }
+
+  Future<void> retry() =>
+      needsSettings || serviceDisabled ? openSettingsAndRetry() : locate();
+
   bool needsSettings = false;
   bool serviceDisabled = false;
   Future<void> openSettingsAndRetry() async {
@@ -39,6 +73,7 @@ class DestinationLocation extends ChangeNotifier {
     position = null;
     measuredAt = null;
     error = null;
+    issue = null;
     needsSettings = false;
     serviceDisabled = false;
     notifyListeners();
@@ -54,6 +89,7 @@ class DestinationLocation extends ChangeNotifier {
         isEnabled = !kIsWeb ? false : true;
       }
       if (!isEnabled && !kIsWeb) {
+        issue = LocationIssue.gpsOff;
         serviceDisabled = true;
         throw 'Activa la ubicación del dispositivo para calcular la distancia.';
       }
@@ -66,6 +102,7 @@ class DestinationLocation extends ChangeNotifier {
         );
       }
       if (permission == LocationPermission.deniedForever) {
+        issue = LocationIssue.permissionBlocked;
         needsSettings = true;
         throw kIsWeb
             ? 'La ubicación está bloqueada en tu navegador. Haz clic en el ícono a la izquierda de la URL y activa "Permitir ubicación".'
@@ -74,6 +111,7 @@ class DestinationLocation extends ChangeNotifier {
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) {
         if (requestPermission) {
+          issue = LocationIssue.permissionDenied;
           throw 'Puedes seguir explorando sin compartir tu ubicación.';
         }
         return;
@@ -85,9 +123,11 @@ class DestinationLocation extends ChangeNotifier {
         ),
       ).timeout(const Duration(seconds: 22));
       measuredAt = DateTime.now();
+      if (tooImpreciseFor(250)) issue = LocationIssue.imprecise;
     } catch (e) {
       position = null;
       measuredAt = null;
+      issue ??= LocationIssue.unavailable;
       error = e is String
           ? e
           : e is TimeoutException
@@ -177,12 +217,12 @@ class _LocationInvitationState extends State<LocationInvitation> {
       if (mounted && DestinationLocation.shared.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(DestinationLocation.shared.error!),
+            content: Text(DestinationLocation.shared.message(context)),
             action:
                 DestinationLocation.shared.needsSettings ||
                     DestinationLocation.shared.serviceDisabled
                 ? SnackBarAction(
-                    label: 'Ajustes',
+                    label: context.l10n.uiAjustes,
                     onPressed: () {
                       DestinationLocation.shared.openSettingsAndRetry();
                     },
@@ -254,7 +294,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                         ),
                         IconButton(
                           onPressed: () => _close(false),
-                          tooltip: 'Cerrar',
+                          tooltip: context.l10n.uiCerrar,
                           style: IconButton.styleFrom(
                             backgroundColor: const Color(0xFFF3F4F6),
                             padding: const EdgeInsets.all(8),
@@ -270,7 +310,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Quizá tu próxima escapada esté cerca.',
+                      context.l10n.uiQuizaTuProximaEscapadaEsteCerca,
                       style: AppTypography.style(
                         fontSize: 22,
                         height: 1.25,
@@ -281,7 +321,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Activa tu ubicación para descubrir destinos cercanos y ver qué tan lejos estás de cada lugar.',
+                      context.l10n.uiActivaTuUbicacionParaDescubrirDestinos,
                       style: AppTypography.style(
                         fontSize: 14.5,
                         height: 1.45,
@@ -316,7 +356,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Es opcional. La distancia se calcula en tu dispositivo y no se envía al motor de recomendaciones. Si registras una visita en tu Atlas, enviamos tu ubicación al servidor para verificarla.',
+                              context.l10n.uiEsOpcionalLaDistanciaSeCalcula,
                               style: AppTypography.style(
                                 fontSize: 12.5,
                                 height: 1.4,
@@ -358,7 +398,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'No volver a mostrar hoy',
+                              context.l10n.uiNoVolverAMostrarHoy,
                               style: AppTypography.style(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
@@ -394,7 +434,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                               color: AppColors.textPrimary,
                             ),
                             const SizedBox(width: 8),
-                            const Text('Activar ubicación'),
+                            Text(context.l10n.uiActivarUbicacion),
                           ],
                         ),
                       ),
@@ -418,7 +458,7 @@ class _LocationInvitationState extends State<LocationInvitation> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        child: const Text('Seguir explorando'),
+                        child: Text(context.l10n.uiSeguirExplorando),
                       ),
                     ),
                   ],
@@ -475,12 +515,12 @@ class _DestinationDistanceState extends State<DestinationDistance> {
               children: [
                 Text(
                   !valid
-                      ? 'Ubicación por confirmar'
+                      ? context.l10n.uiUbicacionPorConfirmar
                       : meters == null
-                      ? '¿Qué tan cerca estás?'
-                      : meters < 1000
-                      ? 'A unos ${meters.round()} m de ti'
-                      : 'A unos ${(meters / 1000).toStringAsFixed(1)} km de ti',
+                      ? context.l10n.uiQueTanCercaEstas
+                      : context.l10n.distanceStraightLine(
+                          mapDistanceLabel(meters),
+                        ),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -488,12 +528,13 @@ class _DestinationDistanceState extends State<DestinationDistance> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  location.error ??
-                      (!valid
-                          ? 'Este destino aún no tiene coordenadas disponibles.'
-                          : meters == null
-                          ? 'Activa tu ubicación para ver la distancia.'
-                          : 'Distancia en línea recta · aproximada'),
+                  location.issue != null || location.error != null
+                      ? location.message(context)
+                      : !valid
+                      ? context.l10n.uiEsteDestinoAunNoTieneCoordenadas
+                      : meters == null
+                      ? context.l10n.uiActivaTuUbicacionParaVerLa
+                      : context.l10n.uiDistanciaEnLineaRectaAproximada,
                   style: const TextStyle(
                     fontSize: 12,
                     height: 1.3,
@@ -506,10 +547,10 @@ class _DestinationDistanceState extends State<DestinationDistance> {
           const SizedBox(width: 8),
           IconButton.filled(
             tooltip: location.needsSettings || location.serviceDisabled
-                ? 'Abrir ajustes de ubicación'
+                ? context.l10n.uiAbrirAjustesDeUbicacion
                 : meters == null
-                ? 'Activar ubicación'
-                : 'Actualizar distancia',
+                ? context.l10n.uiActivarUbicacion
+                : context.l10n.uiActualizarDistancia,
             style: IconButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: AppColors.textPrimary,

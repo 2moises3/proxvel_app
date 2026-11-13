@@ -1,6 +1,6 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../models/traveler_types.dart';
 import '../../../models/traveler_profile_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common/app_icon.dart';
@@ -31,8 +31,8 @@ class PreferencesSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Tu forma de viajar',
+                    Text(
+                      context.l10n.travelPreferencesTitle,
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
@@ -40,8 +40,9 @@ class PreferencesSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      travelerTypes[profile.perfilTuristico] ??
-                          'Completa tus preferencias',
+                      profile.perfilTuristico == null
+                          ? context.l10n.editPreferences
+                          : context.travelerLabel(profile.perfilTuristico!),
                       style: const TextStyle(
                         color: AppColors.discovery,
                         fontSize: 14,
@@ -50,7 +51,7 @@ class PreferencesSummaryCard extends StatelessWidget {
                     if (profile.intereses.isNotEmpty) ...[
                       const SizedBox(height: 5),
                       Text(
-                        profile.intereses.join(' · '),
+                        profile.intereses.map(context.interestLabel).join(' · '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(

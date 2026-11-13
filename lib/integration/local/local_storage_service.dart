@@ -24,6 +24,12 @@ class LocalStorageService {
 
   bool get introSeen => _prefs?.getBool('intro_seen') ?? false;
 
+  String? get appLanguage => _prefs?.getString('app_language');
+
+  Future<void> setAppLanguage(String language) async {
+    await _prefs?.setString('app_language', language);
+  }
+
   // ── Current User (active session user) ──
   Future<void> saveUser(UserModel user) async {
     await _prefs?.setString('user', jsonEncode(user.toJson()));
@@ -34,8 +40,6 @@ class LocalStorageService {
     if (str != null) return UserModel.fromJson(jsonDecode(str));
     return null;
   }
-
-
 
   // ── Profile ──
   Future<void> saveProfile(TravelerProfileModel profile) async {
@@ -56,7 +60,7 @@ class LocalStorageService {
       await _prefs?.setStringList('favorites', list);
     }
   }
-  
+
   Future<void> removeFavorite(String destinationId) async {
     final list = getFavorites();
     if (list.contains(destinationId)) {
@@ -86,6 +90,26 @@ class LocalStorageService {
 
   Future<void> clearRecentSearches() async {
     await _prefs?.setStringList('recent_searches', []);
+  }
+
+  Map<String, dynamic>? readDraft(String key) {
+    final saved = _prefs?.getString(key);
+    if (saved == null) return null;
+    try {
+      return jsonDecode(saved) as Map<String, dynamic>;
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    }
+  }
+
+  Future<void> writeDraft(String key, Map<String, dynamic> value) async {
+    await _prefs?.setString(key, jsonEncode(value));
+  }
+
+  Future<void> clearDraft(String key) async {
+    await _prefs?.remove(key);
   }
 
   // ── Limpieza Total de Sesión (Seguridad) ──

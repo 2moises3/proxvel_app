@@ -1,3 +1,6 @@
+import '../../core/theme/app_layout.dart';
+import '../../core/widgets/cards/favorite_feedback.dart';
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +13,7 @@ import '../../controllers/archive_controller.dart' as import_archive_controller;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/common/app_icon.dart';
-import '../../core/widgets/states/loading_view.dart';
+import '../../core/widgets/states/content_skeleton.dart';
 import '../../models/destination_model.dart';
 import 'widgets/favorite_destination_card.dart';
 
@@ -82,7 +85,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       }
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery;
-        final nameMatch = d.name.toLowerCase().contains(q);
+        final nameMatch =
+            d.name.toLowerCase().contains(q) ||
+            context.destinationTitle(d.id, d.name).toLowerCase().contains(q);
         final cityMatch = d.city.toLowerCase().contains(q);
         final regionMatch = d.region.toLowerCase().contains(q);
         final catMatch = d.category.toLowerCase().contains(q);
@@ -105,10 +110,26 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 const SizedBox(height: 10),
               ],
             ],
+            if (controller.isLoading && allFavorites.isNotEmpty)
+              const LinearProgressIndicator(minHeight: 2),
+            if (controller.error != null && allFavorites.isNotEmpty)
+              ListTile(
+                title: Text(
+                  controller.connectionUnavailable
+                      ? context.l10n.connectionUnavailable
+                      : context.errorText(controller.error!),
+                ),
+                trailing: TextButton(
+                  onPressed: controller.loadFavorites,
+                  child: Text(context.l10n.retry),
+                ),
+              ),
             Expanded(
-              child: controller.isLoading
-                  ? const LoadingView()
-                  : controller.error != null
+              child: controller.isLoading && allFavorites.isEmpty
+                  ? const SingleChildScrollView(
+                      child: ContentSkeleton(SkeletonLayout.favorites),
+                    )
+                  : controller.error != null && allFavorites.isEmpty
                   ? _buildErrorView(controller)
                   : allFavorites.isEmpty
                   ? _buildEmptyState()
@@ -137,7 +158,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 Row(
                   children: [
                     Text(
-                      'Mis Favoritos',
+                      context.l10n.myFavorites,
                       style: AppTypography.style(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -171,8 +192,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 const SizedBox(height: 3),
                 Text(
                   totalCount > 0
-                      ? 'Tus destinos soñados listos para explorar'
-                      : 'Tu colección personal de viajes',
+                      ? context.l10n.uiTusDestinosSonadosListosParaExplorar
+                      : context.l10n.uiTuColeccionPersonalDeViajes,
                   style: AppTypography.style(
                     fontSize: 13.5,
                     color: AppColors.textSecondary,
@@ -199,7 +220,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   _buildLayoutToggleButton(
                     isSelected: !_isGrid,
                     icon: Icons.view_agenda_rounded,
-                    tooltip: 'Vista en lista editorial',
+                    tooltip: context.l10n.uiVistaEnListaEditorial,
                     onTap: () {
                       if (_isGrid) setState(() => _isGrid = false);
                     },
@@ -209,7 +230,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   _buildLayoutToggleButton(
                     isSelected: _isGrid,
                     icon: Icons.grid_view_rounded,
-                    tooltip: 'Vista en cuadrícula',
+                    tooltip: context.l10n.uiVistaEnCuadricula,
                     onTap: () {
                       if (!_isGrid) setState(() => _isGrid = true);
                     },
@@ -290,7 +311,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             border: InputBorder.none,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            hintText: '¿A dónde quieres ir? o busca por nombre...',
+            hintText: context.l10n.uiADondeQuieresIrOBusca,
             hintStyle: AppTypography.style(
               fontSize: 14,
               fontWeight: FontWeight.w400,
@@ -382,7 +403,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    city ?? 'Todas',
+                    city ?? context.l10n.reviewFilterAll,
                     style: AppTypography.style(
                       fontSize: 13,
                       fontWeight: isSelected
@@ -430,7 +451,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   ) {
     if (_isGrid) {
       return GridView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 150),
+        padding: EdgeInsets.fromLTRB(
+          AppSpace.card,
+          AppSpace.micro,
+          AppSpace.card,
+          AppSizing.navigationClearance(context),
+        ),
         physics: const BouncingScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -445,14 +471,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             destination: dest,
             isGrid: true,
             onTap: () => context.push('/destination/${dest.id}'),
-            onRemove: () => _confirmRemove(controller, dest.id, dest.name),
+            onRemove: () =>
+                toggleFavoriteWithFeedback(context, controller, dest.id, dest),
           );
         },
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 150),
+      padding: EdgeInsets.fromLTRB(
+        AppSpace.card,
+        AppSpace.micro,
+        AppSpace.card,
+        AppSizing.navigationClearance(context),
+      ),
       physics: const BouncingScrollPhysics(),
       itemCount: favorites.length,
       separatorBuilder: (_, _) => const SizedBox(height: 18),
@@ -464,7 +496,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             destination: dest,
             isGrid: false,
             onTap: () => context.push('/destination/${dest.id}'),
-            onRemove: () => _confirmRemove(controller, dest.id, dest.name),
+            onRemove: () =>
+                toggleFavoriteWithFeedback(context, controller, dest.id, dest),
           ),
         );
       },
@@ -501,7 +534,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Tu lista de deseos está esperando',
+              context.l10n.uiTuListaDeDeseosEstaEsperando,
               textAlign: TextAlign.center,
               style: AppTypography.style(
                 fontSize: 20,
@@ -511,7 +544,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Explora los destinos de PROXVEL y guarda los que más te inspiren tocando el corazón para tenerlos siempre a mano.',
+              context.l10n.uiExploraLosDestinosDeProxvelY,
               textAlign: TextAlign.center,
               style: AppTypography.style(
                 fontSize: 14.5,
@@ -556,7 +589,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Descubrir destinos',
+                      context.l10n.uiDescubrirDestinos,
                       style: AppTypography.style(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -598,7 +631,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 18),
             Text(
-              'No encontramos resultados',
+              context.l10n.uiNoEncontramosResultados,
               style: AppTypography.style(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -627,7 +660,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 });
               },
               child: Text(
-                'Restablecer filtros',
+                context.l10n.uiRestablecerFiltros,
                 style: AppTypography.style(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -656,7 +689,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No pudimos cargar tus favoritos',
+              context.l10n.uiNoPudimosCargarTusFavoritos,
               style: AppTypography.style(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -665,8 +698,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.error ??
-                  'Verifica tu conexión a internet e inténtalo nuevamente.',
+              controller.connectionUnavailable
+                  ? context.l10n.connectionUnavailable
+                  : context.errorText(controller.error!),
               textAlign: TextAlign.center,
               style: AppTypography.style(
                 fontSize: 14,
@@ -687,7 +721,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   vertical: 12,
                 ),
               ),
-              child: const Text('Reintentar'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -696,135 +730,4 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   // ── Modal Bottom Sheet Refinado para Confirmar Quitar de Favoritos ──
-  void _confirmRemove(FavoritesController controller, String id, String name) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 38,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 22),
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: AppColors.discovery.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.discovery.withValues(alpha: 0.25),
-                  width: 1.5,
-                ),
-              ),
-              child: const Center(
-                child: AppIcon(
-                  AppIcons.heartFilled,
-                  size: 26,
-                  color: AppColors.discovery,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              '¿Quitar de favoritos?',
-              textAlign: TextAlign.center,
-              style: AppTypography.style(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                '¿Deseas quitar "$name" de tu lista? Podrás volver a guardarlo cuando quieras desde el explorador.',
-                textAlign: TextAlign.center,
-                style: AppTypography.style(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFE5E7EB),
-                          width: 1.2,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Conservar',
-                        style: AppTypography.style(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      controller.toggleFavorite(id);
-                    },
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.discovery,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.discovery.withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Quitar',
-                        style: AppTypography.style(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

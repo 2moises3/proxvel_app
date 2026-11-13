@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'profile_avatar.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
@@ -25,8 +26,8 @@ class ProfileHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Tu perfil',
+            Text(
+              context.l10n.uiTuPerfil,
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
@@ -66,8 +67,8 @@ class ProfileHeader extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Ver y editar mis datos',
+                            Text(
+                              context.l10n.uiVerYEditarMisDatos,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.discovery,

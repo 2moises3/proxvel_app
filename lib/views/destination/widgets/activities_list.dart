@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -15,7 +16,7 @@ class ActivitiesList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('¿Qué puedes hacer?', style: AppTextStyles.sectionTitle),
+        Text(context.l10n.uiQuePuedesHacer, style: AppTextStyles.sectionTitle),
         const SizedBox(height: AppSpace.field),
         SizedBox(
           height: 90,

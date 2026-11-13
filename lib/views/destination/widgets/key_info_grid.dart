@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -22,19 +23,19 @@ class KeyInfoGrid extends StatelessWidget {
       if (altitude != null)
         _KeyInfoItem(
           icon: Icons.landscape_outlined,
-          label: 'Altitud',
+          label: context.l10n.altitude,
           value: '${altitude.toStringAsFixed(0)} m s. n. m.',
         ),
       if (region != null)
         _KeyInfoItem(
           icon: Icons.location_on_outlined,
-          label: 'Región',
+          label: context.l10n.region,
           value: region,
         ),
       if (city != null)
         _KeyInfoItem(
           icon: Icons.map_outlined,
-          label: 'Ciudad base',
+          label: context.l10n.uiCiudadBase,
           value: city,
         ),
     ];
@@ -51,7 +52,7 @@ class KeyInfoGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Datos del lugar', style: AppTextStyles.sectionTitle),
+        Text(context.l10n.uiDatosDelLugar, style: AppTextStyles.sectionTitle),
         const SizedBox(height: AppSpace.field),
         LayoutBuilder(
           builder: (context, constraints) => constraints.maxWidth < 330

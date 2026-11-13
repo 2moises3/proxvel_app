@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -85,7 +86,7 @@ class _AspectScoreRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _colorForScore(aspect.score);
-    final tier = _tierForScore(aspect.score);
+    final tier = _tierForScore(context, aspect.score);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -101,7 +102,7 @@ class _AspectScoreRow extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(aspect.aspect, style: AppTextStyles.smallLabel),
+                child: Text(context.aspectLabel(aspect.aspect), style: AppTextStyles.smallLabel),
               ),
               const SizedBox(width: AppSpace.micro),
               Container(
@@ -143,10 +144,10 @@ class _AspectScoreRow extends StatelessWidget {
   }
 
   /// Etiqueta de rango (en vez del % crudo) — coherente con la leyenda.
-  String _tierForScore(double score) {
-    if (score >= 0.70) return 'Excelente';
-    if (score >= 0.50) return 'Bueno';
-    return 'Bajo';
+  String _tierForScore(BuildContext context, double score) {
+    if (score >= 0.70) return context.l10n.uiExcelente;
+    if (score >= 0.50) return context.l10n.uiBueno;
+    return context.l10n.low;
   }
 
   IconData _iconForAspect(String aspect) {

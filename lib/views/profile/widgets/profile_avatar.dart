@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common/app_icon.dart';
@@ -38,9 +39,9 @@ class ProfileAvatar extends StatelessWidget {
     );
     return Semantics(
       button: onEdit != null,
-      label: onEdit != null ? 'Cambiar foto de perfil' : 'Foto de perfil',
+      label: onEdit != null ? context.l10n.uiCambiarFotoDePerfil : context.l10n.uiFotoDePerfil,
       child: Tooltip(
-        message: onEdit != null ? 'Cambiar foto' : name,
+        message: onEdit != null ? context.l10n.uiCambiarFoto : name,
         child: Material(
           color: Colors.transparent,
           child: InkWell(

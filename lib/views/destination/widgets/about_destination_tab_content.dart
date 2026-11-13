@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'destination_section_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,49 +25,72 @@ class AboutDestinationTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final info = tourismInfo;
     final description = info?.description ?? destination.description;
+    final originalInSpanish =
+        Localizations.localeOf(context).languageCode == 'en' &&
+        (info?.contentLanguage ?? 'es') == 'es' &&
+        !isLoading &&
+        (description.isNotEmpty ||
+            info?.activitiesSummary != null ||
+            info?.visitorInfoSummary != null ||
+            info?.howToGet != null ||
+            info?.accessibilitySummary != null ||
+            info?.recommendedDuration != null);
     final facts = <({String icon, String title, String value})>[
       if (info?.recommendedDuration != null)
         (
           icon: AppIcons.clock,
-          title: 'Tiempo sugerido',
+          title: context.l10n.suggestedTime,
           value: info!.recommendedDuration!,
         ),
       if (info?.difficultyLabel != null)
         (
           icon: AppIcons.route,
-          title: 'Dificultad',
-          value: info!.difficultyLabel!,
+          title: context.l10n.difficulty,
+          value: switch (info!.difficulty) {
+            'facil' => context.l10n.easy,
+            'moderada' => context.l10n.moderate,
+            _ => context.l10n.demanding,
+          },
         ),
       if (info?.costLabel != null)
         (
           icon: AppIcons.wallet,
-          title: 'Gasto orientativo',
-          value: info!.costLabel!,
+          title: context.l10n.estimatedCost,
+          value: switch (info!.costLevel) {
+            'bajo' => context.l10n.budgetFriendly,
+            'medio' => context.l10n.midRange,
+            _ => context.l10n.higherCost,
+          },
         ),
       if (info?.altitudeM != null)
         (
           icon: AppIcons.mountain,
-          title: 'Altitud',
+          title: context.l10n.altitude,
           value: '${info!.altitudeM!.round()} m s. n. m.',
         ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Conoce el lugar', style: AppTextStyles.h2),
+        Text(context.l10n.getToKnowPlace, style: AppTextStyles.h2),
         const SizedBox(height: 12),
+        if (originalInSpanish) ...[
+          Text(
+            context.l10n.spanishOriginal,
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: 8),
+        ],
         if (description.trim().isNotEmpty)
           ExpandableDescriptionText(text: description)
         else
-          const Text(
-            'Estamos preparando la descripción de este lugar. Puedes consultar los datos disponibles a continuación.',
+          Text(
+            context.l10n.descriptionPending,
             style: AppTextStyles.bodySecondary,
           ),
         if (isLoading) ...[
           const SizedBox(height: 24),
-          const DestinationSectionLoading(
-            label: 'Preparando los detalles de tu visita…',
-          ),
+          DestinationSectionLoading(label: context.l10n.preparingVisit),
         ],
         if (facts.isNotEmpty) ...[
           const SizedBox(height: 24),
@@ -117,15 +141,12 @@ class AboutDestinationTabContent extends StatelessWidget {
           ),
           if (info?.costLabel != null) ...[
             const SizedBox(height: 8),
-            const Text(
-              'El nivel de gasto es orientativo; no es una tarifa de entrada.',
-              style: AppTextStyles.body2,
-            ),
+            Text(context.l10n.costEstimateNote, style: AppTextStyles.body2),
           ],
         ],
         if (info?.activitiesSummary != null) ...[
           const SizedBox(height: 28),
-          const Text('Vívelo a tu manera', style: AppTextStyles.sectionTitle),
+          Text(context.l10n.activities, style: AppTextStyles.sectionTitle),
           const SizedBox(height: 12),
           Text(info!.activitiesSummary!, style: AppTextStyles.bodySecondary),
         ],
@@ -146,7 +167,11 @@ class AboutDestinationTabContent extends StatelessWidget {
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Text(
-                    tag.isEmpty ? tag : tag[0].toUpperCase() + tag.substring(1),
+                    tag.isEmpty
+                        ? tag
+                        : context.interestLabel(
+                            tag[0].toUpperCase() + tag.substring(1),
+                          ),
                     style: const TextStyle(
                       color: AppColors.discovery,
                       fontSize: 13,
@@ -160,25 +185,25 @@ class AboutDestinationTabContent extends StatelessWidget {
             info?.howToGet != null ||
             info?.accessibilitySummary != null) ...[
           const SizedBox(height: 28),
-          const Text('Antes de salir', style: AppTextStyles.sectionTitle),
+          Text(context.l10n.beforeYouGo, style: AppTextStyles.sectionTitle),
           const SizedBox(height: 12),
           if (info?.visitorInfoSummary != null)
             _DetailDisclosure(
               icon: AppIcons.info,
-              title: 'Prepara tu visita',
+              title: context.l10n.planYourVisit,
               text: info!.visitorInfoSummary!,
               expanded: true,
             ),
           if (info?.howToGet != null)
             _DetailDisclosure(
               icon: AppIcons.route,
-              title: 'Cómo llegar',
+              title: context.l10n.gettingThere,
               text: info!.howToGet!,
             ),
           if (info?.accessibilitySummary != null)
             _DetailDisclosure(
               icon: AppIcons.accessibility,
-              title: 'Accesibilidad',
+              title: context.l10n.accessibility,
               text: info!.accessibilitySummary!,
             ),
         ],
@@ -201,9 +226,7 @@ class AboutDestinationTabContent extends StatelessWidget {
               } catch (_) {}
               if (!opened && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No pudimos abrir el sitio oficial.'),
-                  ),
+                  SnackBar(content: Text(context.l10n.officialSiteError)),
                 );
               }
             },
@@ -216,12 +239,12 @@ class AboutDestinationTabContent extends StatelessWidget {
               foregroundColor: AppColors.discovery,
               shape: const StadiumBorder(),
             ),
-            label: const Text('Consultar sitio oficial'),
+            label: Text(context.l10n.officialSite),
           ),
         ],
         const SizedBox(height: 28),
         MapLocationPreview(
-          destinationName: destination.name,
+          destinationName: context.destinationTitle(destination.id, destination.name),
           imageUrl: destination.imageUrl,
           locationLabel: [
             destination.city,

@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'widgets/profile_page_bar.dart';
 import '../../core/theme/app_colors.dart';
@@ -18,7 +19,7 @@ class AppUpdateScreen extends StatefulWidget {
 class _AppUpdateScreenState extends State<AppUpdateScreen> {
   final _service = AppUpdateService();
   AppRelease? _release;
-  String _message = 'Buscando actualizaciones…';
+  String? _message;
   bool _checking = true;
   bool _downloading = false;
   double? _progress;
@@ -33,13 +34,13 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   Future<void> _check() async {
     setState(() {
       _checking = true;
-      _message = 'Buscando actualizaciones…';
+      _message = null;
     });
     try {
       if (kIsWeb || !Platform.isAndroid) {
         setState(
           () => _message =
-              'Las actualizaciones se instalan desde PROXVEL para Android.',
+              context.l10n.uiLasActualizacionesSeInstalanDesdeProxvel,
         );
         return;
       }
@@ -50,14 +51,14 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
         _installedVersion = '${installed.version}+${installed.buildNumber}';
         _release = release;
         _message = release == null
-            ? 'Ya tienes la última versión publicada.'
-            : 'Nueva versión disponible';
+            ? context.l10n.uiYaTienesLaUltimaVersionPublicada
+            : context.l10n.uiNuevaVersionDisponible;
       });
     } catch (_) {
       if (!mounted) return;
       setState(
         () => _message =
-            'No pudimos comprobar las actualizaciones. Revisa tu conexión.',
+            context.l10n.uiNoPudimosComprobarLasActualizacionesRevisa,
       );
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -76,12 +77,12 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
         if (mounted) setState(() => _progress = progress);
       });
       if (mounted) {
-        setState(() => _message = 'Confirma la instalación en Android.');
+        setState(() => _message = context.l10n.uiConfirmaLaInstalacionEnAndroid);
       }
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
         setState(
-          () => _message = 'No se pudo instalar la actualización: $error',
+          () => _message = context.l10n.updateInstallError,
         );
       }
     } finally {
@@ -92,20 +93,20 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.background,
-    appBar: profilePageBar(context, 'Actualizaciones'),
+    appBar: profilePageBar(context, context.l10n.updates),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_message, style: Theme.of(context).textTheme.titleLarge),
+          Text(_message ?? context.l10n.uiBuscandoActualizaciones, style: Theme.of(context).textTheme.titleLarge),
           if (_installedVersion.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Versión instalada: $_installedVersion'),
+            Text(context.l10n.installedVersion(_installedVersion)),
           ],
           if (_release case final release?) ...[
             const SizedBox(height: 12),
-            Text('Disponible: ${release.versionName}+${release.versionCode}'),
+            Text(context.l10n.availableVersion('${release.versionName}+${release.versionCode}')),
             if (release.changelog != null && release.changelog!.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(release.changelog!),
@@ -114,7 +115,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
             FilledButton(
               onPressed: _downloading ? null : _install,
               child: Text(
-                _downloading ? 'Descargando…' : 'Descargar e instalar',
+                _downloading ? 'Descargando…' : context.l10n.uiDescargarEInstalar,
               ),
             ),
             if (_downloading) ...[
@@ -122,8 +123,8 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
               LinearProgressIndicator(value: _progress),
             ],
             const SizedBox(height: 16),
-            const Text(
-              'Android puede pedirte permiso para instalar desde PROXVEL y confirmar la actualización.',
+            Text(
+              context.l10n.uiAndroidPuedePedirtePermisoParaInstalar,
             ),
           ],
           if (_checking)
@@ -134,7 +135,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
           if (!_checking && !_downloading && !kIsWeb && Platform.isAndroid)
             TextButton(
               onPressed: _check,
-              child: const Text('Volver a comprobar'),
+              child: Text(context.l10n.uiVolverAComprobar),
             ),
         ],
       ),

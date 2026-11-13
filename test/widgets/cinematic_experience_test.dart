@@ -61,15 +61,12 @@ void main() {
       await tester.pump(const Duration(seconds: 8));
       await tester.pump(const Duration(milliseconds: 1300));
       expect(background(tester), AuthScenes.assets[1]);
-      await tester.ensureVisible(find.text('Comenzar aventura'));
-      await tester.tap(find.text('Comenzar aventura'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
       await tester.ensureVisible(find.text('Iniciar sesión'));
       await tester.tap(find.text('Iniciar sesión'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(LoginScreen), findsOneWidget);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
       expect(background(tester), AuthScenes.assets[1]);
       await tester.enterText(
         find.byType(TextField).first,
@@ -98,10 +95,6 @@ void main() {
     final route = router();
     await tester.pumpWidget(host(route));
     await tester.pump(const Duration(seconds: 8));
-    await tester.ensureVisible(find.text('Comenzar aventura'));
-    await tester.tap(find.text('Comenzar aventura'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
     await tester.ensureVisible(find.text('Crear cuenta'));
     await tester.tap(find.text('Crear cuenta'));
     await tester.pump();
@@ -125,10 +118,6 @@ void main() {
       await tester.pumpWidget(host(route, reduce: true));
       await tester.pump(const Duration(seconds: 32));
       expect(background(tester), AuthScenes.assets.first);
-      await tester.ensureVisible(find.text('Comenzar aventura'));
-      await tester.tap(find.text('Comenzar aventura'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
       await tester.ensureVisible(find.text('Crear cuenta'));
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());

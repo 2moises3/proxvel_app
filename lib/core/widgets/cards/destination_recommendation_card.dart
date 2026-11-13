@@ -1,3 +1,5 @@
+import '../../../core/widgets/cards/favorite_feedback.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/navigation/destination_opening.dart';
@@ -6,6 +8,7 @@ import '../../theme/app_typography.dart';
 import '../../../models/recommendation_result_model.dart';
 import '../../../controllers/favorites_controller.dart';
 import '../../../controllers/archive_controller.dart';
+import 'archive_feedback.dart';
 import '../images/adaptive_destination_image.dart';
 import '../common/app_icon.dart';
 
@@ -18,33 +21,6 @@ class DestinationRecommendationCard extends StatelessWidget {
   });
   final RecommendationResultModel recommendation;
   final VoidCallback onTap;
-
-  Future<void> _hide(BuildContext context) async {
-    final archives = context.read<ArchiveController>();
-    final messenger = ScaffoldMessenger.of(context);
-    final dest = recommendation.destination;
-    if (archives.isArchived(dest.id)) return;
-    await archives.toggleArchive(dest.id, dest);
-    if (!messenger.mounted) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          archives.error ??
-              'Destino oculto de Explorar y Para ti. Puedes recuperarlo en Archivados.',
-        ),
-        action: archives.error == null
-            ? SnackBarAction(
-                label: 'Deshacer',
-                onPressed: () {
-                  if (archives.isArchived(dest.id)) {
-                    archives.toggleArchive(dest.id, dest);
-                  }
-                },
-              )
-            : null,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +95,7 @@ class DestinationRecommendationCard extends StatelessWidget {
                             .compatibilityPercentage
                             .isFinite) ...[
                           Tooltip(
-                            message:
-                                'Afinidad calculada por el motor según tu perfil. No es una probabilidad.',
+                            message: context.l10n.matchTooltip,
                             child: Row(
                               children: [
                                 const AppIcon(
@@ -130,7 +105,10 @@ class DestinationRecommendationCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 7),
                                 Text(
-                                  '${recommendation.compatibilityPercentage.round()}% de afinidad',
+                                  context.l10n.matchPercent(
+                                    recommendation.compatibilityPercentage
+                                        .round(),
+                                  ),
                                   style: AppTypography.style(
                                     color: Colors.white,
                                     fontSize: 14,
@@ -156,7 +134,7 @@ class DestinationRecommendationCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
-                              d.category,
+                              context.categoryLabel(d.category),
                               style: AppTypography.style(
                                 fontSize: 12,
                                 color: Colors.white,
@@ -167,7 +145,7 @@ class DestinationRecommendationCard extends StatelessWidget {
                           const SizedBox(height: 12),
                         ],
                         Text(
-                          d.name,
+                          context.destinationTitle(d.id, d.name),
                           style: AppTypography.style(
                             fontSize: 27,
                             height: 1.1,
@@ -191,7 +169,7 @@ class DestinationRecommendationCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'Descubrir destino',
+                                context.l10n.uiDescubrirDestino,
                                 style: AppTypography.style(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -223,9 +201,14 @@ class DestinationRecommendationCard extends StatelessWidget {
                       Consumer<FavoritesController>(
                         builder: (context, favorites, _) => IconButton.filled(
                           tooltip: favorites.isFavorite(d.id)
-                              ? 'Quitar de favoritos'
-                              : 'Guardar en favoritos',
-                          onPressed: () => favorites.toggleFavorite(d.id, d),
+                              ? context.l10n.removeFavorite
+                              : context.l10n.addFavorite,
+                          onPressed: () => toggleFavoriteWithFeedback(
+                            context,
+                            favorites,
+                            d.id,
+                            d,
+                          ),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: favorites.isFavorite(d.id)
@@ -249,19 +232,24 @@ class DestinationRecommendationCard extends StatelessWidget {
                         color: Colors.white,
                         shape: const CircleBorder(),
                         child: PopupMenuButton<String>(
-                          tooltip: 'Opciones del destino',
+                          tooltip: context.l10n.uiOpcionesDelDestino,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          onSelected: (_) => _hide(context),
-                          itemBuilder: (_) => const [
+                          onSelected: (_) => toggleArchiveWithFeedback(
+                            context,
+                            context.read<ArchiveController>(),
+                            d.id,
+                            destination: d,
+                          ),
+                          itemBuilder: (_) => [
                             PopupMenuItem(
                               value: 'hide',
                               child: Row(
                                 children: [
                                   Icon(Icons.visibility_off_outlined, size: 20),
                                   SizedBox(width: 10),
-                                  Text('Ocultar destino'),
+                                  Text(context.l10n.uiOcultarDestino),
                                 ],
                               ),
                             ),

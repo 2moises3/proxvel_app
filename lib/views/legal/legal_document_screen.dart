@@ -4,6 +4,8 @@ import '../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/legal/legal_texts.dart';
+import '../../core/legal/legal_texts_en.dart';
+import '../../core/localization/l10n.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Lee un documento legal (Política de Privacidad, Términos, Permisos, Fuentes…).
@@ -24,9 +26,11 @@ class LegalDocumentScreen extends StatelessWidget {
   static Widget byId(String id) {
     final doc = kLegalDocs[id];
     if (doc == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Documento')),
-        body: const Center(child: Text('No encontramos este documento.')),
+      return Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(context.l10n.uiDocumento)),
+          body: Center(child: Text(context.l10n.uiNoEncontramosEsteDocumento)),
+        ),
       );
     }
     return LegalDocumentScreen(doc: doc);
@@ -34,6 +38,8 @@ class LegalDocumentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final english = context.l10n.localeName == 'en';
+    final doc = english ? legalDocsEn[this.doc.id] ?? this.doc : this.doc;
     final showVersion = doc.id == 'privacidad' || doc.id == 'terminos';
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -48,7 +54,7 @@ class LegalDocumentScreen extends StatelessWidget {
             size: 20,
             color: AppColors.textPrimary,
           ),
-          tooltip: 'Volver',
+          tooltip: context.l10n.back,
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
         title: Text(doc.title, style: AppTextStyles.sectionTitle),
@@ -64,7 +70,9 @@ class LegalDocumentScreen extends StatelessWidget {
           children: [
             if (showVersion) ...[
               Text(
-                'Versión $kLegalVersion · Actualizada el $kLegalUpdated',
+                english
+                    ? 'Version $kLegalVersion · Updated October 19, 2026'
+                    : 'Versión $kLegalVersion · Actualizada el $kLegalUpdated',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textMuted,

@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'dart:async';
 import '../../core/theme/app_layout.dart';
 import 'package:flutter/material.dart';
@@ -64,15 +65,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   String? get _codeError {
-    if (_serverError != null) return _serverError;
+    if (_serverError != null) return context.errorText(_serverError!);
     final v = _codeController.text;
-    if (_submitted && v.length != 6) return 'El código tiene 6 dígitos.';
+    if (_submitted && v.length != 6) return context.l10n.uiElCodigoTiene6Digitos;
     return null;
   }
 
   String? get _newError {
     final v = _newController.text;
-    if (v.isEmpty) return _submitted ? 'Ingresa la nueva contraseña.' : null;
+    if (v.isEmpty) return _submitted ? context.l10n.uiIngresaLaNuevaContrasena : null;
     if (v.length < _minPassword) {
       return 'Debe tener al menos $_minPassword caracteres.';
     }
@@ -81,8 +82,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   String? get _confirmError {
     final v = _confirmController.text;
-    if (v.isEmpty) return _submitted ? 'Repite la nueva contraseña.' : null;
-    if (v != _newController.text) return 'Las contraseñas no coinciden.';
+    if (v.isEmpty) return _submitted ? context.l10n.uiRepiteLaNuevaContrasena : null;
+    if (v != _newController.text) return context.l10n.uiLasContrasenasNoCoinciden2;
     return null;
   }
 
@@ -112,8 +113,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Contraseña actualizada. Ya puedes iniciar sesión.'),
+      SnackBar(
+        content: Text(context.l10n.uiContrasenaActualizadaYaPuedesIniciarSesion),
         backgroundColor: AppColors.success,
       ),
     );
@@ -136,7 +137,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (result.supportEmail != null) _supportEmail = result.supportEmail;
     setState(
       () => _resendMessage =
-          'Te enviamos un código nuevo. El anterior ya no sirve.',
+          context.l10n.uiTeEnviamosUnCodigoNuevoEl,
     );
     _startCountdown();
   }
@@ -157,15 +158,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return AuthFormPage(
       background: _background,
       onBack: () => context.pop(),
-      title: 'Restablece tu contraseña',
+      title: context.l10n.uiRestableceTuContrasena,
       subtitle:
-          'Si ${widget.email} tiene una cuenta, te enviamos un código de 6 dígitos. Vence en ${widget.expiresMinutes} minutos.',
+          context.l10n.resetEmailNotice(widget.email, widget.expiresMinutes),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GlassTextField(
-            label: 'Código de 6 dígitos',
-            hintText: 'Ej. 123456',
+            label: context.l10n.uiCodigoDe6Digitos,
+            hintText: context.l10n.uiEj123456,
             controller: _codeController,
             keyboardType: TextInputType.number,
             inputFormatters: [
@@ -177,8 +178,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           const SizedBox(height: AppSpace.field),
           GlassTextField(
-            label: 'Nueva contraseña',
-            hintText: 'Al menos 8 caracteres',
+            label: context.l10n.uiNuevaContrasena,
+            hintText: context.l10n.eightCharacters,
             controller: _newController,
             isPassword: true,
             errorText: _newError,
@@ -186,8 +187,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           const SizedBox(height: AppSpace.field),
           GlassTextField(
-            label: 'Repite la nueva contraseña',
-            hintText: 'Repite tu nueva contraseña',
+            label: context.l10n.uiRepiteLaNuevaContrasena2,
+            hintText: context.l10n.uiRepiteTuNuevaContrasena,
             controller: _confirmController,
             isPassword: true,
             errorText: _confirmError,
@@ -195,7 +196,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           const SizedBox(height: AppSpace.field),
           AuthSubmitButton(
-            text: 'Cambiar contraseña',
+            text: context.l10n.changePassword,
             isLoading: _isLoading,
             onPressed: _submit,
           ),
@@ -209,8 +210,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               child: Text(
                 canResend
-                    ? 'Reenviar código'
-                    : 'Reenviar código en ${_secondsLeft}s',
+                    ? context.l10n.uiReenviarCodigo
+                    : context.l10n.resendCountdown(_secondsLeft),
               ),
             ),
           ),
@@ -231,15 +232,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             collapsedIconColor: Colors.white,
             textColor: Colors.white,
             collapsedTextColor: Colors.white,
-            title: const Text(
-              '¿No recibiste el código?',
+            title: Text(
+              context.l10n.uiNoRecibisteElCodigo,
               style: TextStyle(fontSize: 15),
             ),
             children: [
               Text(
                 _supportEmail != null && _supportEmail!.isNotEmpty
-                    ? 'Revisa spam o promociones. Si necesitas ayuda, escríbenos a $_supportEmail.'
-                    : 'Revisa spam o promociones. Si necesitas ayuda, contacta al equipo de PROXVEL.',
+                    ? context.l10n.supportSpam(_supportEmail!)
+                    : context.l10n.uiRevisaSpamOPromocionesSiNecesitas,
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.45,

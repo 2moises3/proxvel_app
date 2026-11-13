@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:async';
 import '../../theme/app_layout.dart';
 
@@ -36,10 +37,14 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
   Timer? _timer;
   int _index = 0;
   List<int> _shownIds = const [];
+  String? _language;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = context.l10n.localeName;
+    if (_language == language) return;
+    _language = language;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AnnouncementController>().load(
@@ -227,7 +232,9 @@ class _AnnouncementCard extends StatelessWidget {
                 const SizedBox(height: AppSpace.related),
                 Expanded(
                   child: Text(
-                    ann.message,
+                    context.l10n.localeName == 'en' && ann.contentLanguage != 'en'
+                        ? '${context.l10n.spanishOriginal}\n${ann.message}'
+                        : ann.message,
                     maxLines: ann.hasAction ? 3 : 5,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: style.bodyColor, fontSize: 13, height: 1.4),
@@ -262,7 +269,7 @@ class _AnnouncementCard extends StatelessWidget {
             right: 6,
             child: Semantics(
               button: true,
-              label: 'Cerrar anuncio',
+              label: context.l10n.uiCerrarAnuncio,
               child: GestureDetector(
                 onTap: onClose,
                 child: Container(

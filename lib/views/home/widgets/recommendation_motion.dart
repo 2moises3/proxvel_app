@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -8,7 +9,7 @@ class RecommendationWorkingState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 36),
     child: Semantics(
       liveRegion: true,
-      label: 'Motor de recomendaciones trabajando',
+      label: context.l10n.engineWorking,
       child: Column(
         children: [
           SizedBox(
@@ -35,14 +36,14 @@ class RecommendationWorkingState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Buscando destinos para ti',
+          Text(
+            context.l10n.findingPlaces,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'El motor está combinando tus preferencias con el contexto del viaje.',
+          Text(
+            context.l10n.matchingContext,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,

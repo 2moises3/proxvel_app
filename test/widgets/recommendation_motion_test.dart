@@ -1,3 +1,4 @@
+import 'package:proxvell_app/core/widgets/states/content_skeleton.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -136,23 +137,36 @@ void main() {
           child: const MaterialApp(home: Scaffold(body: HomeForYouContent())),
         ),
       );
-      expect(find.byType(RecommendationWorkingState), findsOneWidget);
+      expect(find.byType(ContentSkeleton), findsOneWidget);
       expect(find.text('83% de afinidad'), findsNothing);
       service.requests.last.complete([result()]);
       await pending;
       await tester.pumpAndSettle();
-      expect(find.byType(RecommendationWorkingState), findsNothing);
+      expect(find.byType(ContentSkeleton), findsNothing);
       expect(find.text('83% de afinidad'), findsOneWidget);
+      final pendingAugust = controller.setMonth(8);
+      await tester.pump();
+      expect(find.byType(ContentSkeleton), findsNothing);
+      expect(find.text('83% de afinidad'), findsOneWidget);
+      expect(
+        find.textContaining('Mostrando los resultados de'),
+        findsOneWidget,
+      );
+      service.requests.last.complete([result()]);
+      await pendingAugust;
+      await tester.pumpAndSettle();
+      expect(controller.resultsMonth, 8);
+
       final revision = controller.resultsRevision;
       controller.invalidate();
       final reload = controller.loadRecommendations(forceRefresh: true);
       await tester.pump();
-      expect(find.byType(RecommendationWorkingState), findsOneWidget);
+      expect(find.byType(ContentSkeleton), findsOneWidget);
       service.requests.last.complete([result()]);
       await reload;
       await tester.pumpAndSettle();
       expect(controller.resultsRevision, greaterThan(revision));
-      expect(find.byType(RecommendationWorkingState), findsNothing);
+      expect(find.byType(ContentSkeleton), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

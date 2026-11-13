@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/visit_controller.dart';
@@ -30,7 +31,7 @@ class _AtlasScreenState extends State<AtlasScreen> {
     final visit = context.watch<VisitController>();
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Atlas de visitas'),
+      appBar: profilePageBar(context, context.l10n.visitAtlas),
       body: RefreshIndicator(
         onRefresh: visit.initVisitState,
         child: ListView(
@@ -50,7 +51,7 @@ class _AtlasScreenState extends State<AtlasScreen> {
                   AppSpace.section,
                 ),
                 child: Text(
-                  visit.error!,
+                  context.errorText(visit.error!),
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
               ),

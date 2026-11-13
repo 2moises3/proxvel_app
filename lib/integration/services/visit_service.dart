@@ -61,15 +61,11 @@ class VisitService {
 
   /// Consulta la visita actualmente activa en curso si existe
   Future<VisitModel?> getActiveVisit() async {
-    try {
-      final response = await _apiClient.get('${ApiConfig.visits}/active');
-      if (response['success'] == true && response['data'] != null) {
-        return VisitModel.fromJson(response['data'] as Map<String, dynamic>);
-      }
-      return null;
-    } catch (e) {
-      return null;
+    final response = await _apiClient.get('${ApiConfig.visits}/active');
+    if (response['success'] == true && response['data'] != null) {
+      return VisitModel.fromJson(response['data'] as Map<String, dynamic>);
     }
+    return null;
   }
 
   /// Obtiene el Atlas de Visitas completo del usuario

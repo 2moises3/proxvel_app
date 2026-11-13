@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../models/map_marker_model.dart';
 import '../../../core/theme/app_colors.dart';
@@ -15,6 +16,8 @@ class MapPlaceCard extends StatelessWidget {
     this.distanceMeters,
     this.onClose,
     this.locationBusy = false,
+    this.locationNotice,
+    this.locationActionLabel,
     this.isPinned = false,
     this.onTogglePin,
   });
@@ -24,6 +27,8 @@ class MapPlaceCard extends StatelessWidget {
   final VoidCallback? onTogglePin;
   final double? distanceMeters;
   final bool locationBusy;
+  final String? locationNotice;
+  final String? locationActionLabel;
   final bool isPinned;
 
   @override
@@ -39,7 +44,7 @@ class MapPlaceCard extends StatelessWidget {
               if (place.category?.isNotEmpty == true)
                 Expanded(
                   child: Text(
-                    place.category!,
+                    context.categoryLabel(place.category!),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.discovery,
@@ -52,7 +57,7 @@ class MapPlaceCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   child: IconButton(
-                    tooltip: 'Cerrar selección',
+                    tooltip: context.l10n.uiCerrarSeleccion,
                     padding: EdgeInsets.zero,
                     onPressed: onClose,
                     icon: const Icon(Icons.close_rounded, size: 19),
@@ -61,7 +66,7 @@ class MapPlaceCard extends StatelessWidget {
             ],
           ),
           Text(
-            place.destination,
+            context.destinationTitle(place.destinationId, place.destination),
             maxLines: largeText ? 4 : 3,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -82,6 +87,16 @@ class MapPlaceCard extends StatelessWidget {
               ),
             ),
           ],
+          if (locationNotice != null)
+            Text(locationNotice!, style: Theme.of(context).textTheme.bodySmall),
+          if (context.l10n.localeName == 'en' &&
+              place.contentLanguage == 'es' &&
+              (place.recommendedDuration?.trim().isNotEmpty == true ||
+                  place.description?.trim().isNotEmpty == true))
+            Text(
+              context.l10n.spanishOriginal,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           if (place.recommendedDuration?.trim().isNotEmpty == true) ...[
             const SizedBox(height: 8),
             Row(
@@ -122,7 +137,7 @@ class MapPlaceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Descubrir destino',
+                  context.l10n.uiDescubrirDestino,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -130,7 +145,12 @@ class MapPlaceCard extends StatelessWidget {
                 ),
               ),
               IconButton.filled(
-                tooltip: 'Ver detalle de ${place.destination}',
+                tooltip: context.l10n.viewMapPlaceDetails(
+                  context.destinationTitle(
+                    place.destinationId,
+                    place.destination,
+                  ),
+                ),
                 onPressed: onOpen,
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.accent,
@@ -219,24 +239,40 @@ class MapPlaceCard extends StatelessWidget {
                       locationBusy
                           ? 'Ubicando…'
                           : distanceMeters == null
-                          ? 'Ver mi distancia'
-                          : '${mapDistanceLabel(distanceMeters!)} en línea recta',
+                          ? (locationActionLabel ??
+                                context.l10n.uiVerMiDistancia)
+                          : context.l10n.distanceStraightLine(
+                              mapDistanceLabel(distanceMeters!),
+                            ),
                     ),
                   ),
                   if (onTogglePin != null)
                     TextButton.icon(
                       onPressed: onTogglePin,
                       style: TextButton.styleFrom(
-                        foregroundColor: isPinned ? AppColors.primary : AppColors.textSecondary,
-                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        foregroundColor: isPinned
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                       icon: Icon(
-                        isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                        isPinned
+                            ? Icons.push_pin_rounded
+                            : Icons.push_pin_outlined,
                         size: 15,
-                        color: isPinned ? AppColors.primary : AppColors.textSecondary,
+                        color: isPinned
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                       ),
-                      label: Text(isPinned ? 'Fijado' : 'Fijar en mapa'),
+                      label: Text(
+                        isPinned
+                            ? context.l10n.pinned
+                            : context.l10n.uiFijarEnMapa,
+                      ),
                     ),
                   TextButton.icon(
                     onPressed: onGoogleMaps,

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/common/app_icon.dart';
 import '../../../core/theme/app_layout.dart';
@@ -86,7 +87,7 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
           return TextButton.icon(
             onPressed: () => setState(() => _future = _load()),
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('No pudimos cargar la temporada. Reintentar'),
+            label: Text(context.l10n.uiNoPudimosCargarLaTemporadaReintentar),
           );
         }
         final calendar = snapshot.data;
@@ -110,10 +111,10 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Mejor época para ir', style: AppTextStyles.cardTitle),
+          Text(context.l10n.uiMejorEpocaParaIr, style: AppTextStyles.cardTitle),
           const SizedBox(height: AppSpace.micro),
-          const Text(
-            'Toca un mes y descubre cómo cambia la experiencia.',
+          Text(
+            context.l10n.uiTocaUnMesYDescubreComo,
             style: AppTextStyles.bodySecondary,
           ),
           if (best != null && best >= 1 && best <= 12)
@@ -124,7 +125,7 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
                 color: AppColors.discovery,
                 size: 18,
               ),
-              label: Text('Tu mejor contexto: ${kMonthNames[best - 1]}'),
+              label: Text(context.l10n.bestMonth(context.fullMonth(best))),
             ),
           const SizedBox(height: 14),
           _chart(cal),
@@ -146,10 +147,9 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
           ),
           const SizedBox(height: AppSpace.content),
           Text(
-            'Basado en el clima típico (SENAMHI 1991-2020) y las llegadas históricas de '
-            'visitantes (MINCETUR). Personalizado con tu clima '
-            '${_climateLabel(cal.preference)} y tu tolerancia a multitudes ${cal.tolerance}. '
-            'Describe lo habitual de cada mes, no un pronóstico.',
+            context.l10n.localeName == 'en'
+                ? 'Based on typical weather (SENAMHI 1991–2020) and historical visitor arrivals (MINCETUR). ${context.l10n.uiDescribeLoHabitualDeCadaMes}'
+                : 'Basado en el clima típico (SENAMHI 1991-2020) y las llegadas históricas de visitantes (MINCETUR). Personalizado con tu clima ${_climateLabel(cal.preference)} y tu tolerancia a multitudes ${cal.tolerance}. ${context.l10n.uiDescribeLoHabitualDeCadaMes}',
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textMuted,
@@ -171,10 +171,10 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Afinidad del contexto mensual', style: AppTextStyles.label),
+        Text(context.l10n.uiAfinidadDelContextoMensual, style: AppTextStyles.label),
         const SizedBox(height: 6),
-        const Text(
-          'Arriba: más favorable · Abajo: menos favorable',
+        Text(
+          context.l10n.uiArribaMasFavorableAbajoMenosFavorable,
           style: AppTextStyles.body2,
         ),
         const SizedBox(height: 16),
@@ -225,7 +225,7 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
                       shape: const StadiumBorder(),
                     ),
                     child: Text(
-                      kMonthShort[month - 1],
+                      context.shortMonth(month),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -276,7 +276,8 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
   );
 
   Widget _monthCard(CalendarMonth m) {
-    final monthName = kMonthNames[m.month - 1];
+    final english = context.l10n.localeName == 'en';
+    final monthName = context.fullMonth(m.month);
     final title = monthName[0].toUpperCase() + monthName.substring(1);
 
     if (!m.hasData) {
@@ -285,7 +286,9 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
         padding: const EdgeInsets.all(14),
         decoration: _cardDecoration(),
         child: Text(
-          'Aún no tenemos datos de $monthName para este destino.',
+          english
+              ? 'There is no data for $monthName at this destination yet.'
+              : 'Aún no tenemos datos de $monthName para este destino.',
           style: AppTextStyles.body2,
         ),
       );
@@ -315,19 +318,19 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
                 _metric(
                   'assets/icons/app/thermometer.svg',
                   '${m.tempProm!.toStringAsFixed(1)} °C',
-                  'Temperatura media',
+                  context.l10n.uiTemperaturaMedia,
                 ),
               if (m.lluviaMm != null)
                 _metric(
                   'assets/icons/app/droplets.svg',
                   '${m.lluviaMm!.toStringAsFixed(0)} mm',
-                  'Lluvia mensual',
+                  context.l10n.uiLluviaMensual,
                 ),
               if (m.visitantesMedios != null)
                 _metric(
                   AppIcons.navProfile,
                   '${m.visitantesMedios!.round()}',
-                  'Visitantes promedio',
+                  context.l10n.uiVisitantesPromedio,
                 ),
             ],
           ),
@@ -343,20 +346,23 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
-              const Text(
-                'Clima',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              Text(
+                context.l10n.weather,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: AppSpace.related),
               if (m.climaNivel != null)
-                _chip(m.climaNivel!, _levelColor(m.climaNivel)),
+                _chip(_weatherLevel(m.climaNivel!), _levelColor(m.climaNivel)),
               if (hasRisk) ...[
                 const SizedBox(width: 6),
-                _chip('Ojo: $risk', AppColors.textSecondary),
+                _chip(
+                  english ? 'Weather risks: ${_englishRisks(risk)}' : 'Ojo: $risk',
+                  AppColors.textSecondary,
+                ),
               ],
             ],
           ),
-          if ((m.climaExplicacion ?? '').isNotEmpty) ...[
+          if (!english && (m.climaExplicacion ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               m.climaExplicacion!,
@@ -379,19 +385,19 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
-              const Text(
-                'Afluencia',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              Text(
+                context.l10n.visitorCount,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: AppSpace.related),
               if (m.aforoNivel != null)
                 _chip(
-                  kCrowdOptions[m.aforoNivel] ?? m.aforoNivel!,
+                  _crowdLevel(m.aforoNivel!),
                   _crowdColor(m.aforoNivel),
                 ),
             ],
           ),
-          if ((m.aforoExplicacion ?? '').isNotEmpty) ...[
+          if (!english && (m.aforoExplicacion ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               m.aforoExplicacion!,
@@ -406,6 +412,33 @@ class _SeasonalitySectionState extends State<SeasonalitySection> {
       ),
     );
   }
+
+  String _weatherLevel(String level) {
+    if (context.l10n.localeName != 'en') return level;
+    return switch (level.toLowerCase()) {
+      'favorable' => 'Favorable',
+      'moderado' => 'Moderate',
+      'desfavorable' => 'Unfavorable',
+      _ => 'See weather data',
+    };
+  }
+
+  String _englishRisks(String risks) => risks.split(',').map((risk) {
+    return switch (risk.trim()) {
+      'calor' => 'heat',
+      'lluvia' => 'rain',
+      'noches frias' => 'cold nights',
+      'frio de dia' => 'cold days',
+      _ => 'check local conditions',
+    };
+  }).join(', ');
+
+  String _crowdLevel(String level) => switch (level) {
+    'Bajo' => context.l10n.quiet,
+    'Medio' => context.l10n.moderateCrowds,
+    'Alto' => context.l10n.busy,
+    _ => kCrowdOptions[level] ?? level,
+  };
 
   Widget _metric(String icon, String value, String label) => Container(
     padding: const EdgeInsets.all(12),

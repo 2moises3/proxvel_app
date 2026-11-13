@@ -1,3 +1,5 @@
+import '../../../core/widgets/cards/favorite_feedback.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
@@ -88,7 +90,7 @@ class CoverflowDestinationCard extends StatelessWidget {
               onTap: onTap,
               child: Semantics(
                 button: true,
-                label: 'Ver ${destination.name}',
+                label: context.l10n.viewPlaceDetails(context.destinationTitle(destination.id, destination.name)),
                 child: const SizedBox.expand(),
               ),
             ),
@@ -101,10 +103,10 @@ class CoverflowDestinationCard extends StatelessWidget {
                 final saved = favorites.isFavorite(destination.id);
                 return IconButton.filled(
                   tooltip: saved
-                      ? 'Quitar de favoritos'
-                      : 'Guardar en favoritos',
+                      ? context.l10n.removeFavorite
+                      : context.l10n.addFavorite,
                   onPressed: () =>
-                      favorites.toggleFavorite(destination.id, destination),
+                      toggleFavoriteWithFeedback(context, favorites, destination.id, destination),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black.withValues(alpha: .28),
                     foregroundColor: saved ? AppColors.accent : Colors.white,
@@ -122,7 +124,7 @@ class CoverflowDestinationCard extends StatelessWidget {
             top: 14,
             right: 14,
             child: IconButton.filled(
-              tooltip: 'Ver destino',
+              tooltip: context.l10n.viewDestination,
               onPressed: onTap,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -141,7 +143,7 @@ class CoverflowDestinationCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    destination.name,
+                    context.destinationTitle(destination.id, destination.name),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.style(

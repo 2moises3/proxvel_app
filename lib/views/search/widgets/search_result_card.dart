@@ -1,3 +1,5 @@
+import '../../../core/widgets/cards/favorite_feedback.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/favorites_controller.dart';
@@ -73,7 +75,7 @@ class SearchResultCard extends StatelessWidget {
                         const SizedBox(height: 5),
                       ] else if (d.category.isNotEmpty) ...[
                         Text(
-                          d.category,
+                          context.categoryLabel(d.category),
                           style: AppTypography.style(
                             fontSize: 12,
                             color: AppColors.discovery,
@@ -82,7 +84,7 @@ class SearchResultCard extends StatelessWidget {
                         const SizedBox(height: 5),
                       ],
                       Text(
-                        d.name,
+                        context.destinationTitle(d.id, d.name),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.style(
@@ -108,9 +110,9 @@ class SearchResultCard extends StatelessWidget {
                 Consumer<FavoritesController>(
                   builder: (context, favorites, _) => IconButton(
                     tooltip: favorites.isFavorite(d.id)
-                        ? 'Quitar de favoritos'
-                        : 'Guardar en favoritos',
-                    onPressed: () => favorites.toggleFavorite(d.id, d),
+                        ? context.l10n.removeFavorite
+                        : context.l10n.addFavorite,
+                    onPressed: () => toggleFavoriteWithFeedback(context, favorites, d.id, d),
                     icon: AppIcon(
                       favorites.isFavorite(d.id)
                           ? AppIcons.heartFilled

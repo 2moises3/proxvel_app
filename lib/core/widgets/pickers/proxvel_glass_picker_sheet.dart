@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:ui';
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
@@ -160,7 +161,7 @@ class _ProxvelGlassPickerSheetState extends State<ProxvelGlassPickerSheet> {
                             fontSize: 14,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Buscar...',
+                            hintText: context.l10n.uiBuscar,
                             hintStyle: AppTypography.style(
                               color: Colors.white.withValues(alpha: 0.3),
                               fontSize: 14,

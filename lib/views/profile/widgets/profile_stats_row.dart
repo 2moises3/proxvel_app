@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/widgets/cards/stats_card.dart';
@@ -29,19 +30,19 @@ class ProfileStatsRow extends StatelessWidget {
           StatsCard(
             icon: Icons.favorite_rounded,
             value: '$favoritesCount',
-            label: 'Favoritos',
+            label: context.l10n.favorites,
           ),
           const SizedBox(width: AppSpace.content),
           StatsCard(
             icon: Icons.rate_review_rounded,
             value: '$reviewsCount',
-            label: 'Reseñas',
+            label: context.l10n.reviews,
           ),
           const SizedBox(width: AppSpace.content),
           StatsCard(
             icon: Icons.auto_awesome_rounded,
             value: '$recommendationsCount',
-            label: 'Para ti',
+            label: context.l10n.forYou,
           ),
         ],
       ),

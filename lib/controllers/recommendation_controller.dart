@@ -10,7 +10,9 @@ class RecommendationController extends ChangeNotifier {
   List<RecommendationResultModel> recommendations = [];
   List<RecommendationResultModel> globalRecommendations = [];
   String? error;
+  bool connectionUnavailable = false;
   int? selectedMonth;
+  int? resultsMonth;
   String? selectedRegion;
   bool _isStale = false;
   int _generation = 0;
@@ -22,6 +24,7 @@ class RecommendationController extends ChangeNotifier {
     recommendations = [];
     globalRecommendations = [];
     error = null;
+    connectionUnavailable = false;
     notifyListeners();
   }
 
@@ -46,16 +49,18 @@ class RecommendationController extends ChangeNotifier {
     final generation = ++_generation;
     isLoading = true;
     profileIncomplete = false;
-    recommendations = [];
-    globalRecommendations = [];
     error = null;
+    connectionUnavailable = false;
+    final month = selectedMonth;
+    final effectiveMonth = month ?? DateTime.now().month;
     notifyListeners();
     try {
       final full = await _recommendationService.getMyRecommendations(
         limit: 100,
-        month: selectedMonth,
+        month: month,
       );
       if (generation != _generation) return;
+      resultsMonth = effectiveMonth;
       globalRecommendations = full;
       // El filtro de región no cambia los puntajes ni su orden relativo.
       recommendations = selectedRegion == null
@@ -65,11 +70,17 @@ class RecommendationController extends ChangeNotifier {
       resultsRevision++;
     } catch (e) {
       if (generation != _generation) return;
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
       profileIncomplete =
           e is ApiException &&
           (e.code == 'TRAVELER_PROFILE_INCOMPLETE' ||
               (e.statusCode == 400 &&
                   e.message.contains('no cuenta con un perfil de viaje')));
+      if (profileIncomplete) {
+        recommendations = [];
+        globalRecommendations = [];
+        resultsMonth = null;
+      }
       error = profileIncomplete
           ? 'Completa tu estilo de viajero y preferencias para recibir recomendaciones.'
           : e is ApiException && (e.statusCode == 400 || e.statusCode == 422)
@@ -87,9 +98,11 @@ class RecommendationController extends ChangeNotifier {
     globalRecommendations = [];
     profileIncomplete = false;
     error = null;
+    connectionUnavailable = false;
     _isStale = false;
     isLoading = false;
     selectedMonth = null;
+    resultsMonth = null;
     selectedRegion = null;
     notifyListeners();
   }

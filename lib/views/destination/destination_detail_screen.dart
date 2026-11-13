@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/destination_section_loading.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ import '../../models/destination_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/common/app_icon.dart';
 import '../../core/widgets/images/adaptive_destination_image.dart';
-import '../../core/widgets/states/loading_view.dart';
+import '../../core/widgets/states/content_skeleton.dart';
 import '../../core/widgets/announcements/announcement_banner.dart';
 import 'widgets/why_for_me_tab_content.dart';
 import 'widgets/about_destination_tab_content.dart';
@@ -51,6 +52,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   int _selectedTabIndex = 0;
   String? _selectedImageUrl;
   bool _loadStarted = false;
+  final _scrollController = ScrollController();
 
   List<String> get _tabKeys => widget.source.startsWith('ai_')
       ? const ['ai', 'about', 'reviews']
@@ -59,17 +61,22 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   String _tabLabel(String key) {
     switch (key) {
       case 'ai':
-        return 'Para ti';
+        return context.l10n.forYou;
       case 'about':
-        return 'El lugar';
+        return context.l10n.aboutPlace;
       default:
-        return 'Reseñas';
+        return context.l10n.reviews;
     }
   }
 
+  String? _languageCode;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (_languageCode == language) return;
+    _languageCode = language;
     _loadAfterFrame();
   }
 
@@ -99,6 +106,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -137,7 +145,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                 ),
                 const SizedBox(height: AppSpace.field),
                 Text(
-                  controller.error ?? 'No pudimos abrir este destino.',
+                  controller.error == null
+                      ? context.l10n.destinationOpenError
+                      : controller.connectionUnavailable
+                      ? context.l10n.connectionUnavailable
+                      : context.errorText(
+                          controller.error!,
+                          fallback: context.l10n.destinationOpenError,
+                        ),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.cardTitle,
                 ),
@@ -147,7 +162,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                     widget.destinationId,
                     month: widget.month,
                   ),
-                  child: const Text('Reintentar'),
+                  child: Text(context.l10n.retry),
                 ),
               ],
             ),
@@ -159,12 +174,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
+        controller: _scrollController,
         key: PageStorageKey(
           'destination/${widget.destinationId}/${widget.source}',
         ),
         slivers: [
           SliverToBoxAdapter(
             child: DestinationCover(
+              scrollController: _scrollController,
               destination: dest,
               heroTag: widget.opening?.destination.id == dest.id
                   ? widget.opening?.tag
@@ -178,7 +195,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   ? 0
                   : controller.reviews.length,
               onOpenGallery: () => _openGallery(dest),
-              onImageChanged: (url) => _selectedImageUrl = url,
+              selectedImageUrl: _selectedImageUrl,
+              onImageChanged: (url) => setState(() => _selectedImageUrl = url),
             ),
           ),
           SliverPersistentHeader(
@@ -278,7 +296,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         return _buildAboutDestinationContent(controller);
       default:
         if (controller.isReviewsLoading) {
-          return const DestinationSectionLoading(label: 'Cargando reseñas…');
+          return DestinationSectionLoading(label: context.l10n.reviewsLoading);
         }
         return ReviewsTabContent(
           key: const ValueKey('reviews'),
@@ -318,8 +336,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               controller.rankingInfo?.explanation?.shapValues ?? const {},
           compatibilityPercentage: controller.compatibility,
           label:
-              controller.recommendationLabel ?? 'Recomendación personalizada',
-          explanation: controller.explanation,
+              controller.recommendationLabel ??
+              context.l10n.personalizedRecommendation,
+          explanation: _recommendationExplanation(controller),
           topAspects: controller.recommendationTopAspects,
           aspectScores: controller.aspectScores,
           climaContextScore: controller.climaContextScore,
@@ -336,6 +355,16 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         ),
       ],
     );
+  }
+
+  String _recommendationExplanation(DestinationController controller) {
+    final coverage = controller.rankingInfo?.interestCoverage;
+    if (context.l10n.localeName == 'en' &&
+        coverage != null &&
+        coverage.isFinite) {
+      return context.l10n.interestMatch((coverage * 100).round());
+    }
+    return controller.explanation;
   }
 
   Widget _buildNoRecommendationCard({required bool hasProfile}) {
@@ -358,16 +387,16 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
           const SizedBox(height: 16),
           Text(
             hasProfile
-                ? 'Tu afinidad, cuando esté disponible'
-                : 'Tu viaje merece algo más personal.',
+                ? context.l10n.uiTuAfinidadCuandoEsteDisponible
+                : context.l10n.uiTuViajeMereceAlgoMasPersonal,
             textAlign: TextAlign.center,
             style: AppTextStyles.h2,
           ),
           const SizedBox(height: AppSpace.content),
           Text(
             hasProfile
-                ? 'No tenemos un resultado del motor para mostrarte en este momento. Puedes volver a consultarlo.'
-                : '¿Este lugar va contigo? Cuéntanos cómo te gusta viajar y descubre la afinidad, el clima y la afluencia según tus preferencias.',
+                ? context.l10n.uiNoTenemosUnResultadoDelMotor
+                : context.l10n.uiEsteLugarVaContigoCuentanosComo,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),
@@ -376,7 +405,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               onPressed: () => context
                   .read<DestinationController>()
                   .loadDestination(widget.destinationId, month: widget.month),
-              child: const Text('Volver a consultar'),
+              child: Text(context.l10n.checkAgain),
             ),
           if (!hasProfile) ...[
             const SizedBox(height: 14),
@@ -390,7 +419,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   );
                 }
               },
-              child: const Text('Descubrir mi afinidad'),
+              child: Text(context.l10n.discoverMatch),
             ),
           ],
         ],
@@ -401,7 +430,22 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   Widget _openingPreview() {
     final opening = widget.opening;
     if (opening == null || opening.destination.id != widget.destinationId) {
-      return const LoadingView();
+      return SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BackButton(
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/main'),
+            ),
+            const Expanded(
+              child: SingleChildScrollView(
+                child: ContentSkeleton(SkeletonLayout.detail),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     return Stack(
       fit: StackFit.expand,
@@ -424,7 +468,13 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         ),
         const Align(
           alignment: Alignment.bottomCenter,
-          child: LinearProgressIndicator(minHeight: 3),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Card(child: ContentSkeleton(SkeletonLayout.detailPreview)),
+            ),
+          ),
         ),
       ],
     );
@@ -439,16 +489,13 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (controller.hasTourismError) ...[
-          const Text(
-            'No pudimos cargar toda la información para planificar la visita.',
-            style: AppTextStyles.body2,
-          ),
+          Text(context.l10n.tourismPartialError, style: AppTextStyles.body2),
           TextButton(
             onPressed: () => controller.loadDestination(
               widget.destinationId,
               month: widget.month,
             ),
-            child: const Text('Reintentar'),
+            child: Text(context.l10n.retry),
           ),
           const SizedBox(height: AppSpace.field),
         ],
@@ -461,16 +508,16 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     );
   }
 
-  void _openGallery(DestinationModel destination) {
-    final images = [
+  Future<void> _openGallery(DestinationModel destination) async {
+    final images = {
       destination.imageUrl,
       ...destination.galleryImages,
-    ].where((url) => url.isNotEmpty).toList();
+    }.where((url) => url.trim().isNotEmpty).toList();
     if (images.isEmpty) return;
     var page = images.indexOf(_selectedImageUrl ?? destination.imageUrl);
     if (page < 0) page = 0;
     final pageController = PageController(initialPage: page);
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
       barrierColor: Colors.black,
       builder: (dialogContext) => StatefulBuilder(
@@ -498,7 +545,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   top: 8,
                   left: 8,
                   child: IconButton(
-                    tooltip: 'Cerrar galería',
+                    tooltip: context.l10n.uiCerrarGaleria,
                     onPressed: () => Navigator.pop(dialogContext),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),
@@ -508,7 +555,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   right: 20,
                   bottom: 20,
                   child: Text(
-                    '${page + 1} de ${images.length}',
+                    context.l10n.positionOfTotal(page + 1, images.length),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -522,7 +569,11 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
           ),
         ),
       ),
-    ).then((_) => pageController.dispose());
+    );
+    pageController.dispose();
+    if (mounted && widget.destinationId == destination.id) {
+      setState(() => _selectedImageUrl = images[page]);
+    }
   }
 }
 

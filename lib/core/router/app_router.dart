@@ -1,3 +1,11 @@
+import 'package:provider/provider.dart';
+import '../../controllers/destination_controller.dart';
+import '../../models/destination_model.dart';
+import '../../controllers/search_controller.dart' as search;
+import '../../integration/local/local_storage_service.dart';
+import '../../integration/services/destination_service.dart';
+import '../../integration/services/tourism_service.dart';
+import '../../integration/services/review_service.dart';
 import '../navigation/profile_transition.dart';
 import '../../views/profile/widgets/about_proxvel_sheet.dart';
 import '../widgets/navigation/navigation_island_transition.dart';
@@ -100,17 +108,25 @@ final GoRouter appRouter = GoRouter(
         final month = int.tryParse(state.uri.queryParameters['month'] ?? '');
         return CustomTransitionPage(
           key: state.pageKey,
-          child: DestinationDetailScreen(
-            destinationId: id,
-            opening: state.extra is DestinationOpening
-                ? state.extra as DestinationOpening
-                : null,
-            source: source,
-            month: month,
+          child: ChangeNotifierProvider(
+            create: (context) => DestinationController(
+              context.read<DestinationService>(),
+              context.read<TourismService>(),
+              context.read<ReviewService>(),
+            ),
+            child: DestinationDetailScreen(
+              destinationId: id,
+              opening: state.extra is DestinationOpening
+                  ? state.extra as DestinationOpening
+                  : null,
+              source: source,
+              month: month,
+            ),
           ),
           transitionDuration: const Duration(milliseconds: 300),
           reverseTransitionDuration: const Duration(milliseconds: 240),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (MediaQuery.disableAnimationsOf(context)) return child;
             final curved = CurvedAnimation(
               parent: animation,
               curve: Curves.easeOutCubic,
@@ -136,14 +152,21 @@ final GoRouter appRouter = GoRouter(
             state.uri.queryParameters['open_filters'] == 'true';
         return CustomTransitionPage(
           key: state.pageKey,
-          child: SearchResultsScreen(
-            initialQuery: query,
-            initialCategory: category,
-            autoOpenFilters: autoOpenFilters,
+          child: ChangeNotifierProvider(
+            create: (context) => search.SearchController(
+              context.read<DestinationService>(),
+              context.read<LocalStorageService>(),
+            ),
+            child: SearchResultsScreen(
+              initialQuery: query,
+              initialCategory: category,
+              autoOpenFilters: autoOpenFilters,
+            ),
           ),
           transitionDuration: const Duration(milliseconds: 320),
           reverseTransitionDuration: const Duration(milliseconds: 260),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (MediaQuery.disableAnimationsOf(context)) return child;
             return FadeTransition(
               opacity: CurvedAnimation(
                 parent: animation,
@@ -181,7 +204,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/forgot-password',
-      builder: (context, state) => const ForgotPasswordScreen(),
+      builder: (context, state) =>
+          ForgotPasswordScreen(initialEmail: state.extra as String? ?? ''),
     ),
     GoRoute(
       path: '/reset-password',
@@ -244,7 +268,12 @@ final GoRouter appRouter = GoRouter(
       path: '/feedback/:destinationId',
       builder: (context, state) {
         final destId = state.pathParameters['destinationId']!;
-        return FeedbackScreen(destinationId: destId);
+        return FeedbackScreen(
+          destinationId: destId,
+          openingDestination: state.extra is DestinationModel
+              ? state.extra as DestinationModel
+              : null,
+        );
       },
     ),
     GoRoute(path: '/map', builder: (context, state) => const MapScreen()),

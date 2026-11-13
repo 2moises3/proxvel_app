@@ -63,6 +63,7 @@ class AuthController extends ChangeNotifier {
         password: password,
       );
 
+      await _secureStorage.setPersistence(true);
       await saveToken(loginResponse.accessToken);
       await _storage.saveUser(loginResponse.user);
       await _storage.setSessionActive(true);
@@ -75,7 +76,11 @@ class AuthController extends ChangeNotifier {
   }
 
   /// Autentica usando JWT y guarda la sesión
-  Future<String?> login(String email, String password) async {
+  Future<String?> login(
+    String email,
+    String password, {
+    bool rememberSession = true,
+  }) async {
     _sessionRevision++;
     if (email.trim().isEmpty || password.isEmpty) {
       return 'Correo y contraseña son requeridos.';
@@ -89,6 +94,7 @@ class AuthController extends ChangeNotifier {
         password: password,
       );
 
+      await _secureStorage.setPersistence(rememberSession);
       await saveToken(response.accessToken);
       await _storage.saveUser(response.user);
       await _storage.setSessionActive(true);
@@ -189,6 +195,7 @@ class AuthController extends ChangeNotifier {
     try {
       final token = await _secureStorage.getAccessToken();
       if (token == null || token.isEmpty) {
+        await _storage.clearAllUserData();
         await _storage.setSessionActive(false);
         notifyListeners();
         return false;
@@ -201,8 +208,8 @@ class AuthController extends ChangeNotifier {
       await _storage.setSessionActive(true);
       notifyListeners();
       return true;
-    } catch (e) {
-      // Si falla (por ejemplo 401, o error de storage), limpiamos sesión
+    } on ApiException catch (e) {
+      if (e.statusCode != 401 && e.statusCode != 403) rethrow;
       try {
         await logout();
       } catch (_) {

@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import '../profile/widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
@@ -34,7 +35,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Future<void> _delete() async {
     if (_busy) return;
     if (_password.text.isEmpty) {
-      setState(() => _error = 'Escribe tu contraseña para confirmar.');
+      setState(() => _error = context.l10n.uiEscribeTuContrasenaParaConfirmar);
       return;
     }
     setState(() {
@@ -51,7 +52,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       setState(() {
         _busy = false;
         _error = e.statusCode == 403
-            ? 'La contraseña no es correcta.'
+            ? context.l10n.uiLaContrasenaNoEsCorrecta
             : e.message;
       });
       return;
@@ -60,18 +61,18 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       setState(() {
         _busy = false;
         _error =
-            'No pudimos procesar tu solicitud. Revisa tu conexión e intenta de nuevo.';
+            context.l10n.uiNoPudimosProcesarTuSolicitudRevisa;
       });
       return;
     }
+    if (!mounted) return;
+    final confirmation = context.l10n.accountDeletionScheduled(kSupportEmail);
     await auth.logout();
     router.go('/welcome');
     messenger.showSnackBar(
-      const SnackBar(
-        duration: Duration(seconds: 6),
-        content: Text(
-          'Tu cuenta se eliminará en 14 días. Si cambias de opinión, escribe a $kSupportEmail.',
-        ),
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text(confirmation),
       ),
     );
   }
@@ -80,7 +81,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Eliminar mi cuenta', busy: _busy),
+      appBar: profilePageBar(context, context.l10n.deleteAccount, busy: _busy),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -90,13 +91,13 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             32,
           ),
           children: [
-            const Text('Esto es lo que pasará', style: AppTextStyles.cardTitle),
+            Text(context.l10n.uiEstoEsLoQuePasara, style: AppTextStyles.cardTitle),
             const SizedBox(height: AppSpace.content),
-            for (final t in const [
-              'Tu acceso se bloquea de inmediato.',
-              'Tienes 14 días para arrepentirte escribiendo a $kSupportEmail.',
-              'Pasado ese plazo borramos tu perfil, favoritos, archivados, notificaciones, foto y datos de residencia, y anonimizamos tu nombre y correo.',
-              'Tus reseñas se conservan sin identificarte, para mejorar las recomendaciones.',
+            for (final t in [
+              context.l10n.uiTuAccesoSeBloqueaDeInmediato,
+              context.l10n.accountDeletionGrace(kSupportEmail),
+              context.l10n.uiPasadoEsePlazoBorramosTuPerfil,
+              context.l10n.uiTusResenasSeConservanSinIdentificarte,
             ])
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -123,8 +124,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               obscureText: _obscure,
               enabled: !_busy,
               decoration: InputDecoration(
-                labelText: 'Tu contraseña',
-                hintText: 'Confirma con tu contraseña actual',
+                labelText: context.l10n.uiTuContrasena,
+                hintText: context.l10n.uiConfirmaConTuContrasenaActual,
                 errorText: _error,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -136,8 +137,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                         : Icons.visibility_outlined,
                   ),
                   tooltip: _obscure
-                      ? 'Mostrar contraseña'
-                      : 'Ocultar contraseña',
+                      ? context.l10n.uiMostrarContrasena
+                      : context.l10n.uiOcultarContrasena,
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
@@ -159,7 +160,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Eliminar mi cuenta'),
+                  : Text(context.l10n.deleteAccount),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
@@ -167,7 +168,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
               ),
-              child: const Text('Cancelar'),
+              child: Text(context.l10n.cancel),
             ),
           ],
         ),

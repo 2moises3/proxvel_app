@@ -15,14 +15,18 @@ class VisitController extends ChangeNotifier {
   bool isActionLoading = false;
   String? error;
   String? actionMessage;
+  String? latestStampedDestinationId;
 
   Timer? _tickerTimer;
+  int _sessionRevision = 0;
+  int _activeRevision = 0;
 
   VisitController([VisitService? visitService])
     : _visitService = visitService ?? VisitService();
 
   @override
   void dispose() {
+    _sessionRevision++;
     _tickerTimer?.cancel();
     super.dispose();
   }
@@ -32,16 +36,23 @@ class VisitController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void dismissStampedStatus() {
+    latestStampedDestinationId = null;
+    notifyListeners();
+  }
+
   void clearPendingDestination() {
     pendingDestination = null;
     notifyListeners();
   }
 
   void clearSession() {
+    _sessionRevision++;
     _tickerTimer?.cancel();
     activeVisit = null;
     atlasSummary = null;
     pendingDestination = null;
+    latestStampedDestinationId = null;
     error = null;
     actionMessage = null;
     isLoading = false;
@@ -55,28 +66,38 @@ class VisitController extends ChangeNotifier {
   }
 
   Future<void> loadAtlas() async {
+    final session = _sessionRevision;
     isLoading = true;
     error = null;
     notifyListeners();
 
     try {
-      atlasSummary = await _visitService.getAtlas();
-    } catch (e) {
-      error = 'No pudimos sincronizar tu Atlas de visitas.';
+      final atlas = await _visitService.getAtlas();
+      if (session == _sessionRevision) atlasSummary = atlas;
+    } catch (_) {
+      if (session == _sessionRevision) {
+        error = 'No pudimos sincronizar tu Atlas de visitas.';
+      }
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (session == _sessionRevision) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> checkActiveVisit() async {
+    if (isActionLoading) return;
+    final session = _sessionRevision;
+    final revision = ++_activeRevision;
     try {
       final active = await _visitService.getActiveVisit();
+      if (session != _sessionRevision || revision != _activeRevision) return;
       activeVisit = active;
       _setupTickerIfNeeded();
       notifyListeners();
     } catch (_) {
-      // Silencioso para no bloquear la experiencia si no hay visita
+      // Keep the last known visit and retry on the next poll.
     }
   }
 
@@ -85,6 +106,9 @@ class VisitController extends ChangeNotifier {
     required double latitude,
     required double longitude,
   }) async {
+    if (isActionLoading) return false;
+    final session = _sessionRevision;
+    _activeRevision++;
     isActionLoading = true;
     error = null;
     actionMessage = null;
@@ -96,21 +120,26 @@ class VisitController extends ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
       );
+      if (session != _sessionRevision) return false;
+      latestStampedDestinationId = null;
       activeVisit = visit;
       if (pendingDestination?.destinationId == destinationId) {
         pendingDestination = null;
       }
       actionMessage = '¡Check-in iniciado! Disfruta tu recorrido turístico.';
       _setupTickerIfNeeded();
-      return true;
+      return session == _sessionRevision;
     } catch (e) {
+      if (session != _sessionRevision) return false;
       error = e is ApiException
           ? e.message
           : 'No pudimos iniciar la visita. Inténtalo nuevamente.';
       return false;
     } finally {
-      isActionLoading = false;
-      notifyListeners();
+      if (session == _sessionRevision) {
+        isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -118,8 +147,11 @@ class VisitController extends ChangeNotifier {
     required double latitude,
     required double longitude,
   }) async {
-    if (activeVisit == null) return false;
+    final visit = activeVisit;
+    if (visit == null || isActionLoading) return false;
 
+    final session = _sessionRevision;
+    _activeRevision++;
     isActionLoading = true;
     error = null;
     actionMessage = null;
@@ -127,25 +159,30 @@ class VisitController extends ChangeNotifier {
 
     try {
       await _visitService.verifyVisit(
-        visitId: activeVisit!.visitId,
+        visitId: visit.visitId,
         latitude: latitude,
         longitude: longitude,
       );
+      if (session != _sessionRevision) return false;
       activeVisit = null;
+      latestStampedDestinationId = visit.destinationId;
       _tickerTimer?.cancel();
       actionMessage =
           '🎉 ¡Felicitaciones! Visita sellada en tu Atlas de viajes.';
       // Recargar el atlas con el nuevo sello
       await loadAtlas();
-      return true;
+      return session == _sessionRevision;
     } catch (e) {
+      if (session != _sessionRevision) return false;
       error = e is ApiException
           ? e.message
           : 'No pudimos sellar la visita. Inténtalo nuevamente.';
       return false;
     } finally {
-      isActionLoading = false;
-      notifyListeners();
+      if (session == _sessionRevision) {
+        isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -153,14 +190,8 @@ class VisitController extends ChangeNotifier {
     _tickerTimer?.cancel();
     if (activeVisit != null && activeVisit!.isInProgress) {
       // Timer cada 30 segundos para sincronizar y actualizar el progreso visual suavemente
-      _tickerTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-        final refreshed = await _visitService.getActiveVisit();
-        if (refreshed != null) {
-          activeVisit = refreshed;
-          notifyListeners();
-        } else {
-          _tickerTimer?.cancel();
-        }
+      _tickerTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        unawaited(checkActiveVisit());
       });
     }
   }

@@ -81,6 +81,31 @@ void main() {
       final scroll = tester
           .state<ScrollableState>(find.byType(Scrollable).first)
           .position;
+      final back = find.byIcon(Icons.arrow_back_rounded);
+      final initialTop = tester.getTopLeft(back).dy;
+      scroll.jumpTo(190);
+      await tester.pump();
+      expect(back.hitTestable(), findsOneWidget);
+      expect(tester.getTopLeft(back).dy, closeTo(initialTop, 1));
+
+      final title = find.text(fixture.name);
+      final titleY = tester.getTopLeft(title).dy + scroll.pixels;
+      scroll.jumpTo(titleY - 40);
+      await tester.pump();
+      expect(
+        tester.getBottomLeft(back).dy,
+        lessThan(tester.getTopLeft(title).dy),
+      );
+      expect(tester.getTopLeft(back).dy, lessThan(initialTop));
+
+      scroll.jumpTo(titleY + 100);
+      await tester.pump();
+      expect(back.hitTestable(), findsNothing);
+
+      scroll.jumpTo(190);
+      await tester.pump();
+      expect(back.hitTestable(), findsOneWidget);
+
       scroll.jumpTo(scroll.maxScrollExtent);
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('Tu viaje merece algo más personal.'), findsOneWidget);

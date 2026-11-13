@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_layout.dart';
@@ -26,7 +27,7 @@ class ButtonContent extends StatelessWidget {
       ),
       if (isLoading)
         Semantics(
-          label: 'Cargando',
+          label: context.l10n.uiCargando,
           liveRegion: true,
           child: const SizedBox.square(
             dimension: AppSpace.section,

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common/app_icon.dart';
@@ -22,13 +23,13 @@ void showLogoutConfirmSheet(
         children: [
           const AppIcon(AppIcons.logOut, size: 32, color: AppColors.discovery),
           const SizedBox(height: 16),
-          const Text(
-            '¿Cerrar sesión?',
+          Text(
+            context.l10n.uiCerrarSesion,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Tus preferencias y destinos guardados seguirán en tu cuenta cuando vuelvas.',
+          Text(
+            context.l10n.uiTusPreferenciasYDestinosGuardadosSeguiran,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -49,7 +50,7 @@ void showLogoutConfirmSheet(
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.pop(sheetContext, true),
-                  child: const Text('Cerrar sesión'),
+                  child: Text(context.l10n.signOut),
                 ),
               ),
             ],

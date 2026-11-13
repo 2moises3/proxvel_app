@@ -1,3 +1,5 @@
+import '../../localization/l10n.dart';
+import '../../../core/widgets/cards/favorite_feedback.dart';
 import 'dart:ui';
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
@@ -102,7 +104,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                       builder: (context, favCtrl, child) {
                         final isFav = favCtrl.isFavorite(destination.id);
                         return GestureDetector(
-                          onTap: () => favCtrl.toggleFavorite(destination.id, destination),
+                          onTap: () => toggleFavoriteWithFeedback(context, favCtrl, destination.id, destination),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(AppRadius.card),
                             child: BackdropFilter(
@@ -140,7 +142,7 @@ class FeaturedDestinationCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      destination.name,
+                      context.destinationTitle(destination.id, destination.name),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.style(

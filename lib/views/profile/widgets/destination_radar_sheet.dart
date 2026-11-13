@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +59,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
   Future<void> _performScan() async {
     setState(() {
       _isScanning = true;
-      _statusText = '🛰️ Calibrando sensores GPS y buscando destinos...';
+      _statusText = context.l10n.uiCalibrandoSensoresGpsYBuscandoDestinos;
     });
 
     final mapService = context.read<TourismMapService>();
@@ -71,8 +72,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
         _nearbyDestinations = [];
         _selectedTarget = null;
         _statusText =
-            location.error ??
-            'Activa la ubicación para buscar destinos cerca de ti.';
+            location.error == null ? context.l10n.enableLocationForNearby : context.errorText(location.error!);
       });
       return;
     }
@@ -99,22 +99,22 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
               ? _nearbyDestinations.first
               : null;
           _statusText = _selectedTarget != null
-              ? 'Destinos cercanos a tu ubicación actual'
-              : 'No hay destinos con ubicación disponible.';
+              ? context.l10n.uiDestinosCercanosATuUbicacionActual
+              : context.l10n.uiNoHayDestinosConUbicacionDisponible;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isScanning = false;
-          _statusText = 'No pudimos completar el escaneo GPS.';
+          _statusText = context.l10n.uiNoPudimosCompletarElEscaneoGps;
         });
       }
     }
   }
 
   String _formatDistance(double? meters) {
-    if (meters == null) return 'Distancia calculándose';
+    if (meters == null) return context.l10n.uiDistanciaCalculandose;
     if (meters < 1000) return 'A ${meters.toInt()} metros de ti';
     return 'A ${(meters / 1000).toStringAsFixed(1)} km de ti';
   }
@@ -175,11 +175,11 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Radar de Destinos',
+                          context.l10n.uiRadarDeDestinos,
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 18,
@@ -187,7 +187,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                           ),
                         ),
                         Text(
-                          'Búsqueda activa de sellado por GPS',
+                          context.l10n.uiBusquedaActivaDeSelladoPorGps,
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11.5,
@@ -272,7 +272,7 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                     TextButton.icon(
                       onPressed: _performScan,
                       icon: const Icon(Icons.my_location_rounded),
-                      label: const Text('Reintentar ubicación'),
+                      label: Text(context.l10n.uiReintentarUbicacion),
                     ),
 
                   const SizedBox(height: 16),
@@ -395,8 +395,8 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                               Text(
                                 distance <=
                                         _selectedTarget!.geofenceRadiusMeters
-                                    ? 'Estás dentro del radio de este destino.'
-                                    : 'Aún estás fuera del radio de este destino.',
+                                    ? context.l10n.uiEstasDentroDelRadioDeEste
+                                    : context.l10n.uiAunEstasFueraDelRadioDe,
                                 style: const TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 11.5,
@@ -455,8 +455,8 @@ class _DestinationRadarSheetState extends State<DestinationRadarSheet>
                                   Icons.track_changes_rounded,
                                   size: 18,
                                 ),
-                                label: const Text(
-                                  'Fijar como objetivo de sellado',
+                                label: Text(
+                                  context.l10n.uiFijarComoObjetivoDeSellado,
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,

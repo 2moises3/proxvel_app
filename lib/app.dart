@@ -1,7 +1,9 @@
 import 'core/widgets/navigation/navigation_island_transition.dart';
+import 'core/localization/app_language.dart';
+import 'l10n/app_localizations.dart';
 import 'controllers/notifications_controller.dart';
 import 'integration/services/notification_service.dart';
-import 'package:flutter/material.dart' hide SearchController;
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -26,9 +28,7 @@ import 'controllers/auth_controller.dart';
 import 'controllers/announcement_controller.dart';
 import 'controllers/home_controller.dart';
 import 'controllers/onboarding_controller.dart';
-import 'controllers/search_controller.dart';
 import 'controllers/recommendation_controller.dart';
-import 'controllers/destination_controller.dart';
 import 'controllers/favorites_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/feedback_controller.dart';
@@ -47,23 +47,41 @@ class ProxvelApp extends StatelessWidget {
       providers: [
         // Services
         Provider<LocalStorageService>.value(value: storageService),
+        ChangeNotifierProvider(create: (_) => AppLanguage(storageService)),
         Provider<SecureTokenStorage>(create: (_) => SecureTokenStorage()),
         ProxyProvider<SecureTokenStorage, ApiClient>(
-          update: (_, secureStorage, previous) => ApiClient(secureStorage: secureStorage),
+          update: (_, secureStorage, previous) =>
+              ApiClient(secureStorage: secureStorage),
         ),
         ProxyProvider2<LocalStorageService, ApiClient, ProfileService>(
           update: (_, storage, api, previous) =>
               ProfileService(storage, apiClient: api),
         ),
         ProxyProvider2<LocalStorageService, ApiClient, FeedbackService>(
-          update: (_, storage, api, previous) => FeedbackService(storage, apiClient: api),
-        ),
-        ProxyProvider2<LocalStorageService, ApiClient, DestinationService>(
           update: (_, storage, api, previous) =>
-              DestinationService(apiClient: api, storage: storage),
+              FeedbackService(storage, apiClient: api),
         ),
-        ProxyProvider<ApiClient, TourismService>(
-          update: (_, api, previous) => TourismService(apiClient: api),
+        ProxyProvider3<
+          LocalStorageService,
+          ApiClient,
+          AppLanguage,
+          DestinationService
+        >(
+          update: (_, storage, api, language, previous) =>
+              previous ??
+              DestinationService(
+                apiClient: api,
+                storage: storage,
+                languageCode: () => language.languageCode,
+              ),
+        ),
+        ProxyProvider2<ApiClient, AppLanguage, TourismService>(
+          update: (_, api, language, previous) =>
+              previous ??
+              TourismService(
+                apiClient: api,
+                languageCode: () => language.languageCode,
+              ),
         ),
         ProxyProvider<ApiClient, ReviewService>(
           update: (_, api, previous) => ReviewService(apiClient: api),
@@ -83,100 +101,139 @@ class ProxvelApp extends StatelessWidget {
         ProxyProvider<ApiClient, ArchiveService>(
           update: (_, api, previous) => ArchiveService(apiClient: api),
         ),
-        ProxyProvider<ApiClient, TourismMapService>(
-          update: (_, api, previous) => TourismMapService(apiClient: api),
+        ProxyProvider2<ApiClient, AppLanguage, TourismMapService>(
+          update: (_, api, language, previous) =>
+              previous ??
+              TourismMapService(
+                apiClient: api,
+                languageCode: () => language.languageCode,
+              ),
         ),
         ProxyProvider<ApiClient, NotificationService>(
-          update: (_, api, previous) => NotificationService(apiClient: api),
+          update: (context, api, previous) => NotificationService(
+            apiClient: api,
+            languageCode: () => context.read<AppLanguage>().languageCode,
+          ),
         ),
         ProxyProvider<ApiClient, AnnouncementService>(
-          update: (_, api, previous) => AnnouncementService(apiClient: api),
+          update: (context, api, previous) => AnnouncementService(
+            apiClient: api,
+            languageCode: () => context.read<AppLanguage>().languageCode,
+          ),
         ),
         ProxyProvider<ApiClient, VisitService>(
           update: (_, api, previous) => VisitService(apiClient: api),
         ),
 
         // Controllers
-        ChangeNotifierProxyProvider4<LocalStorageService, SecureTokenStorage, UserService, AuthService, AuthController>(
-          create: (context) => AuthController(context.read<LocalStorageService>(), context.read<SecureTokenStorage>(), context.read<UserService>(), context.read<AuthService>()),
-          update: (context, local, secure, userSvc, authSvc, auth) => auth ?? AuthController(local, secure, userSvc, authSvc),
+        ChangeNotifierProxyProvider4<
+          LocalStorageService,
+          SecureTokenStorage,
+          UserService,
+          AuthService,
+          AuthController
+        >(
+          create: (context) => AuthController(
+            context.read<LocalStorageService>(),
+            context.read<SecureTokenStorage>(),
+            context.read<UserService>(),
+            context.read<AuthService>(),
+          ),
+          update: (context, local, secure, userSvc, authSvc, auth) =>
+              auth ?? AuthController(local, secure, userSvc, authSvc),
         ),
-        ChangeNotifierProxyProvider2<DestinationService, LocalStorageService, HomeController>(
+        ChangeNotifierProxyProvider2<
+          DestinationService,
+          LocalStorageService,
+          HomeController
+        >(
           create: (context) => HomeController(
             context.read<DestinationService>(),
             context.read<LocalStorageService>(),
           ),
-          update: (context, destSvc, localSvc, ctl) => ctl ?? HomeController(destSvc, localSvc),
+          update: (context, destSvc, localSvc, ctl) =>
+              ctl ?? HomeController(destSvc, localSvc),
         ),
         ChangeNotifierProxyProvider<ProfileService, OnboardingController>(
-          create: (context) => OnboardingController(context.read<ProfileService>()),
-          update: (context, profileSvc, ctl) => ctl ?? OnboardingController(profileSvc),
+          create: (context) =>
+              OnboardingController(context.read<ProfileService>()),
+          update: (context, profileSvc, ctl) =>
+              ctl ?? OnboardingController(profileSvc),
         ),
-        ChangeNotifierProxyProvider2<DestinationService, LocalStorageService, SearchController>(
-          create: (context) => SearchController(
-            context.read<DestinationService>(),
-            context.read<LocalStorageService>(),
-          ),
-          update: (context, destSvc, localSvc, ctl) => ctl ?? SearchController(destSvc, localSvc),
-        ),
-        ChangeNotifierProxyProvider<RecommendationService, RecommendationController>(
-          create: (context) => RecommendationController(context.read<RecommendationService>()),
-          update: (context, recSvc, ctl) => ctl ?? RecommendationController(recSvc),
-        ),
-        ChangeNotifierProxyProvider3<DestinationService, TourismService, ReviewService, DestinationController>(
-          create: (context) => DestinationController(
-            context.read<DestinationService>(),
-            context.read<TourismService>(),
-            context.read<ReviewService>(),
-          ),
-          update: (context, destSvc, tourismSvc, reviewSvc, ctl) => 
-            ctl ?? DestinationController(destSvc, tourismSvc, reviewSvc),
+        ChangeNotifierProxyProvider<
+          RecommendationService,
+          RecommendationController
+        >(
+          create: (context) =>
+              RecommendationController(context.read<RecommendationService>()),
+          update: (context, recSvc, ctl) =>
+              ctl ?? RecommendationController(recSvc),
         ),
         ChangeNotifierProxyProvider<FavoritesService, FavoritesController>(
-          create: (context) => FavoritesController(context.read<FavoritesService>()),
+          create: (context) =>
+              FavoritesController(context.read<FavoritesService>()),
           update: (context, favSvc, ctl) => ctl ?? FavoritesController(favSvc),
         ),
         ChangeNotifierProxyProvider<ArchiveService, ArchiveController>(
-          create: (context) => ArchiveController(context.read<ArchiveService>()),
+          create: (context) =>
+              ArchiveController(context.read<ArchiveService>()),
           update: (context, arcSvc, ctl) => ctl ?? ArchiveController(arcSvc),
         ),
-        ChangeNotifierProxyProvider3<ProfileService, LocalStorageService, UserService, ProfileController>(
+        ChangeNotifierProxyProvider3<
+          ProfileService,
+          LocalStorageService,
+          UserService,
+          ProfileController
+        >(
           create: (context) => ProfileController(
             context.read<ProfileService>(),
             context.read<LocalStorageService>(),
             userService: context.read<UserService>(),
           ),
-          update: (context, profileSvc, localSvc, userSvc, ctl) => 
-            ctl ?? ProfileController(profileSvc, localSvc, userService: userSvc),
+          update: (context, profileSvc, localSvc, userSvc, ctl) =>
+              ctl ??
+              ProfileController(profileSvc, localSvc, userService: userSvc),
         ),
         ChangeNotifierProxyProvider<FeedbackService, FeedbackController>(
-          create: (context) => FeedbackController(context.read<FeedbackService>()),
-          update: (context, feedbackSvc, ctl) => ctl ?? FeedbackController(feedbackSvc),
+          create: (context) =>
+              FeedbackController(context.read<FeedbackService>()),
+          update: (context, feedbackSvc, ctl) =>
+              ctl ?? FeedbackController(feedbackSvc),
         ),
         ChangeNotifierProxyProvider<ReviewService, MyReviewsController>(
-          create: (context) => MyReviewsController(context.read<ReviewService>()),
-          update: (context, reviewSvc, ctl) => ctl ?? MyReviewsController(reviewSvc),
+          create: (context) =>
+              MyReviewsController(context.read<ReviewService>()),
+          update: (context, reviewSvc, ctl) =>
+              ctl ?? MyReviewsController(reviewSvc),
         ),
         ChangeNotifierProxyProvider<TourismMapService, TourismMapController>(
-          create: (context) => TourismMapController(context.read<TourismMapService>()),
+          create: (context) =>
+              TourismMapController(context.read<TourismMapService>()),
           update: (context, mapSvc, ctl) => ctl ?? TourismMapController(mapSvc),
         ),
-        ChangeNotifierProxyProvider<NotificationService, NotificationsController>(
-          create: (context) => NotificationsController(context.read<NotificationService>()),
+        ChangeNotifierProxyProvider<
+          NotificationService,
+          NotificationsController
+        >(
+          create: (context) =>
+              NotificationsController(context.read<NotificationService>()),
           update: (context, svc, ctl) => ctl ?? NotificationsController(svc),
         ),
-        ChangeNotifierProxyProvider<AnnouncementService, AnnouncementController>(
-          create: (context) => AnnouncementController(context.read<AnnouncementService>()),
-          update: (context, annSvc, ctl) => ctl ?? AnnouncementController(annSvc),
+        ChangeNotifierProxyProvider<
+          AnnouncementService,
+          AnnouncementController
+        >(
+          create: (context) =>
+              AnnouncementController(context.read<AnnouncementService>()),
+          update: (context, annSvc, ctl) =>
+              ctl ?? AnnouncementController(annSvc),
         ),
         ChangeNotifierProxyProvider<VisitService, VisitController>(
           create: (context) => VisitController(context.read<VisitService>()),
           update: (context, visitSvc, ctl) => ctl ?? VisitController(visitSvc),
         ),
       ],
-      child: const _SessionManager(
-        child: _ProxvelMaterialApp(),
-      ),
+      child: const _SessionManager(child: _ProxvelMaterialApp()),
     );
   }
 }
@@ -188,9 +245,15 @@ class _ProxvelMaterialApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'PROXVEL',
+      locale: context.watch<AppLanguage>().locale,
+      localeListResolutionCallback: (locales, _) =>
+          AppLanguage.resolveSystemLocale(locales),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
-      builder: (context, child) => NavigationIslandHost(controller: navigationIsland, child: child!),
+      builder: (context, child) =>
+          NavigationIslandHost(controller: navigationIsland, child: child!),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -230,7 +293,7 @@ class _SessionManagerState extends State<_SessionManager> {
     if (_wasAuthenticated && !isAuth) {
       _clearAllControllers();
     }
-    
+
     // También detectamos si un nuevo usuario hace login (transición a auth)
     // Para asegurarnos de que parta de un estado limpio
     if (!_wasAuthenticated && isAuth) {

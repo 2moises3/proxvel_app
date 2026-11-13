@@ -1,6 +1,10 @@
+import 'dart:async';
+import '../../integration/local/local_storage_service.dart';
+import '../../core/localization/l10n.dart';
 import '../../core/constants/preference_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'widgets/preference_choice.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +14,7 @@ import '../../controllers/recommendation_controller.dart';
 import '../../core/constants/traveler_vocabulary.dart';
 import '../../core/navigation/home_entry_coordinator.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_typography.dart';
 import '../../models/traveler_profile_model.dart';
 import '../../models/traveler_types.dart';
@@ -37,7 +42,7 @@ class OnboardingProfileScreen extends StatefulWidget {
 
 class _OnboardingState extends State<OnboardingProfileScreen>
     with SingleTickerProviderStateMixin {
-  final PageController _pages = PageController();
+  late final PageController _pages;
   late final AnimationController _float;
   int _page =
       0; // 0=introducción, 1=estilo, 2=presupuesto, 3=clima, 4=multitudes, 5=intereses.
@@ -48,6 +53,27 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   String? _climate;
   String? _comfort;
   final Set<String> _interests = {};
+
+  LocalStorageService? _storage;
+  String? _draftKey;
+
+  void _updateDraft(VoidCallback change) {
+    setState(change);
+    final key = _draftKey;
+    if (key != null) {
+      unawaited(
+        _storage?.writeDraft(key, {
+          'page': _page,
+          'style': _travelerType,
+          'budget': _budget,
+          'days': _days,
+          'climate': _climate,
+          'crowds': _comfort,
+          'interests': _interests.toList(),
+        }),
+      );
+    }
+  }
 
   bool _saving = false;
   bool _done = false;
@@ -66,6 +92,22 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   @override
   void initState() {
     super.initState();
+    final userId = context.read<AuthController>().currentUser?.id;
+    _storage = context.read<LocalStorageService?>();
+    _draftKey = userId == null ? null : 'onboarding_draft:$userId';
+    final draft = _draftKey == null ? null : _storage?.readDraft(_draftKey!);
+    if (draft != null) {
+      _page = (draft['page'] as int? ?? 0).clamp(0, 5);
+      _travelerType = draft['style'] as String?;
+      _budget = draft['budget'] as String?;
+      _days = (draft['days'] as int? ?? 1).clamp(1, 30);
+      _climate = draft['climate'] as String?;
+      _comfort = draft['crowds'] as String?;
+      _interests.addAll(
+        (draft['interests'] as List? ?? []).whereType<String>(),
+      );
+    }
+    _pages = PageController(initialPage: _page);
     _float = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3200),
@@ -92,7 +134,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
         curve: Curves.easeOutCubic,
       );
     }
-    setState(() => _page = index);
+    _updateDraft(() => _page = index);
   }
 
   void _next() {
@@ -112,9 +154,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
     final user = context.read<AuthController>().currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No encontramos tu sesión. Vuelve a iniciar sesión.'),
-        ),
+        SnackBar(content: Text(context.l10n.uiNoEncontramosTuSesionVuelveA)),
       );
       return;
     }
@@ -148,13 +188,20 @@ class _OnboardingState extends State<OnboardingProfileScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            error ?? 'No pudimos guardar tus preferencias. Intenta otra vez.',
+            error == null
+                ? context.l10n.savePreferencesError
+                : context.errorText(
+                    error,
+                    fallback: context.l10n.savePreferencesError,
+                  ),
           ),
         ),
       );
       return;
     }
 
+    final draftKey = _draftKey;
+    if (draftKey != null) unawaited(_storage?.clearDraft(draftKey));
     final recommendations = context.read<RecommendationController>();
     recommendations.invalidate();
     recommendations.loadRecommendations(forceRefresh: true);
@@ -213,13 +260,13 @@ class _OnboardingState extends State<OnboardingProfileScreen>
     child: Row(
       children: [
         IconButton.outlined(
-          tooltip: 'Volver',
+          tooltip: context.l10n.back,
           onPressed: _previous,
           icon: const Icon(Icons.arrow_back_rounded, size: 20),
           style: IconButton.styleFrom(
             foregroundColor: _ink,
             side: const BorderSide(color: _line),
-            minimumSize: const Size(44, 44),
+            minimumSize: const Size.square(AppSizing.touchTarget),
           ),
         ),
         const SizedBox(width: 18),
@@ -231,7 +278,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
                 child: Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
+                    duration: AppMotion.duration(context, true),
                     height: 5,
                     decoration: BoxDecoration(
                       color: index < _page ? AppColors.accent : _line,
@@ -245,7 +292,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
         ),
         const SizedBox(width: 12),
         Text(
-          '$_page de 5',
+          context.l10n.positionOfTotal(_page, 5),
           style: _text(13, color: _muted, weight: FontWeight.w600),
         ),
       ],
@@ -259,7 +306,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
             children: [
               Expanded(
                 child: AuthSubmitButton(
-                  text: 'Comenzar',
+                  text: context.l10n.start,
                   onPressed: _next,
                   size: AuthSubmitButtonSize.large,
                 ),
@@ -269,15 +316,20 @@ class _OnboardingState extends State<OnboardingProfileScreen>
                 child: SizedBox(
                   height: 64,
                   child: OutlinedButton(
-                    onPressed: () =>
-                        HomeEntryCoordinator.goToPreparedHome(context),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        HomeEntryCoordinator.goToPreparedHome(context);
+                      }
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _ink,
                       side: const BorderSide(color: Color(0xFFB9BDBF)),
                       shape: const StadiumBorder(),
                       textStyle: _text(14, weight: FontWeight.w600),
                     ),
-                    child: const Text('Omitir por ahora', maxLines: 1),
+                    child: Text(context.l10n.skipForNow, maxLines: 1),
                   ),
                 ),
               ),
@@ -285,7 +337,9 @@ class _OnboardingState extends State<OnboardingProfileScreen>
           )
         : AuthSubmitButton(
             size: AuthSubmitButtonSize.large,
-            text: _page == 5 ? 'Guardar preferencias' : 'Continuar',
+            text: _page == 5
+                ? context.l10n.savePreferences
+                : context.l10n.continueAction,
             onPressed: _canProceed ? _next : null,
             isLoading: _saving,
           ),
@@ -301,13 +355,13 @@ class _OnboardingState extends State<OnboardingProfileScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Tu viaje empieza contigo.',
+              context.l10n.tripStartsWithYou,
               textAlign: TextAlign.center,
               style: _text(32, weight: FontWeight.w700, height: 1.12),
             ),
             const SizedBox(height: 12),
             Text(
-              'Elige lo que disfrutas y descubre destinos a tu manera.',
+              context.l10n.chooseWhatYouEnjoy,
               textAlign: TextAlign.center,
               style: _text(16, color: _muted, height: 1.4),
             ),
@@ -315,7 +369,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
             _art(_backpack, height: 290),
             const SizedBox(height: 20),
             Text(
-              'Son cinco pasos breves. Podrás cambiar tus preferencias después.',
+              context.l10n.fiveSteps,
               textAlign: TextAlign.center,
               style: _text(14, color: _muted, height: 1.4),
             ),
@@ -378,8 +432,8 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   }
 
   Widget _styleView() => _stepPage(
-    title: 'Elige tu\nestilo de viaje',
-    subtitle: '¿Qué tipo de viajero eres? Elige el estilo que más va contigo.',
+    title: context.l10n.chooseTravelStyle,
+    subtitle: context.l10n.recommendationInputs,
     artwork: _backpack,
     body: LayoutBuilder(
       builder: (context, constraints) => Wrap(
@@ -390,13 +444,13 @@ class _OnboardingState extends State<OnboardingProfileScreen>
               (entry) => SizedBox(
                 width: (constraints.maxWidth - 12) / 2,
                 child: TravelStyleOption(
-                  label: entry.value,
+                  label: context.travelerLabel(entry.key),
                   asset: entry.key == 'economico_mochilero'
                       ? _backpack
                       : 'assets/images/onboarding_${preferenceStyleImages[entry.key]!}_scene.webp',
                   containImage: entry.key == 'economico_mochilero',
                   selected: _travelerType == entry.key,
-                  onTap: () => setState(() => _travelerType = entry.key),
+                  onTap: () => _updateDraft(() => _travelerType = entry.key),
                 ),
               ),
             )
@@ -406,15 +460,14 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   );
 
   Widget _budgetView() => _stepPage(
-    title: 'Planea tu\nescapada',
-    subtitle:
-        '¿Cómo será tu próxima escapada? Define tu presupuesto y los días que tienes.',
+    title: context.l10n.planGetaway,
+    subtitle: context.l10n.planGetawayHelp,
     artwork: _backpack,
     body: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Presupuesto aproximado',
+          context.l10n.approxBudget,
           style: _text(16, weight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
@@ -437,7 +490,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
                           }}.svg',
                       illustrationLeading: true,
                       selected: _budget == value,
-                      onTap: () => setState(() => _budget = value),
+                      onTap: () => _updateDraft(() => _budget = value),
                     ),
                   ),
                 )
@@ -446,7 +499,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
         ),
         const SizedBox(height: 26),
         Text(
-          '¿Cuántos días planeas viajar?',
+          context.l10n.howManyDays,
           style: _text(16, weight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
@@ -460,20 +513,22 @@ class _OnboardingState extends State<OnboardingProfileScreen>
           child: Row(
             children: [
               IconButton(
-                tooltip: 'Quitar un día',
-                onPressed: _days > 1 ? () => setState(() => _days--) : null,
+                tooltip: context.l10n.removeDay,
+                onPressed: _days > 1 ? () => _updateDraft(() => _days--) : null,
                 icon: const Icon(Icons.remove_rounded),
               ),
               Expanded(
                 child: Text(
-                  '$_days ${_days == 1 ? 'día' : 'días'}',
+                  context.l10n.travelDayCount(_days),
                   textAlign: TextAlign.center,
                   style: _text(20, weight: FontWeight.w500),
                 ),
               ),
               IconButton(
-                tooltip: 'Añadir un día',
-                onPressed: _days < 30 ? () => setState(() => _days++) : null,
+                tooltip: context.l10n.addDay,
+                onPressed: _days < 30
+                    ? () => _updateDraft(() => _days++)
+                    : null,
                 icon: const Icon(Icons.add_rounded),
               ),
             ],
@@ -484,99 +539,96 @@ class _OnboardingState extends State<OnboardingProfileScreen>
   );
 
   Widget _climateView() => _stepPage(
-    title: 'Elige tu\nclima ideal',
-    subtitle:
-        '¿Con qué clima disfrutas más el viaje? Elige tu favorito o explora cualquiera.',
+    title: context.l10n.chooseClimate,
+    subtitle: context.l10n.chooseClimateHelp,
     artwork: _climates,
     body: Column(
       children: [
         _choice(
           'Frío',
-          description: 'Temperaturas bajas y aire fresco',
+          description: context.l10n.coldWeather,
           illustration: 'assets/icons/weather_ice.svg',
           selected: _climate == 'Frío',
-          onTap: () => setState(() => _climate = 'Frío'),
+          onTap: () => _updateDraft(() => _climate = 'Frío'),
         ),
         _gap(),
         _choice(
           'Templado',
-          description: 'Temperaturas suaves',
+          description: context.l10n.mildWeather,
           illustration: 'assets/icons/sun_behind_small_cloud.svg',
           selected: _climate == 'Templado',
-          onTap: () => setState(() => _climate = 'Templado'),
+          onTap: () => _updateDraft(() => _climate = 'Templado'),
         ),
         _gap(),
         _choice(
           'Cálido',
-          description: 'Temperaturas altas',
+          description: context.l10n.warmWeather,
           illustration: 'assets/icons/weather_sun.svg',
           selected: _climate == 'Cálido',
-          onTap: () => setState(() => _climate = 'Cálido'),
+          onTap: () => _updateDraft(() => _climate = 'Cálido'),
         ),
         _gap(),
         _choice(
           'Seco',
-          description: 'Poca lluvia',
+          description: context.l10n.dryWeather,
           illustration: 'assets/icons/weather_dry.svg',
           selected: _climate == 'Seco',
-          onTap: () => setState(() => _climate = 'Seco'),
+          onTap: () => _updateDraft(() => _climate = 'Seco'),
         ),
         _gap(),
         _choice(
           'Indiferente',
-          description: 'Estoy abierto a cualquier clima',
+          description: context.l10n.anyWeatherDescription,
           illustration: 'assets/icons/weather_any.svg',
           selected: _climate == 'Indiferente',
-          onTap: () => setState(() => _climate = 'Indiferente'),
+          onTap: () => _updateDraft(() => _climate = 'Indiferente'),
         ),
       ],
     ),
   );
 
   Widget _crowdView() => _stepPage(
-    title: 'Encuentra\ntu ambiente',
-    subtitle:
-        '¿Dónde te sientes más a gusto? Elige entre la tranquilidad y los lugares con más gente.',
+    title: context.l10n.findAtmosphere,
+    subtitle: context.l10n.findAtmosphereHelp,
     artwork: _crowds,
     body: _illustratedGrid([
       IllustratedPreferenceOption(
-        label: 'Calma',
+        label: context.l10n.calm,
         asset: 'assets/images/onboarding_relax_scene.webp',
-        description: 'Poca gente',
+        description: context.l10n.fewPeople,
         selected: _comfort == 'Baja',
-        onTap: () => setState(() => _comfort = 'Baja'),
+        onTap: () => _updateDraft(() => _comfort = 'Baja'),
       ),
       IllustratedPreferenceOption(
-        label: 'Me adapto',
+        label: context.l10n.flexible,
         asset: 'assets/images/onboarding_urban_scene.webp',
-        description: 'Sin preferencia',
+        description: context.l10n.noPreference,
         selected: _comfort == 'Media',
-        onTap: () => setState(() => _comfort = 'Media'),
+        onTap: () => _updateDraft(() => _comfort = 'Media'),
       ),
       IllustratedPreferenceOption(
-        label: 'Movimiento',
+        label: context.l10n.lively,
         asset: 'assets/images/onboarding_culture_scene.webp',
-        description: 'Más gente',
+        description: context.l10n.morePeople,
         selected: _comfort == 'Alta',
-        onTap: () => setState(() => _comfort = 'Alta'),
+        onTap: () => _updateDraft(() => _comfort = 'Alta'),
       ),
     ]),
   );
 
   Widget _interestsView() => _stepPage(
-    title: 'Elige tus\nintereses',
-    subtitle:
-        '¿Qué te gustaría descubrir en Perú? Elige uno o varios intereses para empezar.',
+    title: context.l10n.chooseInterests,
+    subtitle: context.l10n.chooseInterestsHelp,
     artwork: _interestsArt,
     body: _illustratedGrid(
       TravelerVocabulary.interests.map((item) {
         final selected = _interests.contains(item.label);
         return IllustratedPreferenceOption(
-          label: item.label,
+          label: context.interestLabel(item.label),
           asset:
               'assets/images/onboarding_${preferenceInterestImages[item.label]!}_scene.webp',
           selected: selected,
-          onTap: () => setState(
+          onTap: () => _updateDraft(
             () => selected
                 ? _interests.remove(item.label)
                 : _interests.add(item.label),
@@ -611,7 +663,7 @@ class _OnboardingState extends State<OnboardingProfileScreen>
     required bool selected,
     required VoidCallback onTap,
   }) => PreferenceChoice(
-    label: label,
+    label: context.preferenceLabel(label),
     description: description,
     illustration: illustration,
     illustrationLeading: illustrationLeading,

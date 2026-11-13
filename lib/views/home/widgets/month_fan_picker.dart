@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -46,6 +47,48 @@ class _MonthFanPickerState extends State<MonthFanPicker>
   LocalHistoryEntry? _history;
   int? _hover;
   bool _closing = false;
+  Future<void> _chooseMonth() async {
+    final current = DateTime.now().month;
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+              child: Text(
+                context.l10n.chooseMonth,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            for (var index = 0; index <= 12; index++)
+              ListTile(
+                selected: index == (widget.month ?? 0),
+                title: Text(
+                  index == 0
+                      ? context.l10n.currentMonthName(
+                          context.fullMonth(current),
+                        )
+                      : context.fullMonth(index),
+                ),
+                trailing: index == (widget.month ?? 0)
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.pop(sheetContext, index),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (mounted && selected != null) {
+      widget.onChanged(selected == 0 ? null : selected);
+    }
+  }
+
   void _open() {
     if (_entry != null) return;
     _hover = null;
@@ -137,8 +180,8 @@ class _MonthFanPickerState extends State<MonthFanPicker>
                               child: IgnorePointer(
                                 child: Opacity(
                                   opacity: t,
-                                  child: const Text(
-                                    'Desliza hasta tu mes y suelta\nActual usa el mes de hoy.',
+                                  child: Text(
+                                    context.l10n.uiDeslizaHastaTuMesYSuelta,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: Color(0xFF202020),
@@ -236,7 +279,7 @@ class _MonthFanPickerState extends State<MonthFanPicker>
   Widget _option(int i) => Semantics(
     button: true,
     selected: i == (widget.month ?? 0),
-    label: i == 0 ? 'Mes actual' : MonthFanPicker.labels[i],
+    label: i == 0 ? context.l10n.currentMonth : context.shortMonth(i),
     child: MouseRegion(
       onEnter: (_) {
         _hover = i;
@@ -265,7 +308,7 @@ class _MonthFanPickerState extends State<MonthFanPicker>
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  MonthFanPicker.labels[i],
+                  i == 0 ? context.l10n.current : context.shortMonth(i),
                   style: const TextStyle(
                     color: Color(0xFF202020),
                     fontSize: 14,
@@ -349,7 +392,7 @@ class _MonthFanPickerState extends State<MonthFanPicker>
     onLongPressCancel: _close,
     child: OutlinedButton.icon(
       key: _anchor,
-      onPressed: _open,
+      onPressed: _chooseMonth,
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(0, 48),
         foregroundColor: const Color(0xFF202020),
@@ -363,7 +406,17 @@ class _MonthFanPickerState extends State<MonthFanPicker>
         size: 20,
         color: AppColors.discovery,
       ),
-      label: Text(MonthFanPicker.labels[widget.month ?? 0]),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              context.fullMonth(widget.month ?? DateTime.now().month),
+            ),
+          ),
+          const Icon(Icons.expand_more_rounded, size: 18),
+        ],
+      ),
     ),
   );
 }

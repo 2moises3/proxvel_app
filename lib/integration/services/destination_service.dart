@@ -15,6 +15,7 @@ class RankingInfo {
   final double score;
   final double? climateScore;
   final double? crowdScore;
+  final double? interestCoverage;
   final String? monthName;
   final int? rank;
   final ExplanationModel? explanation;
@@ -26,6 +27,7 @@ class RankingInfo {
     this.score = 0,
     this.climateScore,
     this.crowdScore,
+    this.interestCoverage,
     this.monthName,
     this.rank,
     this.explanation,
@@ -39,7 +41,9 @@ class RankingInfo {
 class DestinationService {
   final ApiClient? _api;
   final LocalStorageService? storage;
-  DestinationService({ApiClient? apiClient, this.storage}) : _api = apiClient;
+  final String Function()? languageCode;
+  DestinationService({ApiClient? apiClient, this.storage, this.languageCode})
+    : _api = apiClient;
 
   /// Etiquetas en español para los aspectos ABSA del backend.
   static const Map<String, String> _aspectLabels = {
@@ -63,13 +67,14 @@ class DestinationService {
   List<DestinationModel>? _catalogCache;
   Future<List<DestinationModel>>? _catalogLoad;
   int _catalogGeneration = 0;
-  Map<String, String>? _tourismSearchIndex;
+  final _tourismSearchIndexes = <String, Map<String, String>>{};
 
   /// El gesto de actualizar Inicio vuelve a consultar el catálogo público.
   void invalidateDestinationCatalog() {
     _catalogGeneration++;
     _catalogCache = null;
     _catalogLoad = null;
+    _tourismSearchIndexes.clear();
   }
 
   void clearPersonalizedCache() {
@@ -80,9 +85,15 @@ class DestinationService {
   /// Texto oficial del catálogo para encontrar actividades y descripciones.
   /// La lista general de destinos no contiene estos campos.
   Future<Map<String, String>> getTourismSearchIndex() async {
-    if (_tourismSearchIndex != null) return _tourismSearchIndex!;
+    final language = languageCode?.call() ?? 'es';
+    final cached = _tourismSearchIndexes[language];
+    if (cached != null) return cached;
     if (_api == null) return {};
-    final json = await _api.get('/tourism/catalog');
+    final generation = _catalogGeneration;
+    final json = await _api.get(
+      '/tourism/catalog',
+      queryParams: language == 'en' ? const {'lang': 'en'} : null,
+    );
     final items = json['data'] as List? ?? const [];
     final index = <String, String>{};
     for (final item in items.whereType<Map<String, dynamic>>()) {
@@ -94,7 +105,9 @@ class DestinationService {
         item['visitor_info_summary'],
       ].whereType<String>().join(' ');
     }
-    _tourismSearchIndex = index;
+    if (generation == _catalogGeneration && index.isNotEmpty) {
+      _tourismSearchIndexes[language] = index;
+    }
     return index;
   }
 
@@ -263,6 +276,7 @@ class DestinationService {
         score: (entry['compatibility_score'] as num?)?.toDouble() ?? 0,
         climateScore: (entry['climate_score'] as num?)?.toDouble(),
         crowdScore: (entry['crowd_score'] as num?)?.toDouble(),
+        interestCoverage: (entry['coverage'] as num?)?.toDouble(),
         monthName: entry['month_name'] as String?,
         rank: entry['ranking_position'] as int?,
         explanation: entry['explanation'] is Map<String, dynamic>

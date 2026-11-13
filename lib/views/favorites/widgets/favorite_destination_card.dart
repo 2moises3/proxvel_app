@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../models/destination_model.dart';
@@ -39,7 +40,7 @@ class FavoriteDestinationCard extends StatelessWidget {
     final cityName = destination.city.trim();
     final regionName = destination.region.trim();
     final categoryName = destination.category.trim();
-    final destName = destination.name.trim();
+    final destName = context.destinationTitle(destination.id, destination.name).trim();
     final imageUrl = destination.imageUrl.trim();
 
     final locationParts = <String>[];
@@ -103,7 +104,7 @@ class FavoriteDestinationCard extends StatelessWidget {
                   onTap: onTap,
                   child: Semantics(
                     button: true,
-                    label: 'Ver detalles de $destName',
+                    label: context.l10n.viewPlaceDetails(destName),
                   ),
                 ),
               ),

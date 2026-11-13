@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proxvell_app/core/theme/app_typography.dart';
@@ -28,9 +29,9 @@ class LegalLinksRow extends StatelessWidget {
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        link('Términos y Condiciones', '/legal/doc/terminos'),
+        link(context.l10n.terms, '/legal/doc/terminos'),
         Text('·', style: style.copyWith(decoration: TextDecoration.none)),
-        link('Privacidad', '/legal/doc/privacidad'),
+        link(context.l10n.privacy, '/legal/doc/privacidad'),
       ],
     );
   }

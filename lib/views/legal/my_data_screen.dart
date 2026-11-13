@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import 'package:go_router/go_router.dart';
@@ -26,18 +27,18 @@ class _MyDataScreenState extends State<MyDataScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cerrar sesión en todos tus dispositivos'),
-        content: const Text(
-          'Se cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas entrado. Podrás volver a iniciar sesión cuando quieras.',
+        title: Text(context.l10n.uiCerrarSesionEnTodosTusDispositivos),
+        content: Text(
+          context.l10n.uiSeCerraraTuSesionAquiY,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cerrar sesiones'),
+            child: Text(context.l10n.uiCerrarSesiones),
           ),
         ],
       ),
@@ -47,6 +48,7 @@ class _MyDataScreenState extends State<MyDataScreen> {
     final auth = context.read<AuthController>();
     final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       await context.read<AuthService>().logoutAll();
     } on ApiException catch (e) {
@@ -54,9 +56,9 @@ class _MyDataScreenState extends State<MyDataScreen> {
       if (e.statusCode != 401) {
         if (mounted) setState(() => _busy = false);
         messenger.showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No pudimos cerrar las sesiones. Revisa tu conexión e inténtalo nuevamente.',
+              l10n.uiNoPudimosCerrarLasSesionesRevisa,
             ),
           ),
         );
@@ -65,8 +67,8 @@ class _MyDataScreenState extends State<MyDataScreen> {
     } catch (_) {
       if (mounted) setState(() => _busy = false);
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('No pudimos cerrar las sesiones. Revisa tu conexión.'),
+        SnackBar(
+          content: Text(l10n.uiNoPudimosCerrarLasSesionesRevisa2),
         ),
       );
       return;
@@ -74,8 +76,8 @@ class _MyDataScreenState extends State<MyDataScreen> {
     await auth.logout();
     router.go('/welcome');
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Cerramos tu sesión en todos tus dispositivos.'),
+      SnackBar(
+        content: Text(l10n.uiCerramosTuSesionEnTodosTus),
       ),
     );
   }
@@ -89,7 +91,7 @@ class _MyDataScreenState extends State<MyDataScreen> {
         OutlinedButton.icon(
           onPressed: _busy ? null : _logoutAll,
           icon: const Icon(Icons.devices_rounded, size: 18),
-          label: const Text('Cerrar sesión en todos mis dispositivos'),
+          label: Text(context.l10n.uiCerrarSesionEnTodosMisDispositivos),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
           ),
@@ -98,7 +100,7 @@ class _MyDataScreenState extends State<MyDataScreen> {
         FilledButton.icon(
           onPressed: _busy ? null : () => context.push('/legal/delete-account'),
           icon: const Icon(Icons.delete_outline_rounded, size: 18),
-          label: const Text('Eliminar mi cuenta'),
+          label: Text(context.l10n.deleteAccount),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.error,
             minimumSize: const Size.fromHeight(48),

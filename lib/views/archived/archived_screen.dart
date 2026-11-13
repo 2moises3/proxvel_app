@@ -1,3 +1,5 @@
+import '../../core/localization/l10n.dart';
+import '../../core/widgets/cards/archive_feedback.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -36,12 +38,12 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
             size: 20,
             color: AppColors.textPrimary,
           ),
-          tooltip: 'Volver',
+          tooltip: context.l10n.back,
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/main'),
         ),
         title: Text(
-          'Archivados',
+          context.l10n.uiArchivados,
           style: AppTextStyles.sectionTitle,
         ),
         backgroundColor: Colors.white,
@@ -71,12 +73,12 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     ),
                     const SizedBox(height: AppSpace.field),
                     Text(
-                      'No se pudieron cargar los archivados',
+                      context.l10n.uiNoSePudieronCargarLosArchivados,
                       style: AppTextStyles.sectionTitle,
                     ),
                     const SizedBox(height: AppSpace.related),
                     Text(
-                      arcCtrl.error!,
+                      context.errorText(arcCtrl.error!),
                       textAlign: TextAlign.center,
                       style: AppTypography.style(
                         fontSize: 14,
@@ -86,7 +88,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     const SizedBox(height: AppSpace.section),
                     ElevatedButton(
                       onPressed: arcCtrl.loadArchives,
-                      child: const Text('Reintentar'),
+                      child: Text(context.l10n.retry),
                     ),
                   ],
                 ),
@@ -115,7 +117,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     ),
                     const SizedBox(height: AppSpace.section),
                     Text(
-                      'Sin archivos',
+                      context.l10n.uiSinArchivos,
                       style: AppTypography.style(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -124,7 +126,7 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                     ),
                     const SizedBox(height: AppSpace.content),
                     Text(
-                      'Aquí aparecerán los destinos que hayas decidido ocultar.',
+                      context.l10n.uiAquiApareceranLosDestinosQueHayas,
                       textAlign: TextAlign.center,
                       style: AppTypography.style(
                         fontSize: 16,
@@ -177,7 +179,10 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  arc.name,
+                                  context.destinationTitle(
+                                    arc.destinationId,
+                                    arc.name,
+                                  ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.cardTitle,
@@ -198,13 +203,17 @@ class _ArchivedScreenState extends State<ArchivedScreen> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Quitar de archivados',
+                            tooltip: context.l10n.uiQuitarDeArchivados,
                             constraints: const BoxConstraints(
                               minWidth: 44,
                               minHeight: 44,
                             ),
-                            onPressed: () =>
-                                arcCtrl.toggleArchive(arc.destinationId),
+                            onPressed: () => toggleArchiveWithFeedback(
+                              context,
+                              arcCtrl,
+                              arc.destinationId,
+                              archivedDestination: arc,
+                            ),
                             icon: const Icon(Icons.unarchive_outlined),
                           ),
                         ],

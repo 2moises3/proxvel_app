@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Same translucent return control as the welcome pages.
@@ -7,7 +8,7 @@ class AuthBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton.filledTonal(
-    tooltip: 'Volver',
+    tooltip: context.l10n.back,
     onPressed: onPressed,
     style: IconButton.styleFrom(
       backgroundColor: const Color(0x73202020),

@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/navigation/destination_opening.dart';
 import '../../core/theme/app_layout.dart';
@@ -10,7 +11,7 @@ import '../../controllers/search_controller.dart'
 import '../../controllers/profile_controller.dart';
 import '../../controllers/archive_controller.dart' as import_archive_controller;
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/states/loading_view.dart';
+import '../../core/widgets/states/content_skeleton.dart';
 import '../../core/widgets/states/proxvel_empty_state.dart';
 import 'widgets/search_result_card.dart';
 import 'widgets/search_filter_sheet.dart';
@@ -33,6 +34,19 @@ class SearchResultsScreen extends StatefulWidget {
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
   late TextEditingController _queryCtrl;
+  String? _languageCode;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final previous = _languageCode;
+    _languageCode = context.l10n.localeName;
+    if (previous != null && previous != _languageCode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _queryCtrl.text.trim().isNotEmpty) _onSearch();
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -131,15 +145,33 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       body: Column(
         children: [
           _buildHeader(ctrl),
+          if (ctrl.isLoading && filteredResults.isNotEmpty)
+            const LinearProgressIndicator(minHeight: 2),
+          if (ctrl.error != null && filteredResults.isNotEmpty)
+            ListTile(
+              title: Text(
+                ctrl.connectionUnavailable
+                    ? context.l10n.connectionUnavailable
+                    : context.errorText(ctrl.error!),
+              ),
+              trailing: TextButton(
+                onPressed: _onSearch,
+                child: Text(context.l10n.retry),
+              ),
+            ),
           Expanded(
-            child: ctrl.isLoading
-                ? const LoadingView()
-                : ctrl.error != null
+            child: ctrl.isLoading && filteredResults.isEmpty
+                ? const SingleChildScrollView(
+                    child: ContentSkeleton(SkeletonLayout.results),
+                  )
+                : ctrl.error != null && filteredResults.isEmpty
                 ? ProxvelEmptyState(
                     icon: Icons.wifi_off_rounded,
-                    title: 'No pudimos cargar los destinos',
-                    subtitle: ctrl.error!,
-                    actionLabel: 'Reintentar',
+                    title: context.l10n.placesLoadError,
+                    subtitle: ctrl.connectionUnavailable
+                        ? context.l10n.connectionUnavailable
+                        : context.errorText(ctrl.error!),
+                    actionLabel: context.l10n.retry,
                     onAction: () => ctrl.search(
                       hasProfile: _hasProfile,
                       aiSort: ctrl.aiSortEnabled,
@@ -148,12 +180,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 : filteredResults.isEmpty
                 ? ProxvelEmptyState(
                     icon: Icons.search_off_rounded,
-                    title: 'Sin resultados',
+                    title: context.l10n.noResults,
                     subtitle: ctrl.filters.hasActiveFilters
-                        ? 'Prueba ajustando tus filtros\npara encontrar más destinos.'
-                        : 'No encontramos destinos que\ncoincidan con tu búsqueda.',
+                        ? context.l10n.uiPruebaAjustandoTusFiltrosParaEncontrar
+                        : context.l10n.uiNoEncontramosDestinosQueCoincidanCon,
                     actionLabel: ctrl.filters.hasActiveFilters
-                        ? 'Limpiar filtros'
+                        ? context.l10n.clearFilters
                         : null,
                     onAction: ctrl.filters.hasActiveFilters
                         ? () => ctrl.clearFilters()
@@ -176,7 +208,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Volver',
+                  tooltip: context.l10n.back,
                   onPressed: () => context.pop(),
                   icon: const Icon(
                     Icons.arrow_back_rounded,
@@ -200,7 +232,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           color: const Color(0xFF202020),
                         ),
                         decoration: InputDecoration(
-                          hintText: '¿A dónde quieres ir?',
+                          hintText: context.l10n.searchHint,
                           filled: true,
                           fillColor: Colors.white,
                           hintStyle: AppTypography.style(
@@ -208,13 +240,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             color: AppColors.textSecondary,
                           ),
                           prefixIcon: IconButton(
-                            tooltip: 'Buscar',
+                            tooltip: context.l10n.search,
                             onPressed: _onSearch,
                             icon: const Icon(Icons.search_rounded, size: 21),
                           ),
                           suffixIcon: _queryCtrl.text.isNotEmpty
                               ? IconButton(
-                                  tooltip: 'Borrar búsqueda',
+                                  tooltip: context.l10n.clearSearch,
                                   onPressed: () {
                                     _queryCtrl.clear();
                                     _onSearch();
@@ -259,7 +291,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   child: Material(
                     color: Colors.transparent,
                     child: IconButton.filled(
-                      tooltip: 'Filtros',
+                      tooltip: context.l10n.filters,
                       onPressed: _openFilters,
                       style: IconButton.styleFrom(
                         backgroundColor: AppColors.accent,
@@ -289,7 +321,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       ? null
                       : ctrl.availableCategories[i - 1];
                   return ChoiceChip(
-                    label: Text(category ?? 'Todos'),
+                    label: Text(
+                      category == null
+                          ? context.l10n.all
+                          : context.categoryLabel(category),
+                    ),
                     selected: ctrl.filters.category == category,
                     showCheckmark: false,
                     selectedColor: AppColors.discovery,
@@ -325,7 +361,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Ordenar para mí',
+                    context.l10n.sortForMe,
                     style: AppTypography.style(
                       fontSize: 14,
                       color: const Color(0xFF202020),
@@ -343,15 +379,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             if (ctrl.aiBlockedNoProfile)
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Completa tus preferencias para usar el orden por IA.',
+                      context.l10n.profileForSort,
                       style: TextStyle(fontSize: 12),
                     ),
                   ),
                   TextButton(
                     onPressed: () => context.push('/profile/preferences'),
-                    child: const Text('Completar'),
+                    child: Text(context.l10n.complete),
                   ),
                 ],
               ),
@@ -360,7 +396,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      '${ctrl.filters.activeFilterCount} filtros activos',
+                      context.l10n.activeFilters(
+                        ctrl.filters.activeFilterCount,
+                      ),
                       style: AppTypography.style(
                         fontSize: 12,
                         color: AppColors.discovery,
@@ -369,7 +407,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   ),
                   TextButton(
                     onPressed: () => ctrl.clearFilters(),
-                    child: const Text('Limpiar filtros'),
+                    child: Text(context.l10n.clearFilters),
                   ),
                 ],
               ),
@@ -395,7 +433,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             8,
           ),
           child: Text(
-            '${filteredResults.length} destino${filteredResults.length != 1 ? 's' : ''} encontrado${filteredResults.length != 1 ? 's' : ''}',
+            context.l10n.resultsCount(filteredResults.length),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -405,6 +443,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         ),
         Expanded(
           child: ListView.builder(
+            key: const PageStorageKey('search-results-scroll'),
             padding: const EdgeInsets.fromLTRB(
               AppSpace.screen,
               4,

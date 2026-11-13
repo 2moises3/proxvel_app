@@ -15,6 +15,8 @@ class ArchiveController extends ChangeNotifier {
   String? error;
   bool hasLoaded = false;
   int _sessionGeneration = 0;
+  int _mutationRevision = 0;
+  final _pendingIds = <String>{};
   Future<void>? _pendingLoad;
 
   ArchiveController(this._archiveService);
@@ -23,6 +25,7 @@ class ArchiveController extends ChangeNotifier {
       _pendingLoad ??= _loadArchives(_sessionGeneration);
 
   Future<void> _loadArchives(int generation) async {
+    final revision = _mutationRevision;
     isLoading = true;
     error = null;
     notifyListeners();
@@ -30,6 +33,7 @@ class ArchiveController extends ChangeNotifier {
     try {
       final arcModels = await _archiveService.getArchives();
       if (generation != _sessionGeneration) return;
+      if (revision != _mutationRevision || _pendingIds.isNotEmpty) return;
       archives = arcModels;
       archivedDestinationIds = archives.map((a) => a.destinationId).toSet();
       hasLoaded = true;
@@ -46,7 +50,13 @@ class ArchiveController extends ChangeNotifier {
   }
 
   /// Archiva/desarchiva. Optimista en UI, persiste en backend.
-  Future<void> toggleArchive(String id, [DestinationModel? model]) async {
+  Future<bool?> toggleArchive(
+    String id, [
+    DestinationModel? model,
+    ArchiveModel? archivedDestination,
+  ]) async {
+    if (!_pendingIds.add(id)) return null;
+    _mutationRevision++;
     final generation = _sessionGeneration;
     error = null;
     final isArc = isArchived(id);
@@ -58,7 +68,9 @@ class ArchiveController extends ChangeNotifier {
       archives.removeWhere((a) => a.destinationId == id);
     } else {
       archivedDestinationIds.add(id);
-      if (model != null && !archives.any((a) => a.destinationId == id)) {
+      if (archivedDestination != null) {
+        archives.add(archivedDestination);
+      } else if (model != null && !archives.any((a) => a.destinationId == id)) {
         archives.add(
           ArchiveModel(
             destinationId: model.id,
@@ -84,8 +96,9 @@ class ArchiveController extends ChangeNotifier {
           throw StateError('Archive rejected');
         }
       }
+      return generation == _sessionGeneration ? true : null;
     } catch (_) {
-      if (generation != _sessionGeneration) return;
+      if (generation != _sessionGeneration) return null;
       // Revertir cambio optimista
       if (isArc) {
         archivedDestinationIds.add(id);
@@ -95,7 +108,12 @@ class ArchiveController extends ChangeNotifier {
         archives.removeWhere((a) => a.destinationId == id);
       }
       error = 'No pudimos actualizar tus archivados. Intenta nuevamente.';
-      notifyListeners();
+      return false;
+    } finally {
+      if (generation == _sessionGeneration) {
+        _pendingIds.remove(id);
+        notifyListeners();
+      }
     }
   }
 
@@ -105,6 +123,7 @@ class ArchiveController extends ChangeNotifier {
   void clearState() {
     _sessionGeneration++;
     _pendingLoad = null;
+    _pendingIds.clear();
     hasLoaded = false;
     archives = [];
     archivedDestinationIds = {};

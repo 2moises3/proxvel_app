@@ -1,4 +1,6 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
+import '../../../models/seasonality_model.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_colors.dart';
@@ -67,13 +69,13 @@ class WhyForMeTabContent extends StatelessWidget {
           ),
           if (explanation.trim().isNotEmpty) ...[
             const SizedBox(height: AppSpace.section),
-            _title('Cómo encaja contigo'),
+            _title(context.l10n.howItMatches),
             const SizedBox(height: AppSpace.content),
             Text(explanation, style: AppTextStyles.bodySecondary),
           ],
           if (topAspects.isNotEmpty && aspectScores.isEmpty) ...[
             const SizedBox(height: AppSpace.section),
-            _title('Lo que se tiene en cuenta'),
+            _title(context.l10n.whatCounts),
             const SizedBox(height: AppSpace.content),
             Wrap(
               spacing: 8,
@@ -81,7 +83,7 @@ class WhyForMeTabContent extends StatelessWidget {
               children: [
                 for (final aspect in topAspects)
                   Chip(
-                    label: Text(aspect),
+                    label: Text(context.aspectLabel(aspect)),
                     backgroundColor: AppColors.discovery.withValues(
                       alpha: 0.06,
                     ),
@@ -95,12 +97,12 @@ class WhyForMeTabContent extends StatelessWidget {
             const SizedBox(height: AppSpace.section),
             _title(
               contextMonthName == null
-                  ? 'Contexto del mes'
-                  : 'Contexto de $contextMonthName',
+                  ? context.l10n.monthlyContext
+                  : _monthContextTitle(context, contextMonthName!),
             ),
             const SizedBox(height: AppSpace.content),
             Text(
-              'Valores históricos del mes; no son un pronóstico ni el puntaje final.',
+              context.l10n.historicalValues,
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
@@ -116,7 +118,7 @@ class WhyForMeTabContent extends StatelessWidget {
                   _contextChip(
                     context,
                     AppIcons.calendar,
-                    'Clima',
+                    context.l10n.weather,
                     climaContextLabel,
                     climaContextScore!,
                   ),
@@ -124,7 +126,7 @@ class WhyForMeTabContent extends StatelessWidget {
                   _contextChip(
                     context,
                     AppIcons.navProfile,
-                    'Afluencia según tu tolerancia',
+                    context.l10n.crowdTolerance,
                     aforoContextLabel,
                     aforoContextScore!,
                   ),
@@ -147,13 +149,13 @@ class WhyForMeTabContent extends StatelessWidget {
                 AppIcons.sliders,
                 color: AppColors.discovery,
               ),
-              title: const Text(
-                'Cómo se ordena este destino',
+              title: Text(
+                context.l10n.howRanked,
                 style: AppTextStyles.cardTitle,
               ),
               children: [
-                const Text(
-                  'Aportes respecto a una referencia del modelo. Un valor positivo eleva el puntaje; uno negativo lo reduce. No son probabilidades.',
+                Text(
+                  context.l10n.scoreContributions,
                   style: AppTextStyles.body2,
                 ),
                 const SizedBox(height: AppSpace.content),
@@ -182,17 +184,17 @@ class WhyForMeTabContent extends StatelessWidget {
                 vertical: 6,
               ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              title: const Text(
-                'Valoraciones de referencia',
+              title: Text(
+                context.l10n.referenceRatings,
                 style: AppTextStyles.cardTitle,
               ),
-              subtitle: const Text(
-                'Precios, atención y atractivos',
+              subtitle: Text(
+                context.l10n.pricesServiceAttractions,
                 style: AppTextStyles.body2,
               ),
               children: [
-                const Text(
-                  'Percepciones agregadas del conjunto de reseñas del modelo; no representan tarifas ni condiciones garantizadas.',
+                Text(
+                  context.l10n.reviewPerceptions,
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.4,
@@ -234,9 +236,9 @@ class WhyForMeTabContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   {
-                        'afinidad': 'Afinidad con tu perfil',
-                        'clima': 'Clima del mes',
-                        'afluencia': 'Afluencia según tu tolerancia',
+                        'afinidad': context.l10n.uiAfinidadConTuPerfil,
+                        'clima': context.l10n.uiClimaDelMes,
+                        'afluencia': context.l10n.crowdTolerance,
                       }[entry.key] ??
                       entry.key,
                   style: AppTextStyles.label,
@@ -310,6 +312,12 @@ class WhyForMeTabContent extends StatelessWidget {
   }
 
   Widget _title(String text) => Text(text, style: AppTextStyles.sectionTitle);
+
+  String _monthContextTitle(BuildContext context, String month) {
+    if (context.l10n.localeName != 'en') return 'Contexto de $month';
+    final index = kMonthNames.indexOf(month.toLowerCase());
+    return index < 0 ? context.l10n.monthlyContext : 'Conditions in ${context.fullMonth(index + 1)}';
+  }
 
   Widget _contextChip(
     BuildContext context,

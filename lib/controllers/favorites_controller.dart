@@ -1,3 +1,4 @@
+import '../integration/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../models/destination_model.dart';
 import '../integration/services/favorites_service.dart';
@@ -12,9 +13,12 @@ class FavoritesController extends ChangeNotifier {
   bool hasLoaded = false;
   Future<void>? _pendingLoad;
   int _sessionGeneration = 0;
+  int _mutationRevision = 0;
+  final _pendingIds = <String>{};
   List<DestinationModel> favorites = [];
   Set<String> favoriteDestinationIds = {};
   String? error;
+  bool connectionUnavailable = false;
 
   FavoritesController(this._favoritesService);
 
@@ -25,13 +29,19 @@ class FavoritesController extends ChangeNotifier {
       _pendingLoad ??= _loadFavorites(_sessionGeneration);
 
   Future<void> _loadFavorites(int generation) async {
+    final revision = _mutationRevision;
     isLoading = true;
     error = null;
+    connectionUnavailable = false;
     notifyListeners();
 
     try {
       final favModels = await _favoritesService.getFavorites();
-      if (generation != _sessionGeneration) return;
+      if (generation != _sessionGeneration ||
+          revision != _mutationRevision ||
+          _pendingIds.isNotEmpty) {
+        return;
+      }
       favorites = favModels
           .map((f) => DestinationModel.fromFavoriteModel(f))
           .toList();
@@ -39,9 +49,8 @@ class FavoritesController extends ChangeNotifier {
       hasLoaded = true;
     } catch (e) {
       if (generation != _sessionGeneration) return;
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
       error = 'No pudimos cargar tus favoritos. Intenta nuevamente.';
-      favorites = [];
-      favoriteDestinationIds = {};
     } finally {
       if (generation == _sessionGeneration) {
         _pendingLoad = null;
@@ -52,8 +61,15 @@ class FavoritesController extends ChangeNotifier {
   }
 
   /// Marca/desmarca un favorito. Optimista en UI, persiste en backend.
-  Future<void> toggleFavorite(String id, [DestinationModel? model]) async {
+  bool isSaving(String id) => _pendingIds.contains(id);
+
+  Future<bool?> toggleFavorite(String id, [DestinationModel? model]) async {
+    if (!_pendingIds.add(id)) return null;
+    final generation = _sessionGeneration;
+    _mutationRevision++;
     final isFav = isFavorite(id);
+    final previousIndex = favorites.indexWhere((d) => d.id == id);
+    final previous = previousIndex < 0 ? model : favorites[previousIndex];
     if (isFav) {
       favoriteDestinationIds.remove(id);
       favorites.removeWhere((d) => d.id == id);
@@ -67,21 +83,29 @@ class FavoritesController extends ChangeNotifier {
 
     // Sincroniza con backend. Si falla, revertimos.
     try {
-      if (isFav) {
-        await _favoritesService.removeFavorite(id);
-      } else {
-        await _favoritesService.addFavorite(id);
-      }
+      final saved = isFav
+          ? await _favoritesService.removeFavorite(id)
+          : await _favoritesService.addFavorite(id);
+      if (!saved) throw StateError('Favorite update rejected');
+      return generation == _sessionGeneration ? true : null;
     } catch (_) {
+      if (generation != _sessionGeneration) return null;
       // Revertir cambio optimista
       if (isFav) {
         favoriteDestinationIds.add(id);
-        if (model != null) favorites.add(model);
+        if (previous != null && !favorites.any((d) => d.id == id)) {
+          favorites.insert(previousIndex.clamp(0, favorites.length), previous);
+        }
       } else {
         favoriteDestinationIds.remove(id);
         favorites.removeWhere((d) => d.id == id);
       }
-      notifyListeners();
+      return false;
+    } finally {
+      if (generation == _sessionGeneration) {
+        _pendingIds.remove(id);
+        notifyListeners();
+      }
     }
   }
 
@@ -90,11 +114,13 @@ class FavoritesController extends ChangeNotifier {
   /// Limpia todo el estado en memoria. Llamar al logout/cambio de usuario.
   void clearState() {
     _sessionGeneration++;
+    _pendingIds.clear();
     _pendingLoad = null;
     hasLoaded = false;
     favorites = [];
     favoriteDestinationIds = {};
     error = null;
+    connectionUnavailable = false;
     isLoading = false;
     notifyListeners();
   }

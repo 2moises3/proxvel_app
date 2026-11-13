@@ -1,4 +1,7 @@
-import 'widgets/auth_progress_indicator.dart';
+import '../../core/localization/l10n.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/app_language.dart';
+import '../../core/localization/language_picker.dart';
 import '../../core/theme/app_colors.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -16,8 +19,6 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with WidgetsBindingObserver, RouteAware {
-  final PageController _pageController = PageController();
-  int _step = 0;
   Timer? _timer;
   int _scene = AuthScenes.selected;
   bool _covered = false;
@@ -102,7 +103,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   void dispose() {
-    _pageController.dispose();
     _timer?.cancel();
     authRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
@@ -114,65 +114,27 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     value: SystemUiOverlayStyle.light.copyWith(
       statusBarColor: Colors.transparent,
     ),
-    child: PopScope(
-      canPop: _step == 0,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _step > 0) {
-          _goToStep(0);
-        }
-      },
-      child: Scaffold(
-        backgroundColor: _WelcomePalette.ink,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            AuthBackdrop(imagePath: AuthScenes.assets[_scene], crossfade: true),
-            SafeArea(
-              child: PageView(
-                controller: _pageController,
-                physics: const BouncingScrollPhysics(),
-                onPageChanged: (i) {
-                  setState(() => _step = i);
-                },
-                children: [_buildStepOne(context), _buildStepTwo(context)],
-              ),
-            ),
-          ],
-        ),
+    child: Scaffold(
+      backgroundColor: _WelcomePalette.ink,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          AuthBackdrop(imagePath: AuthScenes.assets[_scene], crossfade: true),
+          SafeArea(child: _buildWelcome(context)),
+        ],
       ),
     ),
   );
 
-  void _goToStep(int step) {
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _pageController.jumpToPage(step);
-      return;
-    }
-    _pageController.animateToPage(
-      step,
-      duration: const Duration(milliseconds: 380),
-      curve: Curves.easeInOutCubic,
-    );
-  }
-
-  Widget _buildStepOne(BuildContext context) => _page(
-    step: 0,
-    title: 'Tu próxima historia\nempieza en Perú.',
-    description: 'Descubre lugares que conectan con tu forma de viajar.',
-    actions: [_adventureButton()],
-  );
-
-  Widget _buildStepTwo(BuildContext context) => _page(
-    step: 1,
-    title: 'A tu ritmo.\nA tu manera.',
-    description:
-        'Explora destinos, descubre recomendaciones para ti y guarda tus favoritos.',
+  Widget _buildWelcome(BuildContext context) => _page(
+    title: context.l10n.welcomeHeadline,
+    description: context.l10n.welcomeDescription,
     actions: [
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _primaryButton('Iniciar sesión', () => _open('/login')),
+            child: _primaryButton(context.l10n.signIn, () => _open('/login')),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -193,7 +155,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              child: const Text('Crear cuenta', textAlign: TextAlign.center),
+              child: Text(
+                context.l10n.createAccount,
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ],
@@ -201,42 +166,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     ],
   );
 
-  Widget _adventureButton() => FilledButton(
-    onPressed: () => _goToStep(1),
-    style: FilledButton.styleFrom(
-      backgroundColor: _WelcomePalette.ink.withValues(alpha: 0.45),
-      foregroundColor: Colors.white,
-      minimumSize: const Size.fromHeight(58),
-      padding: const EdgeInsets.fromLTRB(22, 6, 6, 6),
-      shape: StadiumBorder(
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-      ),
-      elevation: 0,
-      textStyle: AppTypography.style(fontSize: 15, fontWeight: FontWeight.w600),
-    ),
-    child: Row(
-      children: [
-        const Expanded(child: Text('Comenzar aventura')),
-        const SizedBox(width: 16),
-        Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            color: _WelcomePalette.gold,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.arrow_forward_rounded,
-            color: _WelcomePalette.ink,
-            size: 22,
-          ),
-        ),
-      ],
-    ),
-  );
-
   Widget _page({
-    required int step,
     required String title,
     required String description,
     required List<Widget> actions,
@@ -251,26 +181,23 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (step == 1)
+                if (context.watch<AppLanguage?>() != null)
                   Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.centerRight,
                     child: IconButton.filledTonal(
-                      tooltip: 'Volver',
-                      onPressed: () => _goToStep(0),
+                      tooltip: context.l10n.language,
+                      onPressed: () => showLanguagePicker(context),
                       style: IconButton.styleFrom(
-                        backgroundColor: _WelcomePalette.ink.withValues(
-                          alpha: 0.45,
-                        ),
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(44, 44),
+                        backgroundColor: _WelcomePalette.ink.withValues(
+                          alpha: .45,
+                        ),
                       ),
-                      icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                      icon: const Icon(Icons.language_rounded),
                     ),
                   ),
                 const Spacer(),
                 const SizedBox(height: 110),
-                _buildPageIndicator(step),
-                const SizedBox(height: 22),
                 Text(
                   title,
                   style: AppTypography.style(
@@ -321,12 +248,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       child: Text(label, textAlign: TextAlign.center),
     ),
   );
-
-  Widget _buildPageIndicator(int step) =>
-      AuthProgressIndicator(step: step, count: 2);
 }
 
-/// Scoped preview palette for the two welcome pages.
+/// Scoped preview palette for the welcome screen.
 abstract final class _WelcomePalette {
   static const gold = AppColors.accent;
   static const ink = Color(0xFF202020);

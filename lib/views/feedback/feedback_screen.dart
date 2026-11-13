@@ -1,10 +1,12 @@
+import 'dart:async';
+import '../../integration/local/local_storage_service.dart';
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/feedback_controller.dart';
 import '../../controllers/auth_controller.dart';
-import '../../controllers/destination_controller.dart';
 import '../../models/destination_model.dart';
 import '../../models/feedback_model.dart';
 import '../../integration/services/destination_service.dart';
@@ -16,7 +18,12 @@ import '../../core/widgets/images/adaptive_destination_image.dart';
 
 class FeedbackScreen extends StatefulWidget {
   final String destinationId;
-  const FeedbackScreen({super.key, required this.destinationId});
+  final DestinationModel? openingDestination;
+  const FeedbackScreen({
+    super.key,
+    required this.destinationId,
+    this.openingDestination,
+  });
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
 }
@@ -28,28 +35,105 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   DestinationModel? _destination;
   final Map<String, double> _aspectRatings = {};
   bool _showAspects = false;
+  LocalStorageService? _storage;
+  String? _draftKey;
+  bool _restoredDraft = false;
+
+  void _saveDraft() {
+    final key = _draftKey;
+    if (key == null || _submitted) return;
+    if (_rating == 0 &&
+        _commentController.text.isEmpty &&
+        _aspectRatings.isEmpty) {
+      unawaited(_storage?.clearDraft(key));
+      return;
+    }
+    unawaited(
+      _storage?.writeDraft(key, {
+        'rating': _rating,
+        'comment': _commentController.text,
+        'aspects': _aspectRatings,
+      }),
+    );
+  }
+
+  void _editDraft(VoidCallback edit) {
+    setState(edit);
+    _saveDraft();
+  }
 
   static const _aspectsConfig = [
-    (key: 'atractivos', label: 'Atractivos y paisajes', icon: Icons.landscape_rounded),
+    (
+      key: 'atractivos',
+      label: 'Atractivos y paisajes',
+      icon: Icons.landscape_rounded,
+    ),
     (key: 'seguridad', label: 'Seguridad', icon: Icons.shield_outlined),
-    (key: 'gastronomia', label: 'Gastronomía y comida', icon: Icons.restaurant_rounded),
-    (key: 'limpieza', label: 'Limpieza y cuidado', icon: Icons.cleaning_services_rounded),
-    (key: 'accesibilidad', label: 'Accesibilidad y transporte', icon: Icons.directions_bus_rounded),
+    (
+      key: 'gastronomia',
+      label: 'Gastronomía y comida',
+      icon: Icons.restaurant_rounded,
+    ),
+    (
+      key: 'limpieza',
+      label: 'Limpieza y cuidado',
+      icon: Icons.cleaning_services_rounded,
+    ),
+    (
+      key: 'accesibilidad',
+      label: 'Accesibilidad y transporte',
+      icon: Icons.directions_bus_rounded,
+    ),
     (key: 'costos', label: 'Costos y precios', icon: Icons.payments_outlined),
-    (key: 'atencion_servicio', label: 'Atención y guiado', icon: Icons.support_agent_rounded),
-    (key: 'clima', label: 'Clima durante la visita', icon: Icons.wb_sunny_outlined),
-    (key: 'alojamiento', label: 'Alojamiento en la zona', icon: Icons.hotel_rounded),
-    (key: 'aforo_multitudes', label: 'Tranquilidad y aforo', icon: Icons.groups_outlined),
+    (
+      key: 'atencion_servicio',
+      label: 'Atención y guiado',
+      icon: Icons.support_agent_rounded,
+    ),
+    (
+      key: 'clima',
+      label: 'Clima durante la visita',
+      icon: Icons.wb_sunny_outlined,
+    ),
+    (
+      key: 'alojamiento',
+      label: 'Alojamiento en la zona',
+      icon: Icons.hotel_rounded,
+    ),
+    (
+      key: 'aforo_multitudes',
+      label: 'Tranquilidad y aforo',
+      icon: Icons.groups_outlined,
+    ),
   ];
   @override
   void initState() {
     super.initState();
+    _storage = context.read<LocalStorageService?>();
+    final user = context.read<AuthController?>()?.currentUser;
+    if (user != null) {
+      final key = 'review_draft:${user.id}:${widget.destinationId}';
+      _draftKey = key;
+      final draft = _storage?.readDraft(key);
+      if (draft != null) {
+        _rating = (draft['rating'] as num? ?? 0).toDouble().clamp(0, 5);
+        _commentController.text = draft['comment'] as String? ?? '';
+        final aspects = draft['aspects'] as Map<String, dynamic>? ?? {};
+        for (final entry in aspects.entries) {
+          if (entry.value is num) {
+            _aspectRatings[entry.key] = (entry.value as num).toDouble();
+          }
+        }
+        _showAspects = _aspectRatings.isNotEmpty;
+        _restoredDraft = true;
+      }
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadDestination());
   }
 
   Future<void> _loadDestination() async {
     if (!mounted) return;
-    final current = context.read<DestinationController>().destination;
+    final current = widget.openingDestination;
     if (current?.id == widget.destinationId) {
       setState(() => _destination = current);
       return;
@@ -88,14 +172,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         ),
         leading: IconButton(
           onPressed: busy ? null : () => context.pop(_submitted),
-          tooltip: 'Volver',
+          tooltip: context.l10n.back,
           icon: const Icon(
             Icons.arrow_back_rounded,
             color: Color(0xFF202020),
             size: 24,
           ),
         ),
-        title: const Text('Tu experiencia', style: AppTextStyles.sectionTitle),
+        title: Text(
+          context.l10n.yourExperience,
+          style: AppTextStyles.sectionTitle,
+        ),
       ),
       body: SafeArea(
         top: false,
@@ -111,19 +198,22 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       size: 56,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Gracias por compartir tu viaje.',
+                    Text(
+                      context.l10n.uiGraciasPorCompartirTuViaje,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.h1,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Tu reseña ayuda a otros viajeros a conocer mejor este destino.',
+                    Text(
+                      context.l10n.uiTuResenaAyudaAOtrosViajeros,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,
                     ),
                     const SizedBox(height: 32),
-                    _button('Volver al destino', () => context.pop(true)),
+                    _button(
+                      context.l10n.uiVolverAlDestino,
+                      () => context.pop(true),
+                    ),
                   ],
                 )
               : Column(
@@ -141,16 +231,22 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Text(_destination!.name, style: AppTextStyles.h2),
+                      Text(
+                        context.destinationTitle(
+                          _destination!.id,
+                          _destination!.name,
+                        ),
+                        style: AppTextStyles.h2,
+                      ),
                       const SizedBox(height: 8),
                     ],
-                    const Text(
-                      '¿Cómo fue tu visita?',
+                    Text(
+                      context.l10n.uiComoFueTuVisita,
                       style: AppTextStyles.sectionTitle,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Elige una puntuación y cuenta lo que te gustaría que otro viajero supiera.',
+                    Text(
+                      context.l10n.uiEligeUnaPuntuacionYCuentaLo,
                       style: AppTextStyles.bodySecondary,
                     ),
                     const SizedBox(height: 20),
@@ -160,11 +256,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         for (var i = 1; i <= 5; i++)
                           Flexible(
                             child: IconButton(
-                              tooltip: '$i de 5 estrellas',
+                              tooltip: context.l10n.localeName == 'en'
+                                  ? '$i out of 5 stars'
+                                  : '$i de 5 estrellas',
                               onPressed: busy
                                   ? null
-                                  : () =>
-                                        setState(() => _rating = i.toDouble()),
+                                  : () => _editDraft(
+                                      () => _rating = i.toDouble(),
+                                    ),
                               icon: AppIcon(
                                 _rating >= i
                                     ? AppIcons.starFilled
@@ -182,32 +281,49 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     Center(
                       child: Text(
                         _rating == 0
-                            ? 'Toca las estrellas para calificar'
-                            : [
-                                'Muy mala',
-                                'Mala',
-                                'Regular',
-                                'Buena',
-                                'Excelente',
-                              ][_rating.toInt() - 1],
+                            ? context.l10n.uiTocaLasEstrellasParaCalificar
+                            : (context.l10n.localeName == 'en'
+                                  ? const [
+                                      'Very poor',
+                                      'Poor',
+                                      'Fair',
+                                      'Good',
+                                      'Excellent',
+                                    ]
+                                  : const [
+                                      'Muy mala',
+                                      'Mala',
+                                      'Regular',
+                                      'Buena',
+                                      'Excelente',
+                                    ])[_rating.toInt() - 1],
                         style: AppTextStyles.bodySecondary,
                       ),
                     ),
                     const SizedBox(height: 20),
+                    if (_restoredDraft)
+                      Text(
+                        context.l10n.reviewDraftRestored,
+                        style: AppTextStyles.bodySecondary,
+                      ),
                     _buildAspectsSection(busy),
                     const SizedBox(height: 24),
-                    const Text('Tu reseña', style: AppTextStyles.cardTitle),
+                    Text(
+                      context.l10n.uiTuResena,
+                      style: AppTextStyles.cardTitle,
+                    ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _commentController,
                       enabled: !busy,
                       minLines: 5,
                       maxLines: 10,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => _editDraft(() {}),
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText:
-                            '¿Qué disfrutaste? ¿Qué recomendarías antes de ir?',
+                        hintText: context
+                            .l10n
+                            .uiQueDisfrutasteQueRecomendariasAntesDe,
                         filled: true,
                         fillColor: Colors.white,
                         contentPadding: const EdgeInsets.all(20),
@@ -222,13 +338,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Se mostrará tu nombre y la inicial de tu apellido cuando estén disponibles. Evita incluir datos personales en el comentario.',
+                    Text(
+                      context.l10n.uiSeMostraraTuNombreYLa,
                       style: AppTextStyles.body2,
                     ),
                     const SizedBox(height: 24),
                     _button(
-                      busy ? 'Enviando reseña…' : 'Publicar reseña',
+                      busy
+                          ? context.l10n.uiEnviandoResena
+                          : context.l10n.uiPublicarResena,
                       _canSubmit && !busy ? _submit : null,
                     ),
                   ],
@@ -258,10 +376,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (currentUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No se encontró un usuario activo. Regístrate o inicia sesión para continuar.',
-            ),
+          SnackBar(
+            content: Text(context.l10n.uiNoSeEncontroUnUsuarioActivo),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -286,14 +402,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
     if (mounted) {
       if (success) {
+        final key = _draftKey;
+        if (key != null) unawaited(_storage?.clearDraft(key));
         setState(() => _submitted = true);
       } else {
         final errorMsg = context.read<FeedbackController>().error ?? '';
-        String displayMsg =
-            'No se pudo enviar la reseña. Inténtalo nuevamente.';
+        String displayMsg = context.l10n.uiNoSePudoEnviarLaResena;
 
         if (errorMsg.isNotEmpty) {
-          displayMsg = errorMsg;
+          displayMsg = context.errorText(errorMsg, fallback: displayMsg);
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -325,7 +442,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       child: Column(
         children: [
           InkWell(
-            onTap: busy ? null : () => setState(() => _showAspects = !_showAspects),
+            onTap: busy
+                ? null
+                : () => setState(() => _showAspects = !_showAspects),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -344,7 +463,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       child: AppIcon(
                         AppIcons.sliders,
                         size: 18,
-                        color: count > 0 ? const Color(0xFFB87D0F) : const Color(0xFF6B7280),
+                        color: count > 0
+                            ? const Color(0xFFB87D0F)
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ),
@@ -354,7 +475,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Aspectos específicos',
+                          context.l10n.uiAspectosEspecificos,
                           style: AppTypography.style(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -364,12 +485,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         const SizedBox(height: 2),
                         Text(
                           count == 0
-                              ? 'Opcional · Toca para calificar'
+                              ? context.l10n.uiOpcionalTocaParaCalificar
                               : '$count ${count == 1 ? 'aspecto calificado' : 'aspectos calificados'}',
                           style: AppTypography.style(
                             fontSize: 12,
-                            color: count > 0 ? const Color(0xFFB87D0F) : AppColors.textSecondary,
-                            fontWeight: count > 0 ? FontWeight.w500 : FontWeight.w400,
+                            color: count > 0
+                                ? const Color(0xFFB87D0F)
+                                : AppColors.textSecondary,
+                            fontWeight: count > 0
+                                ? FontWeight.w500
+                                : FontWeight.w400,
                           ),
                         ),
                       ],
@@ -394,7 +519,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Evalúa los aspectos que hayas vivido en este lugar:',
+                    context.l10n.uiEvaluaLosAspectosQueHayasVivido,
                     style: AppTypography.style(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -423,11 +548,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            label,
+            context.aspectLabel(label),
             style: AppTypography.style(
               fontSize: 13,
               fontWeight: currentVal > 0 ? FontWeight.w600 : FontWeight.w400,
-              color: currentVal > 0 ? const Color(0xFF202020) : const Color(0xFF4B5563),
+              color: currentVal > 0
+                  ? const Color(0xFF202020)
+                  : const Color(0xFF4B5563),
             ),
           ),
         ),
@@ -439,7 +566,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onTap: busy
                     ? null
                     : () {
-                        setState(() {
+                        _editDraft(() {
                           if (currentVal == i) {
                             _aspectRatings.remove(key);
                           } else {
@@ -448,7 +575,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         });
                       },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 4,
+                  ),
                   child: AppIcon(
                     currentVal >= i ? AppIcons.starFilled : AppIcons.star,
                     size: 19,

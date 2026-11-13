@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -75,7 +76,7 @@ Future<void> openAnnouncementAction(BuildContext context, AnnouncementModel ann)
   final messenger = ScaffoldMessenger.maybeOf(context);
   final uri = Uri.tryParse(url);
   final ok = uri != null && await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!ok) {
-    messenger?.showSnackBar(const SnackBar(content: Text('No se pudo abrir el enlace.')));
+  if (!ok && context.mounted) {
+    messenger?.showSnackBar(SnackBar(content: Text(context.l10n.uiNoSePudoAbrirElEnlace)));
   }
 }

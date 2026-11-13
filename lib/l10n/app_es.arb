@@ -1,0 +1,975 @@
+{
+  "@@locale": "es",
+  "language": "Idioma",
+  "deviceLanguage": "Idioma del dispositivo",
+  "home": "Inicio",
+  "map": "Mapa",
+  "favorites": "Favoritos",
+  "profile": "Perfil",
+  "explore": "Explorar",
+  "forYou": "Para ti",
+  "reviews": "Reseñas",
+  "aboutPlace": "El lugar",
+  "back": "Volver",
+  "retry": "Reintentar",
+  "signIn": "Iniciar sesión",
+  "createAccount": "Crear cuenta",
+  "welcomeHeadline": "Tu próxima historia\nempieza en Perú.",
+  "welcomeDescription": "Descubre lugares que conectan con tu forma de viajar.",
+  "yourPace": "A tu ritmo.\nA tu manera.",
+  "welcomeExplore": "Explora destinos, descubre recomendaciones para ti y guarda tus favoritos.",
+  "startAdventure": "Comenzar aventura",
+  "email": "Correo electrónico",
+  "emailHint": "nombre@correo.com",
+  "password": "Contraseña",
+  "enterPassword": "Ingresa tu contraseña",
+  "welcomeBack": "Qué bueno\nverte de nuevo.",
+  "registerTitle": "Crea tu cuenta",
+  "createPassword": "Crea tu contraseña",
+  "firstName": "Nombre",
+  "lastName": "Apellidos",
+  "confirmPassword": "Confirmar contraseña",
+  "repeatPassword": "Repite tu contraseña",
+  "eightCharacters": "Al menos 8 caracteres",
+  "yourExperience": "Tu experiencia",
+  "visitAtlas": "Atlas de visitas",
+  "travelPreferences": "Preferencias de viaje",
+  "myReviews": "Mis reseñas",
+  "archivedPlaces": "Destinos archivados",
+  "accountPrivacy": "Cuenta y privacidad",
+  "personalData": "Datos personales",
+  "changePassword": "Cambiar contraseña",
+  "privacyData": "Privacidad y mis datos",
+  "aboutProxvel": "Conoce PROXVEL",
+  "updates": "Actualizaciones",
+  "manageAccount": "Gestionar mi cuenta",
+  "signOut": "Cerrar sesión",
+  "deleteAccount": "Eliminar mi cuenta",
+  "madeForPeru": "Hecho para descubrir el Perú.",
+  "search": "Buscar",
+  "searchHint": "¿A dónde quieres ir?",
+  "clearSearch": "Borrar búsqueda",
+  "filters": "Filtros",
+  "clearFilters": "Limpiar filtros",
+  "noResults": "Sin resultados",
+  "all": "Todos",
+  "placesLoadError": "No pudimos cargar los destinos",
+  "editPreferences": "Editar preferencias",
+  "placesForYou": "Destinos para ti",
+  "matchingPreferences": "Buscando coincidencias con tus preferencias…",
+  "restoringSelection": "Recuperando tu selección…",
+  "hiddenPlaces": "Gestionar destinos ocultos",
+  "myFavorites": "Mis Favoritos",
+  "notifications": "Notificaciones",
+  "markAllRead": "Marcar todas",
+  "allCaughtUp": "Todo al día",
+  "discoverPeru": "Descubre destinos increíbles y vive experiencias inolvidables en Perú.",
+  "searchFilterDestinations": "Buscar y filtrar destinos",
+  "recentSearches": "Búsquedas recientes",
+  "seeMore": "Ver más",
+  "suggestedTime": "Tiempo sugerido",
+  "difficulty": "Dificultad",
+  "estimatedCost": "Gasto orientativo",
+  "altitude": "Altitud",
+  "getToKnowPlace": "Conoce el lugar",
+  "descriptionPending": "Estamos preparando la descripción de este lugar. Puedes consultar los datos disponibles a continuación.",
+  "preparingVisit": "Preparando los detalles de tu visita…",
+  "costEstimateNote": "El nivel de gasto es orientativo; no es una tarifa de entrada.",
+  "activities": "Vívelo a tu manera",
+  "beforeYouGo": "Antes de salir",
+  "planYourVisit": "Prepara tu visita",
+  "gettingThere": "Cómo llegar",
+  "accessibility": "Accesibilidad",
+  "officialSiteError": "No pudimos abrir el sitio oficial.",
+  "officialSite": "Consultar sitio oficial",
+  "spanishOriginal": "Contenido original en español",
+  "easy": "Fácil",
+  "moderate": "Moderada",
+  "demanding": "Exigente",
+  "budgetFriendly": "Económico",
+  "midRange": "Costo medio",
+  "higherCost": "Costo alto",
+  "reviewsLoading": "Cargando reseñas…",
+  "checkAgain": "Volver a consultar",
+  "discoverMatch": "Descubrir mi afinidad",
+  "terms": "Términos y Condiciones",
+  "privacy": "Privacidad",
+  "continueAction": "Continuar",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "discoverHeading": "Para descubrir",
+  "discoverSubheading": "Un lugar puede cambiar tus planes.",
+  "recommendedForYou": "Recomendado para ti",
+  "travelStory": "Tu forma de viajar, tu próxima historia.",
+  "nextGetaway": "Una pista para tu próxima escapada.",
+  "exploreMatches": "Explora recomendaciones según tus preferencias en Para ti.",
+  "goToForYou": "Ir a Para ti  →",
+  "exploreAll": "Explorar todos los destinos  ↗",
+  "viewAll": "Ver todos",
+  "followCuriosity": "Sigue tu curiosidad",
+  "chooseCategory": "Elige una categoría y descubre sus destinos.",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "firstVisit": "¿Primera vez aquí?",
+  "registerAction": "Regístrate",
+  "processing": "Procesando",
+  "findingPlaces": "Buscando destinos para ti",
+  "matchingContext": "El motor está combinando tus preferencias con el contexto del viaje.",
+  "engineWorking": "Motor de recomendaciones trabajando",
+  "historicalConditions": "El clima y la afluencia se basan en datos históricos, no en un pronóstico. La recomendación orienta tu elección.",
+  "allMatchesHidden": "Has ocultado estos destinos. Puedes recuperarlos desde Archivados.",
+  "noMatchesForPreferences": "No encontramos destinos recomendados con estas preferencias. Puedes probar otro mes o ajustar tus intereses.",
+  "viewArchived": "Ver archivados",
+  "sortForMe": "Ordenar para mí",
+  "profileForSort": "Completa tus preferencias para usar el orden por IA.",
+  "complete": "Completar",
+  "refineSearch": "Afina tu búsqueda",
+  "closeFilters": "Cerrar filtros",
+  "place": "Lugar",
+  "region": "Región",
+  "allRegions": "Todas las regiones",
+  "whenToTravel": "Cuándo viajar",
+  "travelMonth": "Mes de viaje",
+  "preferredWeather": "Clima que prefieres",
+  "visitorCount": "Cantidad de visitantes",
+  "weatherFilterNote": "Clima y afluencia se evalúan para ese mes con datos históricos; no son un pronóstico.",
+  "budget": "Presupuesto",
+  "estimatedSpending": "Nivel de gasto orientativo, no un precio de entrada.",
+  "yourMatch": "Afinidad contigo",
+  "matchAvailable": "Disponible cuando el motor puede usar tu perfil viajero.",
+  "clear": "Limpiar",
+  "apply": "Aplicar",
+  "showLess": "Mostrar menos",
+  "readDescription": "Leer descripción",
+  "currentMonth": "Mes actual",
+  "current": "Actual",
+  "howItMatches": "Cómo encaja contigo",
+  "whatCounts": "Lo que se tiene en cuenta",
+  "monthlyContext": "Contexto del mes",
+  "historicalValues": "Valores históricos del mes; no son un pronóstico ni el puntaje final.",
+  "crowdTolerance": "Afluencia según tu tolerancia",
+  "howRanked": "Cómo se ordena este destino",
+  "scoreContributions": "Aportes respecto a una referencia del modelo. Un valor positivo eleva el puntaje; uno negativo lo reduce. No son probabilidades.",
+  "referenceRatings": "Valoraciones de referencia",
+  "pricesServiceAttractions": "Precios, atención y atractivos",
+  "reviewPerceptions": "Percepciones agregadas del conjunto de reseñas del modelo; no representan tarifas ni condiciones garantizadas.",
+  "matchTooltip": "Afinidad calculada por el motor según tu perfil. No es una probabilidad.",
+  "undo": "Deshacer",
+  "viewDestination": "Ver destino",
+  "travelerStyle": "Tu estilo de viajero",
+  "tripBudget": "Presupuesto de viaje",
+  "tripDays": "Días de viaje",
+  "preferredClimate": "Clima preferido",
+  "crowdPreference": "Tolerancia a multitudes",
+  "yourInterests": "Tus intereses",
+  "saving": "Guardando...",
+  "savePreferences": "Guardar preferencias",
+  "preferencesIntro": "Elige lo que disfrutas. Tus preferencias nos ayudan a ordenar los destinos para ti.",
+  "budgetPlanning": "Presupuesto y días se guardan para planificar; no cambian el orden de las recomendaciones.",
+  "preferencesOffline": "Conéctate para cargar y editar tus preferencias actuales.",
+  "retryAlt": "Volver a intentar",
+  "archaeology": "Arqueología",
+  "nature": "Naturaleza",
+  "museum": "Museo",
+  "recreation": "Recreación",
+  "cold": "Frío",
+  "mild": "Templado",
+  "warm": "Cálido",
+  "dry": "Seco",
+  "quiet": "Tranquilo",
+  "moderateCrowds": "Moderado",
+  "busy": "Concurrido",
+  "low": "Bajo",
+  "medium": "Medio",
+  "high": "Alto",
+  "placeCount": "{count, plural, one{1 destino para explorar} other{{count} destinos para explorar}}",
+  "@placeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsCount": "{count, plural, one{1 destino encontrado} other{{count} destinos encontrados}}",
+  "@resultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activeFilters": "{count, plural, one{1 filtro activo} other{{count} filtros activos}}",
+  "@activeFilters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fromPercent": "Desde {value}%",
+  "@fromPercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "matchPercent": "{value}% de afinidad",
+  "@matchPercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "viewCategory": "Ver {category} ({count}) →",
+  "@viewCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapUnavailable": "El fondo del mapa no pudo cargar. Tus destinos siguen disponibles.",
+  "retryMap": "Reintentar mapa",
+  "destinationLocation": "Ubicación del destino",
+  "mapSearchHint": "Destino, ciudad o región",
+  "noMapMatches": "No encontramos coincidencias. Prueba con otra región o destino.",
+  "clearMapSearch": "Limpiar búsqueda",
+  "listDestinations": "Ver lista de destinos",
+  "viewAllDestinations": "Ver todos los destinos",
+  "unpinDestination": "Desfijar destino",
+  "approxLocation": "Tu ubicación aproximada",
+  "travelVoices": "Voces de viajeros",
+  "writeReview": "Escribir reseña",
+  "moreReviews": "Ver más reseñas",
+  "reviewFilterAll": "Todas",
+  "start": "Comenzar",
+  "skipForNow": "Omitir por ahora",
+  "chooseTravelStyle": "Elige tu\nestilo de viaje",
+  "chooseTravelStyleHelp": "¿Qué tipo de viajero eres? Elige el estilo que más va contigo.",
+  "planGetaway": "Planea tu\nescapada",
+  "planGetawayHelp": "¿Cómo será tu próxima escapada? Define tu presupuesto y los días que tienes.",
+  "approxBudget": "Presupuesto aproximado",
+  "howManyDays": "¿Cuántos días planeas viajar?",
+  "removeDay": "Quitar un día",
+  "addDay": "Añadir un día",
+  "chooseClimate": "Elige tu\nclima ideal",
+  "chooseClimateHelp": "¿Con qué clima disfrutas más el viaje? Elige tu favorito o explora cualquiera.",
+  "findAtmosphere": "Encuentra\ntu ambiente",
+  "findAtmosphereHelp": "¿Dónde te sientes más a gusto? Elige entre la tranquilidad y los lugares con más gente.",
+  "chooseInterests": "Elige tus\nintereses",
+  "chooseInterestsHelp": "¿Qué te gustaría descubrir en Perú? Elige uno o varios intereses para empezar.",
+  "preparingDestinations": "Preparando tus destinos…",
+  "restoreHiddenError": "No pudimos recuperar tus destinos ocultos. Reintenta para mostrar tu selección.",
+  "signedIn": "Ya estás dentro.",
+  "preparingHome": "Sesión iniciada.\nEstamos preparando tu inicio y tus recomendaciones.",
+  "preparingContent": "Preparando contenido",
+  "aMoment": "Un momento para empezar.",
+  "takingLonger": "Está tardando un poco más de lo habitual.",
+  "continueHome": "Continuar al inicio",
+  "travelPreferencesTitle": "Tu forma de viajar",
+  "removeFavorite": "Quitar de favoritos",
+  "addFavorite": "Guardar en favoritos",
+  "thisPlaceAndYou": "Este lugar y tú",
+  "profileMatch": "de afinidad con tu perfil",
+  "matchNotProbability": "Es una afinidad relativa calculada por el motor, no una probabilidad de satisfacción.",
+  "interpretResult": "Cómo interpretar este resultado",
+  "rankExplanation": "La afinidad combina tus intereses y las valoraciones del modelo. El orden también considera el clima y la afluencia del mes; por eso puede diferir del porcentaje.",
+  "recommended": "Recomendado",
+  "partlyRecommended": "Parcialmente recomendado",
+  "notRecommended": "No recomendado",
+  "whereYouLive": "¿Dónde vives?",
+  "chooseResidence": "Selecciona tu departamento, provincia y distrito.",
+  "saveContinue": "Guardar y continuar",
+  "department": "Departamento",
+  "province": "Provincia",
+  "cityDistrict": "Ciudad / Distrito",
+  "chooseDepartment": "Selecciona tu departamento",
+  "chooseProvince": "Selecciona tu provincia",
+  "chooseDistrict": "Selecciona tu distrito",
+  "atLeastEight": "Usa al menos 8 caracteres.",
+  "fillValidDetails": "Completa tus datos e ingresa un correo válido.",
+  "alreadyHaveAccount": "¿Ya tienes una cuenta? ",
+  "signInPrompt": "Inicia sesión",
+  "createMyAccount": "Crear mi cuenta",
+  "declareAge": "Declaro ser mayor de 18 años y acepto los ",
+  "legalAnd": " y la ",
+  "privacyPolicy": "Política de Privacidad",
+  "tripStartsWithYou": "Tu viaje empieza contigo.",
+  "chooseWhatYouEnjoy": "Elige lo que disfrutas y descubre destinos a tu manera.",
+  "fiveSteps": "Son cinco pasos breves. Podrás cambiar tus preferencias después.",
+  "preferencesSaved": "Preferencias guardadas",
+  "tailoredAdventure": "Tu próxima aventura,\nmás a tu medida.",
+  "engineProfileHelp": "Nuestro motor de recomendaciones usa tus preferencias para ayudarte a descubrir destinos que van contigo.",
+  "notSet": "Sin definir",
+  "chooseStyle": "Elige tu estilo",
+  "chooseEnjoy": "Elige lo que disfrutas",
+  "personalizedRecommendation": "Recomendación personalizada",
+  "tourismPartialError": "No pudimos cargar toda la información para planificar la visita.",
+  "interestMatch": "Coincide con {value}% de tus intereses.",
+  "travelDayCount": "{count, plural, one{1 día} other{{count} días}}",
+  "@interestMatch": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "@travelDayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "culturalTraveler": "Cultural",
+  "natureTraveler": "Naturalista",
+  "familyTraveler": "Familiar",
+  "backpacker": "Económico / mochilero",
+  "foodTraveler": "Gastronómico",
+  "adventureTraveler": "Aventurero",
+  "urbanTraveler": "Urbano / recreativo",
+  "culture": "Cultura",
+  "history": "Historia",
+  "food": "Gastronomía",
+  "adventure": "Aventura",
+  "mountaineering": "Montañismo",
+  "photography": "Fotografía",
+  "beach": "Playa",
+  "urban": "Urbano",
+  "rural": "Rural",
+  "academic": "Académico",
+  "relaxation": "Relax",
+  "luxury": "Lujo",
+  "anyWeather": "Indiferente",
+  "calm": "Calma",
+  "flexible": "Me adapto",
+  "lively": "Movimiento",
+  "fewPeople": "Poca gente",
+  "noPreference": "Sin preferencia",
+  "morePeople": "Más gente",
+  "coldWeather": "Temperaturas bajas y aire fresco",
+  "mildWeather": "Temperaturas suaves",
+  "warmWeather": "Temperaturas altas",
+  "dryWeather": "Poca lluvia",
+  "anyWeatherDescription": "Estoy abierto a cualquier clima",
+  "uiCerrarAnuncio": "Cerrar anuncio",
+  "uiCerrar": "Cerrar",
+  "uiEntendido": "Entendido",
+  "uiAhoraNo": "Ahora no",
+  "uiNoSePudoAbrirElEnlace": "No se pudo abrir el enlace.",
+  "uiCargando": "Cargando",
+  "uiQuitarDeArchivados": "Quitar de archivados",
+  "uiArchivarDestino": "Archivar destino",
+  "uiDescubrirDestino": "Descubrir destino",
+  "uiOpcionesDelDestino": "Opciones del destino",
+  "uiOcultarDestino": "Ocultar destino",
+  "uiPermanenciaCompletada": "¡Permanencia completada!",
+  "uiCargandoVisitaEnTuAtlas": "Cargando visita en tu Atlas...",
+  "uiSellando": "Sellando...",
+  "uiSellarVisita": "Sellar Visita",
+  "uiDestinoAnterior": "Destino anterior",
+  "uiDestinoSiguiente": "Destino siguiente",
+  "uiPrimeroSeleccionaUnDepartamento": "Primero selecciona un departamento",
+  "uiPrimeroSeleccionaUnaProvincia": "Primero selecciona una provincia",
+  "uiEligeTuEstiloDeViaje": "Elige tu estilo de viaje",
+  "uiTuEleccionDefineQueAspectosPrioriza": "Tu elección define qué aspectos prioriza la recomendación. Puedes cambiarla después.",
+  "uiMostrarContrasena": "Mostrar contraseña",
+  "uiOcultarContrasena": "Ocultar contraseña",
+  "uiPoweredBy": "Powered by",
+  "uiAjustes": "Ajustes",
+  "uiQuizaTuProximaEscapadaEsteCerca": "Quizá tu próxima escapada esté cerca.",
+  "uiActivaTuUbicacionParaDescubrirDestinos": "Activa tu ubicación para descubrir destinos cercanos y ver qué tan lejos estás de cada lugar.",
+  "uiEsOpcionalLaDistanciaSeCalcula": "Es opcional. La distancia se calcula en tu dispositivo y no se envía al motor de recomendaciones. Si registras una visita en tu Atlas, enviamos tu ubicación al servidor para verificarla.",
+  "uiNoVolverAMostrarHoy": "No volver a mostrar hoy",
+  "uiActivarUbicacion": "Activar ubicación",
+  "uiSeguirExplorando": "Seguir explorando",
+  "uiUbicacionPorConfirmar": "Ubicación por confirmar",
+  "uiQueTanCercaEstas": "¿Qué tan cerca estás?",
+  "uiEsteDestinoAunNoTieneCoordenadas": "Este destino aún no tiene coordenadas disponibles.",
+  "uiActivaTuUbicacionParaVerLa": "Activa tu ubicación para ver la distancia.",
+  "uiDistanciaEnLineaRectaAproximada": "Distancia en línea recta · aproximada",
+  "uiAbrirAjustesDeUbicacion": "Abrir ajustes de ubicación",
+  "uiActualizarDistancia": "Actualizar distancia",
+  "uiUsarTuUbicacion": "¿Usar tu ubicación?",
+  "uiUsaremosTuUbicacionSoloParaCalcular": "Usaremos tu ubicación solo para calcular qué tan lejos estás de este destino. ",
+  "uiNoSaleDeTuTelefonoY": "No sale de tu teléfono y no se guarda en nuestros servidores.",
+  "uiPermitir": "Permitir",
+  "uiBuscar": "Buscar...",
+  "uiCuentanosComoTeGustaViajar": "Cuéntanos cómo te gusta viajar",
+  "uiElegirMisPreferencias": "Elegir mis preferencias",
+  "uiNoPudimosCargarLaInformacion": "No pudimos cargar la información",
+  "uiArchivados": "Archivados",
+  "uiNoSePudieronCargarLosArchivados": "No se pudieron cargar los archivados",
+  "uiSinArchivos": "Sin archivos",
+  "uiAquiApareceranLosDestinosQueHayas": "Aquí aparecerán los destinos que hayas decidido ocultar.",
+  "uiIngresaTuCorreo": "Ingresa tu correo.",
+  "uiIngresaUnCorreoValido": "Ingresa un correo válido.",
+  "uiRecuperaTuAcceso": "Recupera\ntu acceso.",
+  "uiIngresaElCorreoDeTuCuenta": "Ingresa el correo de tu cuenta para solicitar un código.",
+  "uiEnviarCodigo": "Enviar código",
+  "uiVolverAIniciarSesion": "Volver a iniciar sesión",
+  "uiNoPudimosCompletarLaAccionIntenta": "No pudimos completar la acción. Intenta nuevamente.",
+  "uiNoHayConexionConElServidor": "No hay conexión con el servidor. Verifica tu internet e intenta nuevamente.",
+  "uiOcurrioUnProblemaInesperadoIntentaNuevamente": "Ocurrió un problema inesperado. Intenta nuevamente.",
+  "uiElCorreoEsRequerido": "El correo es requerido",
+  "uiLaContrasenaEsRequerida": "La contraseña es requerida",
+  "uiCorreoDeSoporteCopiado": "Correo de soporte copiado",
+  "uiCopiarCorreo": "Copiar correo",
+  "uiEjMaria": "Ej. María",
+  "uiEjGarciaLopez": "Ej. García López",
+  "uiLasContrasenasNoCoinciden": "Las contraseñas no coinciden",
+  "uiCompletaLosDatosDeContrasena": "Completa los datos de contraseña",
+  "uiDebesAceptarLosTerminosYLa": "Debes aceptar los Términos y la Política de Privacidad",
+  "uiUsaAlMenos8Caracteres": "Usa al menos 8 caracteres",
+  "uiElCodigoTiene6Digitos": "El código tiene 6 dígitos.",
+  "uiIngresaLaNuevaContrasena": "Ingresa la nueva contraseña.",
+  "uiRepiteLaNuevaContrasena": "Repite la nueva contraseña.",
+  "uiLasContrasenasNoCoinciden2": "Las contraseñas no coinciden.",
+  "uiContrasenaActualizadaYaPuedesIniciarSesion": "Contraseña actualizada. Ya puedes iniciar sesión.",
+  "uiTeEnviamosUnCodigoNuevoEl": "Te enviamos un código nuevo. El anterior ya no sirve.",
+  "uiRestableceTuContrasena": "Restablece tu contraseña",
+  "uiCodigoDe6Digitos": "Código de 6 dígitos",
+  "uiEj123456": "Ej. 123456",
+  "uiNuevaContrasena": "Nueva contraseña",
+  "uiRepiteLaNuevaContrasena2": "Repite la nueva contraseña",
+  "uiRepiteTuNuevaContrasena": "Repite tu nueva contraseña",
+  "uiReenviarCodigo": "Reenviar código",
+  "uiNoRecibisteElCodigo": "¿No recibiste el código?",
+  "uiRevisaSpamOPromocionesSiNecesitas": "Revisa spam o promociones. Si necesitas ayuda, contacta al equipo de PROXVEL.",
+  "uiNoPudimosGuardarTuResidenciaIntenta": "No pudimos guardar tu residencia. Intenta nuevamente.",
+  "uiTuAfinidadCuandoEsteDisponible": "Tu afinidad, cuando esté disponible",
+  "uiTuViajeMereceAlgoMasPersonal": "Tu viaje merece algo más personal.",
+  "uiNoTenemosUnResultadoDelMotor": "No tenemos un resultado del motor para mostrarte en este momento. Puedes volver a consultarlo.",
+  "uiEsteLugarVaContigoCuentanosComo": "¿Este lugar va contigo? Cuéntanos cómo te gusta viajar y descubre la afinidad, el clima y la afluencia según tus preferencias.",
+  "uiCerrarGaleria": "Cerrar galería",
+  "uiQuePuedesHacer": "¿Qué puedes hacer?",
+  "uiExcelente": "Excelente",
+  "uiBueno": "Bueno",
+  "uiDeslizaParaDescubrirElLugar": "Desliza para descubrir el lugar ↓",
+  "uiGaleria": "Galería",
+  "uiVerTodas": "Ver todas",
+  "uiPorQueSeRecomienda": "¿Por qué se recomienda?",
+  "uiCiudadBase": "Ciudad base",
+  "uiDatosDelLugar": "Datos del lugar",
+  "uiNoPudimosAbrirGoogleMapsIntentalo": "No pudimos abrir Google Maps. Inténtalo otra vez.",
+  "uiEncuentraTuProximaParada": "Encuentra tu próxima parada",
+  "uiEsteDestinoAunNoTieneCoordenadas2": "Este destino aún no tiene coordenadas publicadas.",
+  "uiAmpliarMapaDelDestino": "Ampliar mapa del destino",
+  "uiExplorarMapa": "Explorar mapa",
+  "uiNoSePudoAbrirElSitio": "No se pudo abrir el sitio oficial.",
+  "uiGastoEstimadoDeVisita": "Gasto estimado de visita",
+  "uiOrientacionDelGastoEnElLugar": "Orientación del gasto en el lugar; no es una tarifa de entrada confirmada.",
+  "uiTiempoRecomendado": "Tiempo recomendado",
+  "uiAntesDeIr": "Antes de ir",
+  "uiAbrirSitioOficial": "Abrir sitio oficial",
+  "uiExperienciasRealesParaPrepararLaTuya": "Experiencias reales para preparar la tuya.",
+  "uiNoPudimosCargarLasResenasTus": "No pudimos cargar las reseñas. Tus datos del destino siguen disponibles.",
+  "uiCadaViajeTieneAlgoQueContar": "Cada viaje tiene algo que contar.",
+  "uiSiYaConocesEsteLugarTu": "Si ya conoces este lugar, tu experiencia puede ayudar al próximo viajero.",
+  "uiAunNoHayResenasConEsta": "Aún no hay reseñas con esta puntuación.",
+  "uiPorQueReportasEstaResena": "¿Por qué reportas esta reseña?",
+  "uiGraciasRevisaremosLaResena": "Gracias. Revisaremos la reseña.",
+  "uiNoPudimosEnviarElReporteIntenta": "No pudimos enviar el reporte. Intenta de nuevo.",
+  "uiNoPudimosCargarLaTemporadaReintentar": "No pudimos cargar la temporada. Reintentar",
+  "uiMejorEpocaParaIr": "Mejor época para ir",
+  "uiTocaUnMesYDescubreComo": "Toca un mes y descubre cómo cambia la experiencia.",
+  "uiDescribeLoHabitualDeCadaMes": "Describe lo habitual de cada mes, no un pronóstico.",
+  "uiAfinidadDelContextoMensual": "Afinidad del contexto mensual",
+  "uiArribaMasFavorableAbajoMenosFavorable": "Arriba: más favorable · Abajo: menos favorable",
+  "uiSinRiesgo": "sin riesgo",
+  "uiTemperaturaMedia": "Temperatura media",
+  "uiLluviaMensual": "Lluvia mensual",
+  "uiVisitantesPromedio": "Visitantes promedio",
+  "uiTuPerfilDeViajeroResumen": "Tu perfil de viajero (resumen)",
+  "uiPerfilDeViajero": "Perfil de viajero",
+  "uiCompletaTuPerfilViajeroParaRecibir": "Completa tu perfil viajero para recibir explicaciones personalizadas.",
+  "uiCompletarPerfil": "Completar perfil",
+  "uiPrefiereClima": "Prefiere clima",
+  "uiTipoDeInteres": "Tipo de interés",
+  "uiAfinidadConTuPerfil": "Afinidad con tu perfil",
+  "uiClimaDelMes": "Clima del mes",
+  "uiTusDestinosSonadosListosParaExplorar": "Tus destinos soñados listos para explorar",
+  "uiTuColeccionPersonalDeViajes": "Tu colección personal de viajes",
+  "uiVistaEnListaEditorial": "Vista en lista editorial",
+  "uiVistaEnCuadricula": "Vista en cuadrícula",
+  "uiADondeQuieresIrOBusca": "¿A dónde quieres ir? o busca por nombre...",
+  "uiTuListaDeDeseosEstaEsperando": "Tu lista de deseos está esperando",
+  "uiExploraLosDestinosDeProxvelY": "Explora los destinos de PROXVEL y guarda los que más te inspiren tocando el corazón para tenerlos siempre a mano.",
+  "uiDescubrirDestinos": "Descubrir destinos",
+  "uiNoEncontramosResultados": "No encontramos resultados",
+  "uiRestablecerFiltros": "Restablecer filtros",
+  "uiNoPudimosCargarTusFavoritos": "No pudimos cargar tus favoritos",
+  "uiQuitarDeFavoritos": "¿Quitar de favoritos?",
+  "uiGraciasPorCompartirTuViaje": "Gracias por compartir tu viaje.",
+  "uiTuResenaAyudaAOtrosViajeros": "Tu reseña ayuda a otros viajeros a conocer mejor este destino.",
+  "uiVolverAlDestino": "Volver al destino",
+  "uiComoFueTuVisita": "¿Cómo fue tu visita?",
+  "uiEligeUnaPuntuacionYCuentaLo": "Elige una puntuación y cuenta lo que te gustaría que otro viajero supiera.",
+  "uiTocaLasEstrellasParaCalificar": "Toca las estrellas para calificar",
+  "uiMuyMala": "Muy mala",
+  "uiTuResena": "Tu reseña",
+  "uiQueDisfrutasteQueRecomendariasAntesDe": "¿Qué disfrutaste? ¿Qué recomendarías antes de ir?",
+  "uiSeMostraraTuNombreYLa": "Se mostrará tu nombre y la inicial de tu apellido cuando estén disponibles. Evita incluir datos personales en el comentario.",
+  "uiEnviandoResena": "Enviando reseña…",
+  "uiPublicarResena": "Publicar reseña",
+  "uiNoSeEncontroUnUsuarioActivo": "No se encontró un usuario activo. Regístrate o inicia sesión para continuar.",
+  "uiNoSePudoEnviarLaResena": "No se pudo enviar la reseña. Inténtalo nuevamente.",
+  "uiAspectosEspecificos": "Aspectos específicos",
+  "uiOpcionalTocaParaCalificar": "Opcional · Toca para calificar",
+  "uiEvaluaLosAspectosQueHayasVivido": "Evalúa los aspectos que hayas vivido en este lugar:",
+  "uiSeleccionaUnaCalificacion": "Selecciona una calificación",
+  "uiAunNoHayDestinosDisponibles": "Aún no hay destinos disponibles",
+  "uiElCatalogoSeMostraraAquiCuando": "El catálogo se mostrará aquí cuando haya destinos publicados.",
+  "uiDeslizaHastaTuMesYSuelta": "Desliza hasta tu mes y suelta\nActual usa el mes de hoy.",
+  "uiCercaDeMi": "Cerca de mí",
+  "uiTuProximaEscapadaPodriaEstarMas": "Tu próxima escapada podría estar más cerca de lo que piensas.",
+  "uiAunNoHayDestinosDelCatalogo": "Aún no hay destinos del catálogo a menos de 100 km de ti.",
+  "uiUsaremosTuUbicacionAlPulsarEl": "Usaremos tu ubicación al pulsar el botón. También puedes explorar sin compartirla.",
+  "uiDistanciasEnLineaRectaNoRepresentan": "Distancias en línea recta; no representan el recorrido por carretera.",
+  "uiBuscandoUbicacion": "Buscando ubicación…",
+  "uiVerCercanos": "Ver cercanos",
+  "uiActualizarUbicacion": "Actualizar ubicación",
+  "uiTuPerfil": "Tu perfil",
+  "uiVerDetalles": "Ver detalles",
+  "uiEligeTuEstiloDeViajeroPara": "Elige tu estilo de viajero para activar las recomendaciones.",
+  "uiEscribeTuContrasenaParaConfirmar": "Escribe tu contraseña para confirmar.",
+  "uiLaContrasenaNoEsCorrecta": "La contraseña no es correcta.",
+  "uiNoPudimosProcesarTuSolicitudRevisa": "No pudimos procesar tu solicitud. Revisa tu conexión e intenta de nuevo.",
+  "uiEstoEsLoQuePasara": "Esto es lo que pasará",
+  "uiTuAccesoSeBloqueaDeInmediato": "Tu acceso se bloquea de inmediato.",
+  "uiPasadoEsePlazoBorramosTuPerfil": "Pasado ese plazo borramos tu perfil, favoritos, archivados, notificaciones, foto y datos de residencia, y anonimizamos tu nombre y correo.",
+  "uiTusResenasSeConservanSinIdentificarte": "Tus reseñas se conservan sin identificarte, para mejorar las recomendaciones.",
+  "uiTuContrasena": "Tu contraseña",
+  "uiConfirmaConTuContrasenaActual": "Confirma con tu contraseña actual",
+  "uiCerrarSesionEnTodosTusDispositivos": "Cerrar sesión en todos tus dispositivos",
+  "uiSeCerraraTuSesionAquiY": "Se cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas entrado. Podrás volver a iniciar sesión cuando quieras.",
+  "uiCerrarSesiones": "Cerrar sesiones",
+  "uiNoPudimosCerrarLasSesionesRevisa": "No pudimos cerrar las sesiones. Revisa tu conexión e inténtalo nuevamente.",
+  "uiNoPudimosCerrarLasSesionesRevisa2": "No pudimos cerrar las sesiones. Revisa tu conexión.",
+  "uiCerramosTuSesionEnTodosTus": "Cerramos tu sesión en todos tus dispositivos.",
+  "uiCerrarSesionEnTodosMisDispositivos": "Cerrar sesión en todos mis dispositivos",
+  "uiConsultaSobreMisDatos": "Consulta sobre mis datos",
+  "uiPrivacidadYLegal": "Privacidad y legal",
+  "uiQueHacemosConTusDatosTus": "Qué hacemos con tus datos, tus derechos y cómo eliminar tu cuenta.",
+  "uiPoliticaDePrivacidad": "Política de privacidad",
+  "uiTerminosYCondiciones": "Términos y condiciones",
+  "uiMisDatosYEliminacionDeCuenta": "Mis datos y eliminación de cuenta",
+  "uiPermisosDeLaApp": "Permisos de la app",
+  "uiFuentesYLicencias": "Fuentes y licencias",
+  "uiLicenciasDeCodigoAbierto": "Licencias de código abierto",
+  "uiContactarASoporte": "Contactar a soporte",
+  "uiNoPudimosRegistrarTuAceptacionRevisa": "No pudimos registrar tu aceptación. Revisa tu conexión e intenta de nuevo.",
+  "uiActualizamosNuestrosTextosLegales": "Actualizamos nuestros textos legales",
+  "uiParaSeguirUsandoProxvelNecesitamosQue": "Para seguir usando PROXVEL necesitamos que leas y aceptes los Términos y Condiciones y la Política de Privacidad, y que confirmes que eres mayor de 18 años.",
+  "uiSoyMayorDe18AnosY": "Soy mayor de 18 años y acepto",
+  "uiNoAceptoCerrarSesion": "No acepto (cerrar sesión)",
+  "uiActualizacionDisponible": "Actualización disponible",
+  "uiDespues": "Después",
+  "uiActualizar": "Actualizar",
+  "uiMuyCercaHistoriasDistintas": "Muy cerca, historias distintas",
+  "uiMiUbicacion": "Mi ubicación",
+  "uiCentrarDestino": "Centrar destino",
+  "uiVerTodosLosResultados": "Ver todos los resultados",
+  "uiAcercarMapa": "Acercar mapa",
+  "uiAlejarMapa": "Alejar mapa",
+  "uiPreparandoTuMapa": "Preparando tu mapa…",
+  "uiVolvamosAIntentarlo": "Volvamos a intentarlo",
+  "uiUbicacionNoDisponible": "Ubicación no disponible",
+  "uiProbemosOtraBusqueda": "Probemos otra búsqueda",
+  "uiCambiaElNombreOEligeOtra": "Cambia el nombre o elige otra categoría.",
+  "uiLasUbicacionesEstanListasNoPudimos": "Las ubicaciones están listas. No pudimos cargar las fotos y descripciones.",
+  "uiTocaUnaFotoParaDescubrirEl": "Toca una foto para descubrir el lugar. Amplía los grupos para ver cada destino.",
+  "uiTocaParaEnfocarEnMapa": "Toca para enfocar en mapa",
+  "uiCerrarSeleccion": "Cerrar selección",
+  "uiVerMiDistancia": "Ver mi distancia",
+  "uiFijarEnMapa": "Fijar en mapa",
+  "uiNoPudimosCargarTusAvisos": "No pudimos cargar tus avisos",
+  "uiAquiVerasLosAnunciosDeProxvel": "Aquí verás los anuncios de PROXVEL y avisos hechos para ti, como cuándo es el mejor mes para ir a tus favoritos.",
+  "uiNoEncontramosTuSesionVuelveA": "No encontramos tu sesión. Vuelve a iniciar sesión.",
+  "uiGuiaEnInicioAbreLaPestana": "Guía: en Inicio, abre la pestaña Para ti para consultar tus recomendaciones.",
+  "uiInicioParaTi": "Inicio → Para ti",
+  "uiAhiEncontrarasTusRecomendacionesPuedesCambiar": "Ahí encontrarás tus recomendaciones.\nPuedes cambiar tus preferencias cuando quieras.",
+  "uiIrAlInicio": "Ir al inicio",
+  "uiVistaGuia": "VISTA GUÍA",
+  "uiBuscandoActualizaciones": "Buscando actualizaciones…",
+  "uiLasActualizacionesSeInstalanDesdeProxvel": "Las actualizaciones se instalan desde PROXVEL para Android.",
+  "uiYaTienesLaUltimaVersionPublicada": "Ya tienes la última versión publicada.",
+  "uiNuevaVersionDisponible": "Nueva versión disponible",
+  "uiNoPudimosComprobarLasActualizacionesRevisa": "No pudimos comprobar las actualizaciones. Revisa tu conexión.",
+  "uiConfirmaLaInstalacionEnAndroid": "Confirma la instalación en Android.",
+  "uiDescargarEInstalar": "Descargar e instalar",
+  "uiAndroidPuedePedirtePermisoParaInstalar": "Android puede pedirte permiso para instalar desde PROXVEL y confirmar la actualización.",
+  "uiVolverAComprobar": "Volver a comprobar",
+  "uiIngresaTuContrasenaActual": "Ingresa tu contraseña actual.",
+  "uiDebeSerDistintaDeLaActual": "Debe ser distinta de la actual.",
+  "uiContrasenaActualizadaCerramosTusOtrasSesiones": "Contraseña actualizada. Cerramos tus otras sesiones.",
+  "uiContrasenaActual": "Contraseña actual",
+  "uiEscribeTuContrasenaActual": "Escribe tu contraseña actual",
+  "uiVuelveAEscribirla": "Vuelve a escribirla",
+  "uiEscribeTuNombreParaContinuar": "Escribe tu nombre para continuar.",
+  "uiPerfilActualizadoCorrectamente": "Perfil actualizado correctamente",
+  "uiNoPudimosGuardarTuPerfilRevisa": "No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.",
+  "uiTuNombre": "Tu nombre",
+  "uiTusApellidos": "Tus apellidos",
+  "uiElCorreoNoSePuedeModificar": "El correo no se puede modificar",
+  "uiGuardarCambios": "Guardar cambios",
+  "uiCargandoTusResenas": "Cargando tus reseñas...",
+  "uiAunNoHasEnviadoResenasCuando": "Aún no has enviado reseñas.\nCuando comentes un destino, aparecerá aquí.",
+  "uiSalirSinGuardar": "¿Salir sin guardar?",
+  "uiTusPreferenciasAnterioresSeguiranActivasPuedes": "Tus preferencias anteriores seguirán activas. Puedes quedarte para guardar los cambios.",
+  "uiSeguirEditando": "Seguir editando",
+  "uiSalirSinGuardar2": "Salir sin guardar",
+  "uiCompletaTuEstiloPresupuestoInteresesClima": "Completa tu estilo, presupuesto, intereses, clima y tolerancia a multitudes.",
+  "uiPreferenciasActualizadasRecalculandoRecomendaciones": "Preferencias actualizadas · Recalculando recomendaciones…",
+  "uiHuboUnProblemaAlGuardarTus": "Hubo un problema al guardar tus preferencias. Inténtalo nuevamente.",
+  "uiNoPudimosGuardarTusPreferenciasPor": "No pudimos guardar tus preferencias por un problema de conexión.",
+  "uiPersonalizarExplorarYBusqueda": "Personalizar Explorar y búsqueda",
+  "uiUsaElOrdenDelMotorPara": "Usa el orden del motor para el mes elegido. «Para ti» siempre es personalizado.",
+  "uiUnDiaMenos": "Un día menos",
+  "uiUnDiaMas": "Un día más",
+  "uiEstasViendoPreferenciasGuardadasEnEste": "Estás viendo preferencias guardadas en este dispositivo. Conéctate y actualiza antes de editarlas.",
+  "uiNoPudimosAbrirElEnlaceIntentalo": "No pudimos abrir el enlace. Inténtalo nuevamente.",
+  "uiSobreProxvel": "Sobre PROXVEL",
+  "uiMasCercaDeTuProximaHistoria": "Más cerca de tu\npróxima historia.",
+  "uiDescubreDestinosDelPeruYEncuentra": "Descubre destinos del Perú y encuentra los que conectan con tu forma de viajar.",
+  "uiPreferenciasQueTienenSentido": "Preferencias que tienen sentido",
+  "uiTuPerfilDeViajeAyudaAl": "Tu perfil de viaje ayuda al motor a ordenar los destinos. Puedes cambiar tus preferencias cuando quieras.",
+  "uiInformacionParaDecidir": "Información para decidir",
+  "uiExploraLosLugaresConsultaResenasY": "Explora los lugares, consulta reseñas y compara el contexto de tu visita. Confirma horarios, tarifas y condiciones antes de viajar.",
+  "uiTransparenciaYConfianza": "Transparencia y confianza",
+  "uiEstamosParaAyudarte": "Estamos para ayudarte",
+  "uiVersionNoDisponible": "Versión no disponible",
+  "uiConsultandoVersion": "Consultando versión…",
+  "uiAtlasDeVisitas": "Atlas de Visitas",
+  "uiRadarGps": "Radar GPS",
+  "uiTuVisitaHaSidoSelladaCon": "🎉 ¡Tu visita ha sido sellada con éxito en tu Atlas!",
+  "uiLlegasteAlDestino": "🎯 ¡LLEGASTE AL DESTINO!",
+  "uiObjetivoEnEsperaDeSellado": "🎯 OBJETIVO EN ESPERA DE SELLADO",
+  "uiDesfijarObjetivo": "Desfijar objetivo",
+  "uiActivaTuUbicacionParaCalcularLa": "Activa tu ubicación para calcular la distancia.",
+  "uiConteoIniciadoLaCardDeAgua": "⏱️ ¡Conteo iniciado! La card de agua se irá llenando.",
+  "uiIniciarConteoDeEstancia": "Iniciar conteo de estancia",
+  "uiAbrirRadarGps": "Abrir Radar GPS",
+  "uiComienzaTuPasaporteDeViajes": "Comienza tu pasaporte de viajes",
+  "uiVisitaDestinosTuristicosConTuApp": "Visita destinos turísticos con tu app abierta para desbloquear sellos oficiales en tu Atlas.",
+  "uiEscanearDestinosCercanosConRadarGps": "Escanear destinos cercanos con Radar GPS",
+  "uiCalibrandoSensoresGpsYBuscandoDestinos": "🛰️ Calibrando sensores GPS y buscando destinos...",
+  "uiDestinosCercanosATuUbicacionActual": "Destinos cercanos a tu ubicación actual",
+  "uiNoHayDestinosConUbicacionDisponible": "No hay destinos con ubicación disponible.",
+  "uiNoPudimosCompletarElEscaneoGps": "No pudimos completar el escaneo GPS.",
+  "uiDistanciaCalculandose": "Distancia calculándose",
+  "uiRadarDeDestinos": "Radar de Destinos",
+  "uiBusquedaActivaDeSelladoPorGps": "Búsqueda activa de sellado por GPS",
+  "uiReintentarUbicacion": "Reintentar ubicación",
+  "uiEstasDentroDelRadioDeEste": "Estás dentro del radio de este destino.",
+  "uiAunEstasFueraDelRadioDe": "Aún estás fuera del radio de este destino.",
+  "uiFijarComoObjetivoDeSellado": "Fijar como objetivo de sellado",
+  "uiCerrarSesion": "¿Cerrar sesión?",
+  "uiTusPreferenciasYDestinosGuardadosSeguiran": "Tus preferencias y destinos guardados seguirán en tu cuenta cuando vuelvas.",
+  "uiCambiarFotoDePerfil": "Cambiar foto de perfil",
+  "uiFotoDePerfil": "Foto de perfil",
+  "uiCambiarFoto": "Cambiar foto",
+  "uiVerYEditarMisDatos": "Ver y editar mis datos",
+  "uiPruebaAjustandoTusFiltrosParaEncontrar": "Prueba ajustando tus filtros\npara encontrar más destinos.",
+  "uiNoEncontramosDestinosQueCoincidanCon": "No encontramos destinos que\ncoincidan con tu búsqueda.",
+  "uiSinRestricciones": "Sin restricciones",
+  "uiDocumento": "Documento",
+  "uiNoEncontramosEsteDocumento": "No encontramos este documento.",
+  "translationUnavailable": "Traducción no disponible",
+  "showOriginal": "Ver original",
+  "showTranslation": "Ver traducción",
+  "translating": "Traduciendo…",
+  "automaticTranslation": "Traducción automática",
+  "weather": "Clima",
+  "installedVersion": "Versión instalada: {value}",
+  "@installedVersion": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "releaseAvailable": "PROXVEL {value} ya está disponible.",
+  "@releaseAvailable": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "emailSupport": "Escríbenos a {email}",
+  "@emailSupport": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "removeFavoriteConfirm": "¿Deseas quitar \"{name}\" de tu lista? Podrás volver a guardarlo cuando quieras desde el explorador.",
+  "@removeFavoriteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resetEmailNotice": "Si {email} tiene una cuenta, te enviamos un código de 6 dígitos. Vence en {minutes} minutos.",
+  "@resetEmailNotice": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "resendCountdown": "Reenviar código en {seconds}s",
+  "@resendCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "supportSpam": "Revisa spam o promociones. Si necesitas ayuda, escríbenos a {email}.",
+  "@supportSpam": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "supportAccess": "Escríbenos a {email} desde el correo de tu cuenta para recibir ayuda con tu acceso.",
+  "@supportAccess": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordChangeHelp": "Por seguridad, ingresa tu contraseña actual y elige una nueva de al menos {count} caracteres.",
+  "@passwordChangeHelp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordMin": "Mínimo {count} caracteres",
+  "@passwordMin": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeletionScheduled": "Tu cuenta se eliminará en 14 días. Si cambias de opinión, escribe a {email}.",
+  "@accountDeletionScheduled": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletionGrace": "Tienes 14 días para arrepentirte escribiendo a {email}.",
+  "@accountDeletionGrace": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceStraightLine": "{distance} en línea recta",
+  "@distanceStraightLine": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "bestMonth": "Tu mejor contexto: {month}",
+  "@bestMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewsCount": "{count, plural, one{1 reseña} other{{count} reseñas}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoPosition": "Fotografía {index} de {total}",
+  "@photoPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "rankForMonth": "Posición {rank} en el contexto del mes",
+  "@rankForMonth": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "pinned": "Fijado",
+  "pickNextStop": "Elige tu próxima parada",
+  "versionWithBuild": "Versión {version} · {build}",
+  "@versionWithBuild": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "reportReview": "Reportar",
+  "traveler": "Viajero",
+  "proxvelTraveler": "Viajero PROXVEL",
+  "uiRecopilandoTusAspectos": "Recopilando tus aspectos...",
+  "uiProporcionandoTusMejoresDestinos": "Proporcionando tus mejores destinos...",
+  "uiAnalizandoPerfilViajero": "Analizando perfil viajero...",
+  "unreadNotifications": "Notificaciones: {count} sin leer",
+  "@unreadNotifications": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewPlaceDetails": "Ver detalles de {name}",
+  "@viewPlaceDetails": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openUserProfile": "Abrir perfil de {name}",
+  "@openUserProfile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "visitCheckIn": "📍 ¡Check-in iniciado en {name}! Cargando en tu Atlas.",
+  "@visitCheckIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewLocation": "Ver ubicación",
+  "destinationOpenError": "No pudimos abrir este destino.",
+  "visitStartError": "No pudimos iniciar la visita.",
+  "stampVisitError": "No pudimos sellar la visita.",
+  "enableLocationForVisit": "Activa tu ubicación para iniciar la visita.",
+  "enableLocationForStamp": "Activa tu ubicación para sellar la visita.",
+  "enableLocationForNearby": "Activa la ubicación para buscar destinos cerca de ti.",
+  "updateInstallError": "No se pudo instalar la actualización.",
+  "availableVersion": "Disponible: {version}",
+  "@availableVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "savePreferencesError": "No pudimos guardar tus preferencias. Intenta otra vez.",
+  "viewMapPlaceDetails": "Ver detalle de {name}",
+  "@viewMapPlaceDetails": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rememberSession": "Mantener mi sesión iniciada",
+  "sessionCheckFailed": "No pudimos verificar tu sesión",
+  "sessionCheckHelp": "Comprueba tu conexión y vuelve a intentarlo.",
+  "favoriteSaved": "Guardado en favoritos",
+  "favoriteRemoved": "Quitado de favoritos",
+  "favoriteSaveFailed": "No pudimos actualizar tus favoritos",
+  "previousMonthResults": "Mostrando los resultados de {month}.",
+  "@previousMonthResults": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveHidden": "Destino archivado",
+  "archiveRestored": "Destino restaurado",
+  "archiveSaveFailed": "No pudimos actualizar los destinos archivados",
+  "connectionUnavailable": "Sin conexión con el servidor",
+  "positionOfTotal": "{position} de {total}",
+  "reviewDraftRestored": "Recuperamos tu borrador",
+  "recommendationInputs": "Tu estilo, presupuesto, clima, tolerancia a multitudes e intereses personalizan tus recomendaciones. Los días ayudan a planificar el viaje.",
+  "chooseMonth": "Elegir mes",
+  "currentMonthName": "{month} · actual",
+  "gpsDisabled": "Activa el GPS del dispositivo y vuelve a intentar.",
+  "locationDenied": "Permite la ubicación para calcular tu distancia.",
+  "locationImprecise": "La ubicación es imprecisa. Activa la ubicación precisa y prueba al aire libre.",
+  "visitApproach": "Acércate al destino",
+  "visitStart": "Inicia la visita",
+  "visitRemaining": "{minutes, plural, one{Falta 1 minuto} other{Faltan {minutes} minutos}}",
+  "registrationFirstName": "Ingresa tu nombre",
+  "registrationLastName": "Ingresa tus apellidos",
+  "actionRequired": "Requiere atención",
+  "@positionOfTotal": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@currentMonthName": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "@visitRemaining": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "registrationEmailTaken": "Ya existe una cuenta con este correo.",
+  "visitStamped": "Visita sellada",
+  "atlasTotals": "{stamps, plural, one{1 sello} other{{stamps} sellos}} · {regions, plural, one{1 región} other{{regions} regiones}}",
+  "@atlasTotals": {
+    "placeholders": {
+      "stamps": {
+        "type": "int"
+      },
+      "regions": {
+        "type": "int"
+      }
+    }
+  }
+}

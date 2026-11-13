@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_isLoading) return;
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escribe tu nombre para continuar.')),
+        SnackBar(content: Text(context.l10n.uiEscribeTuNombreParaContinuar)),
       );
       return;
     }
@@ -92,8 +93,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Perfil actualizado correctamente'),
+          SnackBar(
+            content: Text(context.l10n.uiPerfilActualizadoCorrectamente),
             backgroundColor: AppColors.success,
           ),
         );
@@ -102,9 +103,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.',
+              context.l10n.uiNoPudimosGuardarTuPerfilRevisa,
             ),
             backgroundColor: AppColors.error,
           ),
@@ -128,7 +129,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Datos personales', busy: _isLoading),
+      appBar: profilePageBar(context, context.l10n.personalData, busy: _isLoading),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpace.screen),
         child: Column(
@@ -152,21 +153,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: AppSpace.group),
             ProxvelTextField(
-              label: 'Nombre',
-              hintText: 'Tu nombre',
+              label: context.l10n.firstName,
+              hintText: context.l10n.uiTuNombre,
               controller: _nameController,
               readOnly: _isLoading,
             ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
-              label: 'Apellidos',
-              hintText: 'Tus apellidos',
+              label: context.l10n.lastName,
+              hintText: context.l10n.uiTusApellidos,
               readOnly: _isLoading,
               controller: _lastNameController,
             ),
             const SizedBox(height: AppSpace.field),
             ProxvelTextField(
-              label: 'Correo electrónico',
+              label: context.l10n.email,
               controller: _emailController,
               readOnly: true,
               fillColor: const Color(0xFFF3F4F6),
@@ -175,7 +176,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 color: Color(0xFF9CA3AF),
                 size: 20,
               ),
-              helperText: 'El correo no se puede modificar',
+              helperText: context.l10n.uiElCorreoNoSePuedeModificar,
             ),
             const SizedBox(height: AppSpace.group),
             const Text('Residencia', style: AppTextStyles.sectionTitle),
@@ -192,7 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 48),
             ProxvelButton(
-              text: 'Guardar cambios',
+              text: context.l10n.uiGuardarCambios,
               isLoading: _isLoading,
               onPressed: _handleSave,
             ),

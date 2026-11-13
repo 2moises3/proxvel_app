@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'button_content.dart';
 import '../../theme/app_colors.dart';
@@ -8,7 +9,7 @@ class ShimmerButton extends StatelessWidget {
   final Color baseColor;
   final Color hoverColor;
   final VoidCallback onPressed;
-  final String text;
+  final String? text;
   final bool isLoading;
 
   const ShimmerButton({
@@ -17,7 +18,7 @@ class ShimmerButton extends StatelessWidget {
     required this.baseColor,
     required this.hoverColor,
     required this.onPressed,
-    this.text = 'Comenzar',
+    this.text,
     this.isLoading = false,
   });
 
@@ -66,7 +67,7 @@ class ShimmerButton extends StatelessWidget {
                           hoverColor.withValues(alpha: 0.25),
                         ),
                       ),
-                  child: ButtonContent(text: text, isLoading: isLoading),
+                  child: ButtonContent(text: text ?? context.l10n.start, isLoading: isLoading),
                 ),
 
                 // Shimmer sweep (no intercepta toques)

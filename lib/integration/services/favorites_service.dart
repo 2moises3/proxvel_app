@@ -15,6 +15,8 @@ class FavoritesService {
         return data.map((json) => FavoriteModel.fromJson(json)).toList();
       }
       return [];
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Error al cargar favoritos: $e');
     }

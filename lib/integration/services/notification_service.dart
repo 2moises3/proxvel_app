@@ -12,14 +12,18 @@ class NotificationFeed {
 /// Servicio del centro de notificaciones (campana del Home).
 class NotificationService {
   final ApiClient? _api;
-  NotificationService({ApiClient? apiClient}) : _api = apiClient;
+  NotificationService({ApiClient? apiClient, this.languageCode}) : _api = apiClient;
+  final String Function()? languageCode;
 
   /// Lista unificada (anuncios + avisos personales) ordenada por llegada.
   /// Lanza si falla, para que la pantalla pueda mostrar el error y reintentar.
   Future<NotificationFeed> getFeed() async {
     final api = _api;
     if (api == null) return const NotificationFeed([], 0);
-    final json = await api.get('/notifications', queryParams: {'limit': '50'});
+    final json = await api.get('/notifications', queryParams: {
+      'limit': '50',
+      if (languageCode?.call() == 'en') 'lang': 'en',
+    });
     final data = json['data'] as Map<String, dynamic>? ?? const {};
     final items = (data['items'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()

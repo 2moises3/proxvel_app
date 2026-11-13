@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import '../../../core/theme/app_layout.dart';
 import 'category_destination_browser.dart';
 import 'nearby_destinations_section.dart';
@@ -57,10 +58,10 @@ class HomeDiscoverySections extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _heading('Para descubrir', onOpenCatalog),
+          _heading(context, context.l10n.discoverHeading, onOpenCatalog),
           const SizedBox(height: 4),
           Text(
-            'Un lugar puede cambiar tus planes.',
+            context.l10n.discoverSubheading,
             style: _type(14, color: _muted),
           ),
           const SizedBox(height: 16),
@@ -89,7 +90,7 @@ class HomeDiscoverySections extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Recomendado para ti',
+                        context.l10n.recommendedForYou,
                         style: _type(17, weight: FontWeight.w500),
                       ),
                     ),
@@ -98,8 +99,8 @@ class HomeDiscoverySections extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   personal == null
-                      ? 'Tu forma de viajar, tu próxima historia.'
-                      : 'Una pista para tu próxima escapada.',
+                      ? context.l10n.travelStory
+                      : context.l10n.nextGetaway,
                   style: _type(24, weight: FontWeight.w500),
                 ),
                 const SizedBox(height: 10),
@@ -128,7 +129,7 @@ class HomeDiscoverySections extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              available[personal.destination.id]!.name,
+                              context.destinationTitle(personal.destination.id, available[personal.destination.id]!.name),
                               style: _type(15, weight: FontWeight.w500),
                             ),
                           ),
@@ -143,7 +144,7 @@ class HomeDiscoverySections extends StatelessWidget {
                   )
                 else
                   Text(
-                    'Explora recomendaciones según tus preferencias en Para ti.',
+                    context.l10n.exploreMatches,
                     style: _type(15, color: _muted),
                   ),
                 const SizedBox(height: 6),
@@ -154,7 +155,7 @@ class HomeDiscoverySections extends StatelessWidget {
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
-                    'Ir a Para ti  →',
+                    context.l10n.goToForYou,
                     style: _type(
                       15,
                       color: AppColors.discovery,
@@ -187,7 +188,7 @@ class HomeDiscoverySections extends StatelessWidget {
               side: const BorderSide(color: Color(0xFFDBDBD7)),
             ),
             child: Text(
-              'Explorar todos los destinos  ↗',
+              context.l10n.exploreAll,
               style: _type(15, weight: FontWeight.w500),
             ),
           ),
@@ -196,19 +197,24 @@ class HomeDiscoverySections extends StatelessWidget {
     );
   }
 
-  Widget _heading(String title, VoidCallback onTap) => Row(
-    children: [
-      Expanded(
-        child: Text(title, style: _type(26, weight: FontWeight.w500)),
-      ),
-      TextButton(
-        onPressed: onTap,
-        style: TextButton.styleFrom(foregroundColor: AppColors.discovery),
-        child: Text(
-          'Ver todos',
-          style: _type(14, color: AppColors.discovery, weight: FontWeight.w500),
-        ),
-      ),
-    ],
-  );
+  Widget _heading(BuildContext context, String title, VoidCallback onTap) =>
+      Row(
+        children: [
+          Expanded(
+            child: Text(title, style: _type(26, weight: FontWeight.w500)),
+          ),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(foregroundColor: AppColors.discovery),
+            child: Text(
+              context.l10n.viewAll,
+              style: _type(
+                14,
+                color: AppColors.discovery,
+                weight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      );
 }

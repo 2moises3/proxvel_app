@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import '../onboarding/widgets/preference_choice.dart';
 import 'widgets/profile_page_bar.dart';
 import 'dart:convert';
@@ -50,18 +51,18 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       final discard = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('¿Salir sin guardar?'),
-          content: const Text(
-            'Tus preferencias anteriores seguirán activas. Puedes quedarte para guardar los cambios.',
+          title: Text(context.l10n.uiSalirSinGuardar),
+          content: Text(
+            context.l10n.uiTusPreferenciasAnterioresSeguiranActivasPuedes,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Seguir editando'),
+              child: Text(context.l10n.uiSeguirEditando),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Salir sin guardar'),
+              child: Text(context.l10n.uiSalirSinGuardar2),
             ),
           ],
         ),
@@ -192,9 +193,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         _climate.isEmpty ||
         _crowdTolerance.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Completa tu estilo, presupuesto, intereses, clima y tolerancia a multitudes.',
+            context.l10n.uiCompletaTuEstiloPresupuestoInteresesClima,
           ),
         ),
       );
@@ -249,9 +250,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           _isSaving = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Preferencias actualizadas · Recalculando recomendaciones…',
+              context.l10n.uiPreferenciasActualizadasRecalculandoRecomendaciones,
             ),
             backgroundColor: AppColors.success,
           ),
@@ -261,10 +262,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         String msg =
-            'Hubo un problema al guardar tus preferencias. Inténtalo nuevamente.';
+            context.l10n.uiHuboUnProblemaAlGuardarTus;
         if (e is ApiException && e.statusCode == 0) {
           msg =
-              'No pudimos guardar tus preferencias por un problema de conexión.';
+              context.l10n.uiNoPudimosGuardarTusPreferenciasPor;
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -294,13 +295,13 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         backgroundColor: AppColors.background,
         appBar: profilePageBar(
           context,
-          'Tu forma de viajar',
+          context.l10n.travelPreferencesTitle,
           busy: _isSaving,
           onBack: _requestLeave,
           actions: [
             if (_ready && !_isEditing)
               IconButton(
-                tooltip: 'Editar preferencias',
+                tooltip: context.l10n.editPreferences,
                 icon: const Icon(Icons.edit_rounded, color: AppColors.accent),
                 onPressed: () {
                   setState(() => _isEditing = true);
@@ -318,8 +319,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Conéctate para cargar y editar tus preferencias actuales.',
+                      Text(
+                        context.l10n.preferencesOffline,
                         textAlign: TextAlign.center,
                       ),
                       TextButton(
@@ -330,7 +331,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                               .loadProfileData();
                           if (mounted) _loadCurrentPreferences();
                         },
-                        child: const Text('Volver a intentar'),
+                        child: Text(context.l10n.retryAlt),
                       ),
                     ],
                   ),
@@ -341,8 +342,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Elige lo que disfrutas. Tus preferencias nos ayudan a ordenar los destinos para ti.',
+                    Text(
+                      context.l10n.preferencesIntro,
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 15,
@@ -352,7 +353,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     const SizedBox(height: AppSpace.section),
 
                     _prefCard(
-                      title: 'Tu estilo de viajero',
+                      title: context.l10n.travelerStyle,
                       icon: Icons.explore_outlined,
                       child: LayoutBuilder(
                         builder: (context, constraints) => Wrap(
@@ -363,7 +364,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                               SizedBox(
                                 width: (constraints.maxWidth - 10) / 2,
                                 child: TravelStyleOption(
-                                  label: entry.value,
+                                  label: context.travelerLabel(entry.key),
                                   asset:
                                       preferenceStyleImages.containsKey(
                                         entry.key,
@@ -389,15 +390,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     _buildAiSwitch(),
                     const SizedBox(height: AppSpace.section),
 
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(bottom: 16),
                       child: Text(
-                        'Presupuesto y días se guardan para planificar; no cambian el orden de las recomendaciones.',
+                        context.l10n.budgetPlanning,
                         style: AppTextStyles.body2,
                       ),
                     ),
                     _prefCard(
-                      title: 'Presupuesto de viaje',
+                      title: context.l10n.tripBudget,
                       icon: Icons.account_balance_wallet_rounded,
                       child: _buildSelectionGrid(
                         _budgetOptions,
@@ -406,12 +407,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     _prefCard(
-                      title: 'Días de viaje',
+                      title: context.l10n.tripDays,
                       icon: Icons.calendar_month_rounded,
                       child: _buildDaysSelector(),
                     ),
                     _prefCard(
-                      title: 'Clima preferido',
+                      title: context.l10n.preferredClimate,
                       icon: Icons.thermostat_rounded,
                       child: _buildSelectionGrid(
                         _climateOptions,
@@ -420,7 +421,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     _prefCard(
-                      title: 'Tolerancia a multitudes',
+                      title: context.l10n.crowdPreference,
                       icon: Icons.groups_rounded,
                       child: _buildSelectionGrid(
                         _crowdOptions,
@@ -429,7 +430,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     _prefCard(
-                      title: 'Tus intereses',
+                      title: context.l10n.yourInterests,
                       icon: Icons.favorite_rounded,
                       child: LayoutBuilder(
                         builder: (context, constraints) => Wrap(
@@ -440,7 +441,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                               SizedBox(
                                 width: (constraints.maxWidth - 12) / 2,
                                 child: IllustratedPreferenceOption(
-                                  label: interest,
+                                  label: context.interestLabel(interest),
                                   asset:
                                       'assets/images/onboarding_${preferenceInterestImages[interest]}_scene.webp',
                                   selected: _interests.contains(interest),
@@ -458,14 +459,14 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     if (_isEditing) ...[
                       ProxvelButton(
                         text: _isSaving
-                            ? 'Guardando...'
-                            : 'Guardar preferencias',
+                            ? context.l10n.saving
+                            : context.l10n.savePreferences,
                         isLoading: _isSaving,
                         onPressed: _handleSave,
                       ),
                       const SizedBox(height: AppSpace.field),
                       ProxvelButton(
-                        text: 'Cancelar',
+                        text: context.l10n.cancel,
                         isSecondary: true,
                         onPressed: _isSaving
                             ? null
@@ -496,15 +497,15 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     required Widget child,
   }) {
     final summary = switch (title) {
-      'Tu estilo de viajero' =>
+      _ when title == context.l10n.travelerStyle =>
         travelerTypes[_travelerType] ?? 'Elige tu estilo',
-      'Presupuesto de viaje' => _budget.isEmpty ? 'Sin definir' : _budget,
-      'Días de viaje' => '$_days días',
-      'Clima preferido' => _climate.isEmpty ? 'Sin definir' : _climate,
-      'Tolerancia a multitudes' =>
-        _crowdTolerance.isEmpty ? 'Sin definir' : _crowdTolerance,
+      _ when title == context.l10n.tripBudget => _budget.isEmpty ? context.l10n.notSet : _budget,
+      _ when title == context.l10n.tripDays => context.l10n.travelDayCount(int.tryParse(_days) ?? 1),
+      _ when title == context.l10n.preferredClimate => _climate.isEmpty ? context.l10n.notSet : _climate,
+      _ when title == context.l10n.crowdPreference =>
+        _crowdTolerance.isEmpty ? context.l10n.notSet : _crowdTolerance,
       _ =>
-        _interests.isEmpty ? 'Elige lo que disfrutas' : _interests.join(' · '),
+        _interests.isEmpty ? context.l10n.chooseEnjoy : _interests.join(' · '),
     };
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -568,9 +569,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Personalizar Explorar y búsqueda',
+                  context.l10n.uiPersonalizarExplorarYBusqueda,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -589,8 +590,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Usa el orden del motor para el mes elegido. «Para ti» siempre es personalizado.',
+          Text(
+            context.l10n.uiUsaElOrdenDelMotorPara,
             style: TextStyle(
               fontSize: 12,
               height: 1.4,
@@ -619,7 +620,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ? constraints.maxWidth
                 : (constraints.maxWidth - 8) / 2,
             child: PreferenceChoice(
-              label: opt,
+              label: context.preferenceLabel(opt),
               selected: isSelected,
               illustration: _choiceIllustration(opt, options),
               illustrationLeading: true,
@@ -654,7 +655,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     return Row(
       children: [
         IconButton.outlined(
-          tooltip: 'Un día menos',
+          tooltip: context.l10n.uiUnDiaMenos,
           onPressed: _isEditing && !_isSaving && days > 1
               ? () => setState(() => _days = (days - 1).toString())
               : null,
@@ -662,13 +663,13 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         ),
         Expanded(
           child: Text(
-            '$days ${days == 1 ? 'día' : 'días'}',
+            context.l10n.travelDayCount(days),
             textAlign: TextAlign.center,
             style: AppTextStyles.sectionTitle,
           ),
         ),
         IconButton.outlined(
-          tooltip: 'Un día más',
+          tooltip: context.l10n.uiUnDiaMas,
           onPressed: _isEditing && !_isSaving
               ? () => setState(() => _days = (days + 1).toString())
               : null,

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/widgets/maps/destination_location.dart';
@@ -71,8 +72,8 @@ class _NearbyDestinationsSectionState extends State<NearbyDestinationsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Cerca de mí',
+        Text(
+          context.l10n.uiCercaDeMi,
           style: TextStyle(fontSize: 26, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 12),
@@ -95,17 +96,17 @@ class _NearbyDestinationsSectionState extends State<NearbyDestinationsSection> {
               Text(
                 _message ??
                     (position == null
-                        ? 'Tu próxima escapada podría estar más cerca de lo que piensas.'
+                        ? context.l10n.uiTuProximaEscapadaPodriaEstarMas
                         : nearby.isEmpty
-                        ? 'Aún no hay destinos del catálogo a menos de 100 km de ti.'
+                        ? context.l10n.uiAunNoHayDestinosDelCatalogo
                         : '${nearby.length} destinos a menos de 100 km.'),
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 8),
               Text(
                 position == null
-                    ? 'Usaremos tu ubicación al pulsar el botón. También puedes explorar sin compartirla.'
-                    : 'Distancias en línea recta; no representan el recorrido por carretera.',
+                    ? context.l10n.uiUsaremosTuUbicacionAlPulsarEl
+                    : context.l10n.uiDistanciasEnLineaRectaNoRepresentan,
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -123,10 +124,10 @@ class _NearbyDestinationsSectionState extends State<NearbyDestinationsSection> {
                     : const Icon(Icons.my_location_rounded, size: 18),
                 label: Text(
                   _busy
-                      ? 'Buscando ubicación…'
+                      ? context.l10n.uiBuscandoUbicacion
                       : position == null
-                      ? 'Ver cercanos'
-                      : 'Actualizar ubicación',
+                      ? context.l10n.uiVerCercanos
+                      : context.l10n.uiActualizarUbicacion,
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.discovery,
@@ -142,7 +143,7 @@ class _NearbyDestinationsSectionState extends State<NearbyDestinationsSection> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               onTap: () => widget.onOpen(item.destination),
-              title: Text(item.destination.name),
+              title: Text(context.destinationTitle(item.destination.id, item.destination.name)),
               subtitle: Text(
                 '${item.km.toStringAsFixed(1)} km · ${item.destination.region}',
               ),

@@ -1,3 +1,6 @@
+import 'archive_feedback.dart';
+import '../../../core/widgets/cards/favorite_feedback.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_layout.dart';
@@ -84,7 +87,10 @@ class ClassicDestinationCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        destination.name,
+                        context.destinationTitle(
+                          destination.id,
+                          destination.name,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.cardTitle,
@@ -166,9 +172,11 @@ class ClassicDestinationCard extends StatelessWidget {
                         final isFav = favCtrl.isFavorite(destination.id);
                         return IconButton(
                           tooltip: isFav
-                              ? 'Quitar de favoritos'
-                              : 'Guardar en favoritos',
-                          onPressed: () => favCtrl.toggleFavorite(
+                              ? context.l10n.removeFavorite
+                              : context.l10n.addFavorite,
+                          onPressed: () => toggleFavoriteWithFeedback(
+                            context,
+                            favCtrl,
                             destination.id,
                             destination,
                           ),
@@ -200,11 +208,13 @@ class ClassicDestinationCard extends StatelessWidget {
                         final isArc = arcCtrl.isArchived(destination.id);
                         return IconButton(
                           tooltip: isArc
-                              ? 'Quitar de archivados'
-                              : 'Archivar destino',
-                          onPressed: () => arcCtrl.toggleArchive(
+                              ? context.l10n.uiQuitarDeArchivados
+                              : context.l10n.uiArchivarDestino,
+                          onPressed: () => toggleArchiveWithFeedback(
+                            context,
+                            arcCtrl,
                             destination.id,
-                            destination,
+                            destination: destination,
                           ),
                           constraints: const BoxConstraints(
                             minWidth: 44,

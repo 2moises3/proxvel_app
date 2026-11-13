@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import '../profile/widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
@@ -19,13 +20,13 @@ class PrivacyLegalScreen extends StatelessWidget {
       Uri(
         scheme: 'mailto',
         path: kSupportEmail,
-        queryParameters: {'subject': 'Consulta sobre mis datos'},
+        queryParameters: {'subject': context.l10n.uiConsultaSobreMisDatos},
       ),
       mode: LaunchMode.externalApplication,
     );
-    if (!ok) {
+    if (!ok && context.mounted) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Escríbenos a $kSupportEmail')),
+        SnackBar(content: Text(context.l10n.emailSupport(kSupportEmail))),
       );
     }
   }
@@ -35,7 +36,7 @@ class PrivacyLegalScreen extends StatelessWidget {
     Widget divider() => const Divider(height: 1, color: AppColors.divider);
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Privacidad y legal'),
+      appBar: profilePageBar(context, context.l10n.uiPrivacidadYLegal),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -45,8 +46,8 @@ class PrivacyLegalScreen extends StatelessWidget {
             32,
           ),
           children: [
-            const Text(
-              'Qué hacemos con tus datos, tus derechos y cómo eliminar tu cuenta.',
+            Text(
+              context.l10n.uiQueHacemosConTusDatosTus,
               style: AppTextStyles.bodySecondary,
             ),
             const SizedBox(height: AppSpace.field),
@@ -61,37 +62,37 @@ class PrivacyLegalScreen extends StatelessWidget {
                 children: [
                   ProfileMenuItem(
                     icon: Icons.privacy_tip_outlined,
-                    label: 'Política de privacidad',
+                    label: context.l10n.uiPoliticaDePrivacidad,
                     onTap: () => context.push('/legal/doc/privacidad'),
                   ),
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.description_outlined,
-                    label: 'Términos y condiciones',
+                    label: context.l10n.uiTerminosYCondiciones,
                     onTap: () => context.push('/legal/doc/terminos'),
                   ),
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.manage_accounts_outlined,
-                    label: 'Mis datos y eliminación de cuenta',
+                    label: context.l10n.uiMisDatosYEliminacionDeCuenta,
                     onTap: () => context.push('/legal/my-data'),
                   ),
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.verified_user_outlined,
-                    label: 'Permisos de la app',
+                    label: context.l10n.uiPermisosDeLaApp,
                     onTap: () => context.push('/legal/doc/permisos'),
                   ),
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.public_rounded,
-                    label: 'Fuentes y licencias',
+                    label: context.l10n.uiFuentesYLicencias,
                     onTap: () => context.push('/legal/doc/fuentes'),
                   ),
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.code_rounded,
-                    label: 'Licencias de código abierto',
+                    label: context.l10n.uiLicenciasDeCodigoAbierto,
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'PROXVEL',
@@ -103,7 +104,7 @@ class PrivacyLegalScreen extends StatelessWidget {
                   divider(),
                   ProfileMenuItem(
                     icon: Icons.mail_outline_rounded,
-                    label: 'Contactar a soporte',
+                    label: context.l10n.uiContactarASoporte,
                     onTap: () => _contact(context),
                   ),
                 ],

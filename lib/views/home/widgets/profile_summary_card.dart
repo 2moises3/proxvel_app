@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -132,8 +133,8 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Text(
-                                    'Tu perfil',
+                                  Text(
+                                    context.l10n.uiTuPerfil,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 14,
@@ -142,7 +143,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    _isExpanded ? 'Ocultar' : 'Ver detalles',
+                                    _isExpanded ? 'Ocultar' : context.l10n.uiVerDetalles,
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textSecondary,
@@ -177,7 +178,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                     const SizedBox(height: AppSpace.field),
                     Text(
                       style == null
-                          ? 'Elige tu estilo de viajero para activar las recomendaciones.'
+                          ? context.l10n.uiEligeTuEstiloDeViajeroPara
                           : 'Estilo $style. El orden considera tus intereses, clima y tolerancia para el mes elegido.',
                       style: AppTextStyles.body2,
                     ),
@@ -199,7 +200,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Icon(
                                   Icons.tune_rounded,
                                   size: 16,
@@ -207,7 +208,7 @@ class _ProfileSummaryCardState extends State<ProfileSummaryCard> {
                                 ),
                                 SizedBox(width: AppSpace.related),
                                 Text(
-                                  'Editar preferencias',
+                                  context.l10n.editPreferences,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textPrimary,

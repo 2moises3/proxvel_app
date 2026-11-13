@@ -1,3 +1,4 @@
+import '../../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../models/destination_model.dart';
 import '../../../core/theme/app_colors.dart';
@@ -55,7 +56,7 @@ class RecentSearchChip extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    destination.name,
+                    context.destinationTitle(destination.id, destination.name),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

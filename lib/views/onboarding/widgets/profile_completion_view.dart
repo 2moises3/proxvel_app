@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -97,7 +98,7 @@ class _ProfileCompletionViewState extends State<ProfileCompletionView>
                                 const SizedBox(width: 8),
                                 Flexible(
                                   child: Text(
-                                    'Preferencias guardadas',
+                                    context.l10n.preferencesSaved,
                                     style: _text(
                                       14,
                                       color: AppColors.discovery,
@@ -110,30 +111,30 @@ class _ProfileCompletionViewState extends State<ProfileCompletionView>
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            'Tu próxima aventura,\nmás a tu medida.',
+                            context.l10n.tailoredAdventure,
                             textAlign: TextAlign.center,
                             style: _text(32, weight: FontWeight.w600),
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Nuestro motor de recomendaciones usa tus preferencias para ayudarte a descubrir destinos que van contigo.',
+                            context.l10n.engineProfileHelp,
                             textAlign: TextAlign.center,
                             style: _text(16, color: const Color(0xFF626870)),
                           ),
                           const SizedBox(height: 28),
                           Semantics(
                             label:
-                                'Guía: en Inicio, abre la pestaña Para ti para consultar tus recomendaciones.',
+                                context.l10n.uiGuiaEnInicioAbreLaPestana,
                             child: ExcludeSemantics(child: _preview()),
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Inicio → Para ti',
+                            context.l10n.uiInicioParaTi,
                             style: _text(20, weight: FontWeight.w500),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Ahí encontrarás tus recomendaciones.\nPuedes cambiar tus preferencias cuando quieras.',
+                            context.l10n.uiAhiEncontrarasTusRecomendacionesPuedesCambiar,
                             textAlign: TextAlign.center,
                             style: _text(14, color: const Color(0xFF626870)),
                           ),
@@ -146,7 +147,7 @@ class _ProfileCompletionViewState extends State<ProfileCompletionView>
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
                 child: AuthSubmitButton(
-                  text: 'Ir al inicio',
+                  text: context.l10n.uiIrAlInicio,
                   size: AuthSubmitButtonSize.large,
                   isLoading: widget.isEntering,
                   onPressed: widget.onContinue,
@@ -189,10 +190,10 @@ class _ProfileCompletionViewState extends State<ProfileCompletionView>
               children: [
                 const Icon(Icons.home_outlined, size: 19),
                 const SizedBox(width: 8),
-                Text('Inicio', style: _text(15, weight: FontWeight.w500)),
+                Text(context.l10n.home, style: _text(15, weight: FontWeight.w500)),
                 const Spacer(),
                 Text(
-                  'VISTA GUÍA',
+                  context.l10n.uiVistaGuia,
                   style: _text(10, color: const Color(0xFF626870)),
                 ),
               ],

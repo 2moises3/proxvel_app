@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/l10n.dart';
+import '../../../core/widgets/states/localized_review_text.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../models/review_model.dart';
@@ -9,7 +11,15 @@ class MyReviewCard extends StatelessWidget {
 
   const MyReviewCard({super.key, required this.review});
 
-  String _mapStatus(String? status) {
+  String _mapStatus(BuildContext context, String? status) {
+    if (context.l10n.localeName == 'en') {
+      return switch (status) {
+        'pending_processing' => 'Awaiting analysis',
+        'processed' => 'Processed',
+        'used_for_training' => 'Used to improve the model',
+        _ => 'Status unavailable',
+      };
+    }
     if (status == null) return 'Estado no disponible';
     switch (status) {
       case 'pending_processing':
@@ -58,7 +68,7 @@ class MyReviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  review.destinationName ?? review.destinationId ?? 'Destino',
+                  context.destinationTitle(review.destinationId, review.destinationName ?? review.destinationId ?? context.l10n.explore),
                   style: AppTextStyles.cardTitle,
                 ),
               ),
@@ -85,8 +95,10 @@ class MyReviewCard extends StatelessWidget {
           const SizedBox(height: AppSpace.content),
 
           // Review Text
-          Text(
-            '"${review.reviewText}"',
+          LocalizedReviewText(
+            key: ValueKey(review.reviewId),
+            reviewId: review.reviewId,
+            text: review.reviewText,
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -101,9 +113,9 @@ class MyReviewCard extends StatelessWidget {
 
           // Aspects (if exist)
           if (hasAspects) ...[
-            const Text(
-              'Aspectos comentados:',
-              style: TextStyle(
+            Text(
+              context.l10n.localeName == 'en' ? 'Reviewed aspects' : 'Aspectos comentados:',
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -128,7 +140,7 @@ class MyReviewCard extends StatelessWidget {
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Text(
-                    '${e.key} ${val.toStringAsFixed(1)}',
+                    '${context.aspectLabel(e.key)} ${val.toStringAsFixed(1)}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -155,7 +167,7 @@ class MyReviewCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _mapStatus(review.status),
+                _mapStatus(context, review.status),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

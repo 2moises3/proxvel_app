@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
@@ -110,8 +111,8 @@ class _ProxvelTextFieldState extends State<ProxvelTextField> {
         suffixIcon: widget.isPassword
             ? IconButton(
                 tooltip: _obscureText
-                    ? 'Mostrar contraseña'
-                    : 'Ocultar contraseña',
+                    ? context.l10n.uiMostrarContrasena
+                    : context.l10n.uiOcultarContrasena,
                 icon: Icon(
                   _obscureText
                       ? Icons.visibility_outlined

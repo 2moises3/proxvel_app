@@ -1,3 +1,5 @@
+import '../../core/localization/l10n.dart';
+import '../../integration/local/local_storage_service.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +20,9 @@ import 'widgets/logout_confirm_sheet.dart';
 import '../../core/utils/avatar_picker_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.updateAvailable = false});
+
+  final bool updateAvailable;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -62,9 +66,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     final user = auth.currentUser ?? profileCtrl.user;
-    final userName = user?.fullName ?? 'Viajero';
+    final userName = user?.fullName ?? context.l10n.traveler;
     final userEmail = user?.email ?? 'sin correo registrado';
     final profile = profileCtrl.profile;
+    final hasOnboardingDraft =
+        user != null &&
+        context.read<LocalStorageService?>()?.readDraft(
+              'onboarding_draft:${user.id}',
+            ) !=
+            null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -86,10 +96,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onEditProfile: () => context.push('/profile/edit'),
             ),
 
-            if (profileCtrl.error != null) _ErrorBanner(profileCtrl.error!),
+            if (profileCtrl.error != null)
+              _ErrorBanner(context.errorText(profileCtrl.error!)),
             if (profileCtrl.isShowingCachedProfile)
               _ErrorBanner(
-                'Estás viendo preferencias guardadas en este dispositivo. Conéctate y actualiza antes de editarlas.',
+                context.l10n.uiEstasViendoPreferenciasGuardadasEnEste,
               ),
 
             ProfileStatsRow(
@@ -109,13 +120,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onChangePassword: () => context.push('/profile/change-password'),
               // The shared editor publishes the confirmed backend response.
               // Reloading here would duplicate the request and blank the page.
-              onPreferences: () => context.push('/profile/preferences'),
+              onPreferences: () async {
+                await context.push(
+                  hasOnboardingDraft ? '/onboarding' : '/profile/preferences',
+                );
+                if (mounted) setState(() {});
+              },
               onAtlas: () => context.push('/profile/atlas'),
               onMyReviews: () => context.push('/profile/my-reviews'),
               onArchived: () => context.push('/archived'),
               onPrivacy: () => context.push('/legal'),
               onAbout: () => showAboutProxvelSheet(context),
               onDeleteAccount: () => context.push('/legal/delete-account'),
+              updateAvailable: widget.updateAvailable,
               onUpdates: () => context.push('/profile/updates'),
               onLogout: () => showLogoutConfirmSheet(
                 context,
@@ -128,11 +145,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: AppSpace.group),
-            const Text(
-              'Hecho para descubrir el Perú.',
+            Text(
+              context.l10n.madeForPeru,
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
-            SizedBox(height: 146 + MediaQuery.viewPaddingOf(context).bottom),
+            SizedBox(height: AppSizing.navigationClearance(context)),
           ],
         ),
       ),

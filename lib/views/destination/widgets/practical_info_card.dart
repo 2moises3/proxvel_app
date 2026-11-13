@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -17,9 +18,9 @@ class PracticalInfoCard extends StatelessWidget {
     final ok =
         uri != null &&
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok) {
+    if (!ok && context.mounted) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el sitio oficial.')),
+        SnackBar(content: Text(context.l10n.uiNoSePudoAbrirElSitio)),
       );
     }
   }
@@ -33,27 +34,27 @@ class PracticalInfoCard extends StatelessWidget {
       if (data.costLabel != null)
         _InfoItem(
           icon: Icons.payments_outlined,
-          title: 'Gasto estimado de visita',
+          title: context.l10n.uiGastoEstimadoDeVisita,
           value: data.costLabel!,
           supportingText:
-              'Orientación del gasto en el lugar; no es una tarifa de entrada confirmada.',
+              context.l10n.uiOrientacionDelGastoEnElLugar,
         ),
       if (data.recommendedDuration != null)
         _InfoItem(
           icon: Icons.access_time_outlined,
-          title: 'Tiempo recomendado',
+          title: context.l10n.uiTiempoRecomendado,
           value: data.recommendedDuration!,
         ),
       if (data.howToGet != null)
         _InfoItem(
           icon: Icons.directions_outlined,
-          title: 'Cómo llegar',
+          title: context.l10n.gettingThere,
           value: data.howToGet!,
         ),
       if (data.visitorInfoSummary != null)
         _InfoItem(
           icon: Icons.info_outline_rounded,
-          title: 'Antes de ir',
+          title: context.l10n.uiAntesDeIr,
           value: data.visitorInfoSummary!,
         ),
     ];
@@ -63,7 +64,7 @@ class PracticalInfoCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Prepara tu visita', style: AppTextStyles.sectionTitle),
+        Text(context.l10n.planYourVisit, style: AppTextStyles.sectionTitle),
         const SizedBox(height: AppSpace.content),
         if (rows.isNotEmpty)
           Container(
@@ -94,7 +95,7 @@ class PracticalInfoCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _openWebsite(context, website),
               icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Abrir sitio oficial'),
+              label: Text(context.l10n.uiAbrirSitioOficial),
             ),
           ),
         ],

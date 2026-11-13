@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,8 +28,8 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
     } catch (_) {}
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No pudimos abrir el enlace. Inténtalo nuevamente.'),
+        SnackBar(
+          content: Text(context.l10n.uiNoPudimosAbrirElEnlaceIntentalo),
         ),
       );
     }
@@ -37,7 +38,7 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.background,
-    appBar: profilePageBar(context, 'Sobre PROXVEL'),
+    appBar: profilePageBar(context, context.l10n.uiSobreProxvel),
     body: SafeArea(
       top: false,
       child: ListView(
@@ -56,8 +57,8 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Más cerca de tu\npróxima historia.',
+          Text(
+            context.l10n.uiMasCercaDeTuProximaHistoria,
             style: TextStyle(
               fontSize: 32,
               height: 1.15,
@@ -65,8 +66,8 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Descubre destinos del Perú y encuentra los que conectan con tu forma de viajar.',
+          Text(
+            context.l10n.uiDescubreDestinosDelPeruYEncuentra,
             style: TextStyle(
               fontSize: 16,
               height: 1.5,
@@ -76,17 +77,17 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
           const SizedBox(height: 28),
           _info(
             AppIcons.sparkles,
-            'Preferencias que tienen sentido',
-            'Tu perfil de viaje ayuda al motor a ordenar los destinos. Puedes cambiar tus preferencias cuando quieras.',
+            context.l10n.uiPreferenciasQueTienenSentido,
+            context.l10n.uiTuPerfilDeViajeAyudaAl,
           ),
           _info(
             AppIcons.compass,
-            'Información para decidir',
-            'Explora los lugares, consulta reseñas y compara el contexto de tu visita. Confirma horarios, tarifas y condiciones antes de viajar.',
+            context.l10n.uiInformacionParaDecidir,
+            context.l10n.uiExploraLosLugaresConsultaResenasY,
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Transparencia y confianza',
+          Text(
+            context.l10n.uiTransparenciaYConfianza,
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
@@ -100,27 +101,27 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
                 children: [
                   ProfileMenuItem(
                     svgIcon: AppIcons.info,
-                    label: 'Términos y condiciones',
+                    label: context.l10n.uiTerminosYCondiciones,
                     onTap: () => context.push('/legal/doc/terminos'),
                   ),
                   ProfileMenuItem(
                     svgIcon: AppIcons.lock,
-                    label: 'Política de privacidad',
+                    label: context.l10n.uiPoliticaDePrivacidad,
                     onTap: () => context.push('/legal/doc/privacidad'),
                   ),
                   ProfileMenuItem(
                     svgIcon: AppIcons.navProfile,
-                    label: 'Permisos de la app',
+                    label: context.l10n.uiPermisosDeLaApp,
                     onTap: () => context.push('/legal/doc/permisos'),
                   ),
                   ProfileMenuItem(
                     svgIcon: AppIcons.externalLink,
-                    label: 'Fuentes y licencias',
+                    label: context.l10n.uiFuentesYLicencias,
                     onTap: () => context.push('/legal/doc/fuentes'),
                   ),
                   ProfileMenuItem(
                     svgIcon: AppIcons.info,
-                    label: 'Licencias de código abierto',
+                    label: context.l10n.uiLicenciasDeCodigoAbierto,
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'PROXVEL',
@@ -131,8 +132,8 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          const Text(
-            'Estamos para ayudarte',
+          Text(
+            context.l10n.uiEstamosParaAyudarte,
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
@@ -154,10 +155,10 @@ class _AboutProxvelScreenState extends State<AboutProxvelScreen> {
             future: _package,
             builder: (context, snapshot) => Text(
               snapshot.hasData
-                  ? 'Versión ${snapshot.data!.version} · ${snapshot.data!.buildNumber}'
+                  ? context.l10n.versionWithBuild(snapshot.data!.version, snapshot.data!.buildNumber)
                   : snapshot.hasError
-                  ? 'Versión no disponible'
-                  : 'Consultando versión…',
+                  ? context.l10n.uiVersionNoDisponible
+                  : context.l10n.uiConsultandoVersion,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,

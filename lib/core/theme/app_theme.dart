@@ -189,7 +189,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
           minimumSize: const Size(AppSizing.touchTarget, AppSizing.button),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.card,

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -55,12 +56,12 @@ class _CategoryDestinationBrowserState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sigue tu curiosidad',
+          context.l10n.followCuriosity,
           style: AppTypography.style(fontSize: 26, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Elige una categoría y descubre sus destinos.',
+        Text(
+          context.l10n.chooseCategory,
           style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         const SizedBox(height: 16),
@@ -130,7 +131,9 @@ class _CategoryDestinationBrowserState
                             ),
                           const SizedBox(width: 9),
                           Text(
-                            c ?? 'Todos',
+                            c == null
+                                ? context.l10n.all
+                                : context.categoryLabel(c),
                             style: AppTypography.style(
                               fontSize: 14,
                               fontWeight: c == selected
@@ -162,7 +165,12 @@ class _CategoryDestinationBrowserState
             onPressed: () =>
                 selected == null ? widget.onAll() : widget.onCategory(selected),
             child: Text(
-              'Ver ${selected ?? 'todos'} (${matches.length}) →',
+              context.l10n.viewCategory(
+                selected == null
+                    ? context.l10n.all.toLowerCase()
+                    : context.categoryLabel(selected),
+                matches.length,
+              ),
               style: const TextStyle(color: AppColors.discovery),
             ),
           ),
@@ -228,7 +236,7 @@ class _DestinationPortraitRailState extends State<DestinationPortraitRail> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                     child: Text(
-                      d.name,
+                      context.destinationTitle(d.id, d.name),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.style(

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_layout.dart';
 import '../../theme/app_colors.dart';
@@ -217,14 +218,14 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildField(
-          label: 'Departamento',
+          label: context.l10n.department,
           value: _selectedDepartment,
-          placeholder: 'Selecciona tu departamento',
+          placeholder: context.l10n.chooseDepartment,
           enabled: true,
           errorText: null,
           onTap: () {
             _showPicker(
-              title: 'Selecciona tu departamento',
+              title: context.l10n.chooseDepartment,
               items: _departments,
               selectedItem: _selectedDepartment,
               onSelected: _onDepartmentChanged,
@@ -233,14 +234,14 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
         ),
         const SizedBox(height: AppSpace.field),
         _buildField(
-          label: 'Provincia',
+          label: context.l10n.province,
           value: _selectedProvince,
-          placeholder: 'Selecciona tu provincia',
+          placeholder: context.l10n.chooseProvince,
           enabled: _selectedDepartment != null,
-          errorText: 'Primero selecciona un departamento',
+          errorText: context.l10n.uiPrimeroSeleccionaUnDepartamento,
           onTap: () {
             _showPicker(
-              title: 'Selecciona tu provincia',
+              title: context.l10n.chooseProvince,
               items: _provinces,
               selectedItem: _selectedProvince,
               onSelected: _onProvinceChanged,
@@ -249,14 +250,14 @@ class _ResidenceFieldsWidgetState extends State<ResidenceFieldsWidget> {
         ),
         const SizedBox(height: AppSpace.field),
         _buildField(
-          label: 'Ciudad / Distrito',
+          label: context.l10n.cityDistrict,
           value: _selectedCity,
-          placeholder: 'Selecciona tu distrito',
+          placeholder: context.l10n.chooseDistrict,
           enabled: _selectedProvince != null,
-          errorText: 'Primero selecciona una provincia',
+          errorText: context.l10n.uiPrimeroSeleccionaUnaProvincia,
           onTap: () {
             _showPicker(
-              title: 'Selecciona tu distrito',
+              title: context.l10n.chooseDistrict,
               items: _cities,
               selectedItem: _selectedCity,
               onSelected: _onCityChanged,

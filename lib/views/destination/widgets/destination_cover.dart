@@ -1,8 +1,10 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/destination_model.dart';
 import '../../../controllers/favorites_controller.dart';
+import '../../../core/widgets/cards/favorite_feedback.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/navigation/destination_opening.dart';
 import '../../../core/widgets/common/app_icon.dart';
@@ -15,6 +17,8 @@ class DestinationCover extends StatefulWidget {
     super.key,
     required this.destination,
     this.heroTag,
+    this.scrollController,
+    this.selectedImageUrl,
     this.latitude,
     this.longitude,
     this.rating,
@@ -24,6 +28,8 @@ class DestinationCover extends StatefulWidget {
   });
   final DestinationModel destination;
   final String? heroTag;
+  final ScrollController? scrollController;
+  final String? selectedImageUrl;
   final double? latitude, longitude, rating;
   final int reviewCount;
   final VoidCallback onOpenGallery;
@@ -33,7 +39,69 @@ class DestinationCover extends StatefulWidget {
 }
 
 class _DestinationCoverState extends State<DestinationCover> {
-  int _selected = 0;
+  final _coverAnchor = GlobalKey();
+  final _titleAnchor = GlobalKey();
+  final _stickyLimit = ValueNotifier<double>(0);
+
+  void _measureTitle() {
+    if (!mounted) return;
+    final cover = _coverAnchor.currentContext?.findRenderObject();
+    final title = _titleAnchor.currentContext?.findRenderObject();
+    if (cover is! RenderBox || title is! RenderBox || !title.hasSize) return;
+    final top = MediaQuery.paddingOf(context).top + 24;
+    final titleY = title.localToGlobal(Offset.zero, ancestor: cover).dy;
+    _stickyLimit.value = (titleY - top - 48 - 12).clamp(0.0, double.infinity);
+  }
+
+  @override
+  void dispose() {
+    _stickyLimit.dispose();
+    super.dispose();
+  }
+
+  Widget _actions(BuildContext context, DestinationModel destination) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      IconButton.filled(
+        tooltip: context.l10n.back,
+        onPressed: () => context.canPop() ? context.pop() : context.go('/main'),
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size(48, 48),
+        ),
+        icon: const Icon(Icons.arrow_back_rounded),
+      ),
+      Consumer<FavoritesController>(
+        builder: (context, favorites, _) {
+          final selected = favorites.isFavorite(destination.id);
+          return IconButton.filled(
+            tooltip: selected
+                ? context.l10n.removeFavorite
+                : context.l10n.addFavorite,
+            onPressed: favorites.isSaving(destination.id)
+                ? null
+                : () => toggleFavoriteWithFeedback(
+                    context,
+                    favorites,
+                    destination.id,
+                    destination,
+                  ),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              disabledBackgroundColor: Colors.white,
+              minimumSize: const Size(48, 48),
+            ),
+            icon: AppIcon(
+              selected ? AppIcons.heartFilled : AppIcons.heartOutline,
+              color: selected ? AppColors.discovery : AppColors.textPrimary,
+            ),
+          );
+        },
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final d = widget.destination;
@@ -41,11 +109,12 @@ class _DestinationCoverState extends State<DestinationCover> {
       d.imageUrl,
       ...d.galleryImages,
     }.where((e) => e.trim().isNotEmpty).toList();
-    final image = images.isEmpty
-        ? ''
-        : images[_selected.clamp(0, images.length - 1)];
+    final selected = images.indexOf(widget.selectedImageUrl ?? d.imageUrl);
+    final image = images.isEmpty ? '' : images[selected < 0 ? 0 : selected];
     // Intrinsic content can grow for accessibility; normal content occupies exactly one viewport.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureTitle());
     return Stack(
+      key: _coverAnchor,
       children: [
         Positioned.fill(
           child: GestureDetector(
@@ -98,49 +167,12 @@ class _DestinationCoverState extends State<DestinationCover> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        IconButton.filled(
-                          tooltip: 'Volver',
-                          onPressed: () => context.pop(),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.textPrimary,
-                            minimumSize: const Size(48, 48),
-                          ),
-                          icon: const Icon(Icons.arrow_back_rounded),
-                        ),
-                        const Spacer(),
-                        Consumer<FavoritesController>(
-                          builder: (context, favorites, _) {
-                            final selected = favorites.isFavorite(d.id);
-                            return IconButton.filled(
-                              tooltip: selected
-                                  ? 'Quitar de favoritos'
-                                  : 'Guardar en favoritos',
-                              onPressed: () =>
-                                  favorites.toggleFavorite(d.id, d),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                minimumSize: const Size(48, 48),
-                              ),
-                              icon: AppIcon(
-                                selected
-                                    ? AppIcons.heartFilled
-                                    : AppIcons.heartOutline,
-                                color: selected
-                                    ? AppColors.discovery
-                                    : AppColors.textPrimary,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 48),
                     const Spacer(),
+                    SizedBox(key: _titleAnchor),
                     if (d.category.isNotEmpty)
                       Text(
-                        d.category,
+                        context.categoryLabel(d.category),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -148,7 +180,7 @@ class _DestinationCoverState extends State<DestinationCover> {
                       ),
                     const SizedBox(height: 8),
                     Text(
-                      d.name,
+                      context.destinationTitle(d.id, d.name),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 30,
@@ -182,7 +214,7 @@ class _DestinationCoverState extends State<DestinationCover> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                '${widget.rating!.toStringAsFixed(1)} (${widget.reviewCount} reseñas)',
+                                '${widget.rating!.toStringAsFixed(1)} (${context.l10n.reviewsCount(widget.reviewCount)})',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -217,13 +249,14 @@ class _DestinationCoverState extends State<DestinationCover> {
                                     const SizedBox(width: 8),
                                 itemBuilder: (context, i) => Semantics(
                                   button: true,
-                                  selected: i == _selected,
-                                  label:
-                                      'Fotografía ${i + 1} de ${images.length}',
+                                  selected: images[i] == image,
+                                  label: context.l10n.photoPosition(
+                                    i + 1,
+                                    images.length,
+                                  ),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(14),
                                     onTap: () {
-                                      setState(() => _selected = i);
                                       widget.onImageChanged(images[i]);
                                     },
                                     child: Container(
@@ -232,7 +265,7 @@ class _DestinationCoverState extends State<DestinationCover> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
-                                          color: i == _selected
+                                          color: images[i] == image
                                               ? AppColors.accent
                                               : Colors.transparent,
                                           width: 2,
@@ -255,9 +288,9 @@ class _DestinationCoverState extends State<DestinationCover> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Center(
+                    Center(
                       child: Text(
-                        'Desliza para descubrir el lugar ↓',
+                        context.l10n.uiDeslizaParaDescubrirElLugar,
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
@@ -265,6 +298,28 @@ class _DestinationCoverState extends State<DestinationCover> {
                 ),
               ),
             ),
+          ),
+        ),
+        Positioned(
+          top: MediaQuery.paddingOf(context).top + 24,
+          left: 24,
+          right: 24,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              widget.scrollController,
+              _stickyLimit,
+            ]),
+            builder: (context, child) {
+              final scroll = widget.scrollController;
+              final offset = scroll != null && scroll.hasClients
+                  ? scroll.offset
+                  : 0.0;
+              return Transform.translate(
+                offset: Offset(0, offset.clamp(0.0, _stickyLimit.value)),
+                child: child,
+              );
+            },
+            child: _actions(context, d),
           ),
         ),
       ],

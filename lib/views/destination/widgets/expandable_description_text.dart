@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -53,7 +54,11 @@ class _ExpandableDescriptionTextState extends State<ExpandableDescriptionText> {
             TextButton.icon(
               onPressed: () => setState(() => _expanded = !_expanded),
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
-              label: Text(_expanded ? 'Mostrar menos' : 'Leer descripción'),
+              label: Text(
+                _expanded
+                    ? context.l10n.showLess
+                    : context.l10n.readDescription,
+              ),
               iconAlignment: IconAlignment.end,
               icon: Icon(
                 _expanded

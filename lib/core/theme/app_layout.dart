@@ -25,6 +25,14 @@ abstract final class AppRadius {
 
 abstract final class AppSizing {
   static const double touchTarget = 48;
+
+  static bool compactNavigation(BuildContext context) =>
+      MediaQuery.sizeOf(context).height < 720;
+
+  static double navigationClearance(BuildContext context) =>
+      (compactNavigation(context) ? 88 : 102) +
+      MediaQuery.viewPaddingOf(context).bottom;
+
   static const double button = 56;
   static const double icon = 20;
 }

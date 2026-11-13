@@ -1,5 +1,5 @@
+import '../../core/theme/app_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../integration/services/app_update_service.dart';
 import '../home/home_screen.dart';
@@ -20,6 +20,7 @@ class MainLayout extends StatefulWidget {
 
 class MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+  bool _updateAvailable = false;
   final Set<int> _visitedTabs = {0};
 
   @override
@@ -64,26 +65,7 @@ class MainLayoutState extends State<MainLayout> {
     try {
       final release = await AppUpdateService().latestAvailable();
       if (!mounted || release == null) return;
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Actualización disponible'),
-          content: Text('PROXVEL ${release.versionName} ya está disponible.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Después'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                context.push('/profile/updates');
-              },
-              child: const Text('Actualizar'),
-            ),
-          ],
-        ),
-      );
+      setState(() => _updateAvailable = true);
     } catch (_) {
       // La aplicación sigue funcionando si no hay red o falla la consulta.
     }
@@ -122,12 +104,12 @@ class MainLayoutState extends State<MainLayout> {
               ? const FavoritesScreen()
               : const SizedBox.shrink(),
           _visitedTabs.contains(3)
-              ? const ProfileScreen()
+              ? ProfileScreen(updateAvailable: _updateAvailable)
               : const SizedBox.shrink(),
         ],
       ),
       bottomNavigationBar: SizedBox(
-        height: 146 + MediaQuery.viewPaddingOf(context).bottom,
+        height: AppSizing.navigationClearance(context),
       ),
     );
   }

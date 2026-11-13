@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_layout.dart';
 import '../../theme/app_text_styles.dart';
@@ -114,7 +115,7 @@ class _AnnouncementModalOverlayState extends State<AnnouncementModalOverlay> {
                             right: 8,
                             child: Semantics(
                               button: true,
-                              label: 'Cerrar',
+                              label: context.l10n.uiCerrar,
                               child: GestureDetector(
                                 onTap: onClose,
                                 child: Container(
@@ -156,7 +157,9 @@ class _AnnouncementModalOverlayState extends State<AnnouncementModalOverlay> {
                             constraints: const BoxConstraints(maxHeight: 220),
                             child: SingleChildScrollView(
                               child: Text(
-                                ann.message,
+                                context.l10n.localeName == 'en' && ann.contentLanguage != 'en'
+                                    ? '${context.l10n.spanishOriginal}\n\n${ann.message}'
+                                    : ann.message,
                                 style: AppTextStyles.bodySecondary,
                               ),
                             ),
@@ -167,8 +170,8 @@ class _AnnouncementModalOverlayState extends State<AnnouncementModalOverlay> {
                               Expanded(
                                 child: _ModalButton(
                                   label: important || !ann.hasAction
-                                      ? 'Entendido'
-                                      : 'Ahora no',
+                                      ? context.l10n.uiEntendido
+                                      : context.l10n.uiAhoraNo,
                                   onTap: onClose,
                                 ),
                               ),

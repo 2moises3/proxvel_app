@@ -1,4 +1,6 @@
+import '../../theme/app_layout.dart';
 import 'dart:ui';
+import '../../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/app_colors.dart';
@@ -17,7 +19,6 @@ class ProxvelBottomNavigation extends StatelessWidget {
   final double backdropOffset;
   final int currentIndex;
   final ValueChanged<int> onTap;
-  static const _labels = ['Inicio', 'Mapa', 'Favoritos', 'Perfil'];
   static const _icons = [
     AppIcons.navHome,
     AppIcons.navMap,
@@ -33,9 +34,12 @@ class ProxvelBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final labels = [l10n.home, l10n.map, l10n.favorites, l10n.profile];
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : const Duration(milliseconds: 240);
+    final compact = AppSizing.compactNavigation(context);
     final bottom = MediaQuery.viewPaddingOf(context).bottom;
     return Stack(
       children: [
@@ -96,14 +100,19 @@ class ProxvelBottomNavigation extends StatelessWidget {
         Transform.translate(
           offset: Offset(0, islandOffset),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(24, 56, 24, bottom + 18),
+            padding: EdgeInsets.fromLTRB(
+              AppSpace.screen,
+              56,
+              AppSpace.screen,
+              bottom + (compact ? AppSpace.content : 18),
+            ),
             child: Center(
               heightFactor: 1,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 360),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     border: Border.all(
                       color: const Color(0xFFDADAD6),
                       width: 1,
@@ -117,12 +126,12 @@ class ProxvelBottomNavigation extends StatelessWidget {
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                       child: Container(
                         foregroundDecoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(99),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
                           border: Border.all(
                             color: const Color(0xFFDADAD6),
                             width: 1,
@@ -134,13 +143,21 @@ class ProxvelBottomNavigation extends StatelessWidget {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               // Keep the selected capsule balanced, even on wide phones.
-                              final activeWidth = (constraints.maxWidth * .40)
-                                  .clamp(0.0, constraints.maxWidth - 144);
+                              final maxActive =
+                                  constraints.maxWidth -
+                                  3 * AppSizing.touchTarget;
+                              final activeWidth =
+                                  maxActive < AppSizing.touchTarget
+                                  ? constraints.maxWidth / 4
+                                  : (constraints.maxWidth * .40).clamp(
+                                      AppSizing.touchTarget,
+                                      maxActive,
+                                    );
                               final inactiveWidth =
                                   (constraints.maxWidth - activeWidth) / 3;
                               return Row(
                                 children: [
-                                  for (var i = 0; i < _labels.length; i++)
+                                  for (var i = 0; i < labels.length; i++)
                                     AnimatedContainer(
                                       duration: duration,
                                       curve: Curves.easeOutCubic,
@@ -150,32 +167,42 @@ class ProxvelBottomNavigation extends StatelessWidget {
                                       child: Semantics(
                                         selected: currentIndex == i,
                                         button: true,
-                                        label: _labels[i],
+                                        label: labels[i],
+                                        onTap: () => onTap(i),
                                         child: ExcludeSemantics(
                                           child: Tooltip(
-                                            message: _labels[i],
+                                            message: labels[i],
                                             child: Material(
                                               color: currentIndex == i
                                                   ? AppColors.accent
                                                   : Colors.transparent,
                                               borderRadius:
-                                                  BorderRadius.circular(99),
+                                                  BorderRadius.circular(
+                                                    AppRadius.pill,
+                                                  ),
                                               child: InkWell(
                                                 onTap: () => onTap(i),
                                                 borderRadius:
-                                                    BorderRadius.circular(99),
+                                                    BorderRadius.circular(
+                                                      AppRadius.pill,
+                                                    ),
                                                 child: ConstrainedBox(
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                        minHeight: 60,
-                                                      ),
+                                                  constraints: BoxConstraints(
+                                                    minHeight: compact
+                                                        ? AppSizing.touchTarget
+                                                        : 60,
+                                                  ),
                                                   child: Padding(
                                                     padding:
-                                                        const EdgeInsets.symmetric(
+                                                        EdgeInsets.symmetric(
                                                           horizontal: 6,
-                                                          vertical: 14,
+                                                          vertical: compact
+                                                              ? AppSpace.related
+                                                              : 14,
                                                         ),
-                                                    child: currentIndex == i
+                                                    child:
+                                                        currentIndex == i &&
+                                                            activeWidth >= 86
                                                         ? Row(
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
@@ -194,7 +221,7 @@ class ProxvelBottomNavigation extends StatelessWidget {
                                                               ),
                                                               Flexible(
                                                                 child: Text(
-                                                                  _labels[i],
+                                                                  labels[i],
                                                                   maxLines: 1,
                                                                   overflow:
                                                                       TextOverflow
@@ -214,7 +241,9 @@ class ProxvelBottomNavigation extends StatelessWidget {
                                                             ],
                                                           )
                                                         : AppIcon(
-                                                            _icons[i],
+                                                            currentIndex == i
+                                                                ? _selectedIcons[i]
+                                                                : _icons[i],
                                                             size: 23,
                                                             color: const Color(
                                                               0xFF202020,

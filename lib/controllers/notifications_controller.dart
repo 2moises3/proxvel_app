@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import '../integration/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../integration/services/notification_service.dart';
 import '../models/notification_model.dart';
@@ -12,7 +14,9 @@ class NotificationsController extends ChangeNotifier {
   int unreadCount = 0;
   bool isLoading = false;
   String? error;
+  bool connectionUnavailable = false;
 
+  int _feedGeneration = 0;
   Timer? _poll;
   static const Duration _pollEvery = Duration(seconds: 90);
 
@@ -20,15 +24,21 @@ class NotificationsController extends ChangeNotifier {
 
   /// Carga la lista completa (pantalla de notificaciones, pull-to-refresh).
   Future<void> load() async {
+    final generation = ++_feedGeneration;
     isLoading = true;
     error = null;
+    connectionUnavailable = false;
     notifyListeners();
     try {
       final feed = await _service.getFeed();
+      if (generation != _feedGeneration) return;
       items = feed.items;
       unreadCount = feed.unreadCount;
     } catch (e) {
-      error = 'No pudimos cargar tus notificaciones. Verifica tu conexión e intenta de nuevo.';
+      if (generation != _feedGeneration) return;
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
+      error =
+          'No pudimos cargar tus notificaciones. Verifica tu conexión e intenta de nuevo.';
     }
     isLoading = false;
     notifyListeners();
@@ -59,7 +69,9 @@ class NotificationsController extends ChangeNotifier {
     if (n.isRead) return;
     final before = items;
     final beforeCount = unreadCount;
-    items = [for (final i in items) i.id == n.id ? i.copyWith(isRead: true) : i];
+    items = [
+      for (final i in items) i.id == n.id ? i.copyWith(isRead: true) : i,
+    ];
     if (unreadCount > 0) unreadCount--;
     notifyListeners();
     try {
@@ -91,16 +103,19 @@ class NotificationsController extends ChangeNotifier {
 
   /// Limpia todo el estado en memoria. Llamar al logout/cambio de usuario.
   void clearState() {
+    _feedGeneration++;
     stopPolling();
     items = [];
     unreadCount = 0;
     error = null;
+    connectionUnavailable = false;
     isLoading = false;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _feedGeneration++;
     stopPolling();
     super.dispose();
   }

@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -162,7 +163,7 @@ class SessionWelcomeView extends StatelessWidget {
                               Semantics(
                                 liveRegion: true,
                                 child: Text(
-                                  'Ya estás dentro.',
+                                  context.l10n.signedIn,
                                   textAlign: TextAlign.center,
                                   style: AppTypography.style(
                                     fontSize: 34,
@@ -174,7 +175,7 @@ class SessionWelcomeView extends StatelessWidget {
                               ),
                               const SizedBox(height: 14),
                               Text(
-                                'Sesión iniciada.\nEstamos preparando tu inicio y tus recomendaciones.',
+                                context.l10n.preparingHome,
                                 textAlign: TextAlign.center,
                                 style: AppTypography.style(
                                   fontSize: 16,
@@ -191,7 +192,7 @@ class SessionWelcomeView extends StatelessWidget {
                           child: LinearProgressIndicator(
                             // Indeterminado: las peticiones no reportan un porcentaje.
                             value: reduceMotion ? .5 : null,
-                            semanticsLabel: 'Preparando contenido',
+                            semanticsLabel: context.l10n.preparingContent,
                             minHeight: 4,
                             borderRadius: BorderRadius.circular(8),
                             color: AppColors.accent,
@@ -201,8 +202,8 @@ class SessionWelcomeView extends StatelessWidget {
                         const SizedBox(height: 16),
                         Text(
                           onContinue == null
-                              ? 'Un momento para empezar.'
-                              : 'Está tardando un poco más de lo habitual.',
+                              ? context.l10n.aMoment
+                              : context.l10n.takingLonger,
                           textAlign: TextAlign.center,
                           style: AppTypography.style(
                             fontSize: 13,
@@ -219,7 +220,7 @@ class SessionWelcomeView extends StatelessWidget {
                                   style: TextButton.styleFrom(
                                     foregroundColor: Colors.white,
                                   ),
-                                  child: const Text('Continuar al inicio'),
+                                  child: Text(context.l10n.continueHome),
                                 ),
                         ),
                       ],

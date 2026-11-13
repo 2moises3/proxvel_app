@@ -1,3 +1,5 @@
+import '../../core/widgets/maps/visit_progress.dart';
+import '../../core/localization/l10n.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -55,6 +57,7 @@ class _TourismMapViewState extends State<TourismMapView>
   LatLng? _from, _to;
   int _tileRevision = 0;
   double _fromZoom = 5, _toZoom = 5;
+  String? _language;
   bool get _focused => widget.destinationId != null;
 
   @override
@@ -62,6 +65,14 @@ class _TourismMapViewState extends State<TourismMapView>
     super.initState();
     _selectedId = widget.destinationId;
     _flight.addListener(_advanceCamera);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = context.l10n.localeName;
+    if (_language == language) return;
+    _language = language;
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
@@ -208,18 +219,41 @@ class _TourismMapViewState extends State<TourismMapView>
     final point = _location.position;
     if (point != null && center) {
       _fly(LatLng(point.latitude, point.longitude), 13);
-    } else if (_location.error != null) {
-      _message(_location.error!);
+    }
+    if (center && (_location.issue != null || _location.error != null)) {
+      _message(_location.message(context), retryLocation: true);
     }
   }
 
-  void _message(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.fromLTRB(20, 0, 20, widget.embedded ? 120 : 20),
-    ),
-  );
+  void _message(String message, {bool retryLocation = false}) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: retryLocation
+              ? SnackBarAction(
+                  label: _location.needsSettings || _location.serviceDisabled
+                      ? context.l10n.uiAbrirAjustesDeUbicacion
+                      : context.l10n.retry,
+                  onPressed: () {
+                    if (_location.needsSettings || _location.serviceDisabled) {
+                      _location.openSettingsAndRetry();
+                    } else {
+                      _locate();
+                    }
+                  },
+                )
+              : null,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            widget.embedded
+                ? AppSizing.navigationClearance(context)
+                : AppSpace.card,
+          ),
+        ),
+      );
 
   Future<void> _googleMaps(MapMarkerModel place) async {
     try {
@@ -228,11 +262,11 @@ class _TourismMapViewState extends State<TourismMapView>
         mode: LaunchMode.externalApplication,
       );
       if (!opened && mounted) {
-        _message('No pudimos abrir Google Maps. Inténtalo otra vez.');
+        _message(context.l10n.uiNoPudimosAbrirGoogleMapsIntentalo);
       }
     } catch (_) {
       if (mounted) {
-        _message('No pudimos abrir Google Maps. Inténtalo otra vez.');
+        _message(context.l10n.uiNoPudimosAbrirGoogleMapsIntentalo);
       }
     }
   }
@@ -241,10 +275,7 @@ class _TourismMapViewState extends State<TourismMapView>
     '/destination/${Uri.encodeComponent(place.destinationId)}?source=map',
   );
 
-  Future<void> _listPlaces(
-    List<MapMarkerModel> places, {
-    String title = 'Elige tu próxima parada',
-  }) async {
+  Future<void> _listPlaces(List<MapMarkerModel> places, {String? title}) async {
     FocusScope.of(context).unfocus();
     final selected = await showModalBottomSheet<MapMarkerModel>(
       context: context,
@@ -265,7 +296,7 @@ class _TourismMapViewState extends State<TourismMapView>
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                 child: Text(
-                  title,
+                  title ?? context.l10n.pickNextStop,
                   style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w500,
@@ -304,7 +335,10 @@ class _TourismMapViewState extends State<TourismMapView>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      p.destination,
+                                      context.destinationTitle(
+                                        p.destinationId,
+                                        p.destination,
+                                      ),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w500,
@@ -355,9 +389,9 @@ class _TourismMapViewState extends State<TourismMapView>
             final selected = places
                 .where((m) => m.destinationId == _selectedId)
                 .firstOrNull;
-            final bottom =
-                (widget.embedded ? 112.0 : 20.0) +
-                MediaQuery.viewPaddingOf(context).bottom;
+            final bottom = widget.embedded
+                ? AppSizing.navigationClearance(context)
+                : AppSpace.card + MediaQuery.viewPaddingOf(context).bottom;
             final compact = bounds.maxHeight < 600;
             final user = _location.position;
             final groups = _ready
@@ -437,7 +471,10 @@ class _TourismMapViewState extends State<TourismMapView>
                                 imageUrl: group.items.first.coverImageUrl ?? '',
                                 label: group.items.length > 1
                                     ? '${group.items.length} destinos cercanos'
-                                    : group.items.first.destination,
+                                    : context.destinationTitle(
+                                        group.items.first.destinationId,
+                                        group.items.first.destination,
+                                      ),
                                 count: group.items.length,
                                 selected:
                                     group.items.first.destinationId ==
@@ -453,7 +490,9 @@ class _TourismMapViewState extends State<TourismMapView>
                                   } else if (_map.camera.zoom >= 16) {
                                     _listPlaces(
                                       group.items,
-                                      title: 'Muy cerca, historias distintas',
+                                      title: context
+                                          .l10n
+                                          .uiMuyCercaHistoriasDistintas,
                                     );
                                   } else {
                                     _fitPlaces(group.items);
@@ -468,7 +507,7 @@ class _TourismMapViewState extends State<TourismMapView>
                               width: 36,
                               height: 36,
                               child: Semantics(
-                                label: 'Tu ubicación aproximada',
+                                label: context.l10n.approxLocation,
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
@@ -537,7 +576,11 @@ class _TourismMapViewState extends State<TourismMapView>
                                       ? null
                                       : categories[i - 1];
                                   return ChoiceChip(
-                                    label: Text(category ?? 'Todos'),
+                                    label: Text(
+                                      category == null
+                                          ? context.l10n.all
+                                          : context.categoryLabel(category),
+                                    ),
                                     selected: _category == category,
                                     showCheckmark: false,
                                     selectedColor: AppColors.accent,
@@ -586,7 +629,7 @@ class _TourismMapViewState extends State<TourismMapView>
                   child: Column(
                     children: [
                       _control(
-                        'Mi ubicación',
+                        context.l10n.uiMiUbicacion,
                         null,
                         _location.busy ? null : () => _locate(),
                         active: user != null,
@@ -596,22 +639,22 @@ class _TourismMapViewState extends State<TourismMapView>
                       const SizedBox(height: 8),
                       _control(
                         _focused
-                            ? 'Centrar destino'
-                            : 'Ver todos los resultados',
+                            ? context.l10n.uiCentrarDestino
+                            : context.l10n.uiVerTodosLosResultados,
                         AppIcons.compass,
                         () => _fitPlaces(places),
                       ),
                       if (!compact) ...[
                         const SizedBox(height: 8),
                         _control(
-                          'Acercar mapa',
+                          context.l10n.uiAcercarMapa,
                           null,
                           () => _fly(_map.camera.center, _map.camera.zoom + 1),
                           icon: Icons.add_rounded,
                         ),
                         const SizedBox(height: 8),
                         _control(
-                          'Alejar mapa',
+                          context.l10n.uiAlejarMapa,
                           null,
                           () => _fly(_map.camera.center, _map.camera.zoom - 1),
                           icon: Icons.remove_rounded,
@@ -676,14 +719,14 @@ class _TourismMapViewState extends State<TourismMapView>
                         padding: const EdgeInsets.all(10),
                         child: Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'El fondo del mapa no pudo cargar. Tus destinos siguen disponibles.',
+                                context.l10n.mapUnavailable,
                                 style: TextStyle(fontSize: 12),
                               ),
                             ),
                             IconButton(
-                              tooltip: 'Reintentar mapa',
+                              tooltip: context.l10n.retryMap,
                               onPressed: () => setState(() {
                                 _tilesFailed = false;
                                 _tileRevision++;
@@ -712,7 +755,7 @@ class _TourismMapViewState extends State<TourismMapView>
       children: [
         if (!widget.embedded)
           IconButton(
-            tooltip: 'Volver',
+            tooltip: context.l10n.back,
             onPressed: () => context.pop(),
             icon: const Icon(Icons.arrow_back_rounded),
           )
@@ -727,10 +770,10 @@ class _TourismMapViewState extends State<TourismMapView>
           ),
         Expanded(
           child: _focused
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 17),
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 17),
                   child: Text(
-                    'Ubicación del destino',
+                    context.l10n.destinationLocation,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 )
@@ -739,7 +782,7 @@ class _TourismMapViewState extends State<TourismMapView>
                   textInputAction: TextInputAction.search,
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: 'Destino, ciudad o región',
+                    hintText: context.l10n.mapSearchHint,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -762,7 +805,7 @@ class _TourismMapViewState extends State<TourismMapView>
         ),
         if (!_focused && _search.text.isNotEmpty)
           IconButton(
-            tooltip: 'Limpiar búsqueda',
+            tooltip: context.l10n.clearMapSearch,
             onPressed: () {
               setState(() {
                 _search.clear();
@@ -785,11 +828,9 @@ class _TourismMapViewState extends State<TourismMapView>
     borderRadius: BorderRadius.circular(22),
     clipBehavior: Clip.antiAlias,
     child: places.isEmpty
-        ? const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'No encontramos coincidencias. Prueba con otra región o destino.',
-            ),
+        ? Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(context.l10n.noMapMatches),
           )
         : ConstrainedBox(
             constraints: BoxConstraints(
@@ -820,7 +861,10 @@ class _TourismMapViewState extends State<TourismMapView>
                     ),
                   ),
                   title: Text(
-                    place.destination,
+                    context.destinationTitle(
+                      place.destinationId,
+                      place.destination,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -890,6 +934,13 @@ class _TourismMapViewState extends State<TourismMapView>
           selected.longitude,
         ),
         locationBusy: _location.busy,
+        locationNotice: _location.issue == null && _location.error == null
+            ? null
+            : _location.message(context),
+        locationActionLabel:
+            _location.needsSettings || _location.serviceDisabled
+            ? context.l10n.uiAbrirAjustesDeUbicacion
+            : null,
         isPinned: selected.destinationId == _pinnedDestinationId,
         onTogglePin: () {
           final nextPinned = (_pinnedDestinationId == selected.destinationId)
@@ -908,7 +959,10 @@ class _TourismMapViewState extends State<TourismMapView>
                 visitCtrl.setPendingDestination(
                   PendingSealDestination(
                     destinationId: selected.destinationId,
-                    destinationName: selected.destination,
+                    destinationName: context.destinationTitle(
+                      selected.destinationId,
+                      selected.destination,
+                    ),
                     latitude: selected.latitude,
                     longitude: selected.longitude,
                     region: selected.region,
@@ -922,7 +976,13 @@ class _TourismMapViewState extends State<TourismMapView>
             }
           } catch (_) {}
         },
-        onLocate: () => _locate(center: false),
+        onLocate: () {
+          if (_location.needsSettings || _location.serviceDisabled) {
+            _location.openSettingsAndRetry();
+          } else {
+            _locate(center: false);
+          }
+        },
         onGoogleMaps: () => _googleMaps(selected),
         onOpen: () => _open(selected),
         onClose: _focused ? null : () => setState(() => _selectedId = null),
@@ -952,13 +1012,13 @@ class _TourismMapViewState extends State<TourismMapView>
                 Expanded(
                   child: Text(
                     controller.isLoading
-                        ? 'Preparando tu mapa…'
+                        ? context.l10n.uiPreparandoTuMapa
                         : failed
-                        ? 'Volvamos a intentarlo'
+                        ? context.l10n.uiVolvamosAIntentarlo
                         : empty
                         ? _focused
-                              ? 'Ubicación no disponible'
-                              : 'Probemos otra búsqueda'
+                              ? context.l10n.uiUbicacionNoDisponible
+                              : context.l10n.uiProbemosOtraBusqueda
                         : '${places.length} lugares, muchas historias',
                     style: const TextStyle(
                       fontSize: 17,
@@ -968,7 +1028,7 @@ class _TourismMapViewState extends State<TourismMapView>
                 ),
                 if (!empty && !failed && !controller.isLoading)
                   IconButton(
-                    tooltip: 'Ver lista de destinos',
+                    tooltip: context.l10n.listDestinations,
                     onPressed: () => _listPlaces(places),
                     icon: const AppIcon(
                       AppIcons.chevronRight,
@@ -983,11 +1043,11 @@ class _TourismMapViewState extends State<TourismMapView>
                   ? controller.errorMessage!
                   : empty
                   ? _focused
-                        ? 'Este destino aún no tiene coordenadas publicadas.'
-                        : 'Cambia el nombre o elige otra categoría.'
+                        ? context.l10n.uiEsteDestinoAunNoTieneCoordenadas2
+                        : context.l10n.uiCambiaElNombreOEligeOtra
                   : controller.detailsUnavailable
-                  ? 'Las ubicaciones están listas. No pudimos cargar las fotos y descripciones.'
-                  : 'Toca una foto para descubrir el lugar. Amplía los grupos para ver cada destino.',
+                  ? context.l10n.uiLasUbicacionesEstanListasNoPudimos
+                  : context.l10n.uiTocaUnaFotoParaDescubrirEl,
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
@@ -997,7 +1057,7 @@ class _TourismMapViewState extends State<TourismMapView>
             if (failed || controller.detailsUnavailable || (_focused && empty))
               TextButton(
                 onPressed: () => _load(refresh: true),
-                child: const Text('Reintentar'),
+                child: Text(context.l10n.retry),
               ),
             if (empty && !_focused && !failed)
               TextButton(
@@ -1010,7 +1070,7 @@ class _TourismMapViewState extends State<TourismMapView>
                   });
                   _fitPlaces(controller.markers);
                 },
-                child: const Text('Ver todos los destinos'),
+                child: Text(context.l10n.viewAllDestinations),
               ),
           ],
         ),
@@ -1062,7 +1122,10 @@ class _TourismMapViewState extends State<TourismMapView>
                       children: [
                         Flexible(
                           child: Text(
-                            pinnedPlace.destination,
+                            context.destinationTitle(
+                              pinnedPlace.destinationId,
+                              pinnedPlace.destination,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -1082,9 +1145,9 @@ class _TourismMapViewState extends State<TourismMapView>
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            'Fijado',
-                            style: TextStyle(
+                          child: Text(
+                            context.l10n.pinned,
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -1095,156 +1158,45 @@ class _TourismMapViewState extends State<TourismMapView>
                     ),
                     Text(
                       distanceMeters != null
-                          ? '${mapDistanceLabel(distanceMeters)} en línea recta'
-                          : 'Toca para enfocar en mapa',
+                          ? context.l10n.distanceStraightLine(
+                              mapDistanceLabel(distanceMeters),
+                            )
+                          : context.l10n.uiTocaParaEnfocarEnMapa,
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: AppColors.textSecondary,
                       ),
                     ),
+                    if (context.watch<VisitController?>() case final visits?)
+                      VisitProgress(
+                        controller: visits,
+                        location: _location,
+                        destinationId: pinnedPlace.destinationId,
+                        latitude: pinnedPlace.latitude,
+                        longitude: pinnedPlace.longitude,
+                        radius: pinnedPlace.geofenceRadiusMeters,
+                      ),
                   ],
                 ),
               ),
               const SizedBox(width: 6),
-              Builder(
-                builder: (context) {
-                  VisitController? visitCtrl;
-                  try {
-                    visitCtrl = context.watch<VisitController>();
-                  } catch (_) {
-                    visitCtrl = null;
-                  }
-                  if (visitCtrl == null) return const SizedBox.shrink();
-                  final ctrl = visitCtrl;
-
-                  final active = ctrl.activeVisit;
-                  final isVisitingThis =
-                      active != null &&
-                      active.destinationId == pinnedPlace.destinationId &&
-                      active.isInProgress;
-
-                  if (isVisitingThis) {
-                    return Container(
-                      margin: const EdgeInsets.only(right: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.accent),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.water_drop_rounded,
-                            size: 12,
-                            color: AppColors.accent,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${active.remainingMinutes} min',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final isInside =
-                      distanceMeters != null &&
-                      distanceMeters <= pinnedPlace.geofenceRadiusMeters;
-                  if (isInside) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ElevatedButton.icon(
-                        onPressed: ctrl.isActionLoading
-                            ? null
-                            : () async {
-                                await _location.locate(requestPermission: true);
-                                final position = _location.position;
-                                if (position == null) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          _location.error ??
-                                              'Activa tu ubicación para iniciar la visita.',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return;
-                                }
-                                final ok = await ctrl.startCheckIn(
-                                  destinationId: pinnedPlace.destinationId,
-                                  latitude: position.latitude,
-                                  longitude: position.longitude,
-                                );
-                                if (context.mounted && ok) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '📍 ¡Check-in iniciado en ${pinnedPlace.destination}! Cargando en tu Atlas.',
-                                      ),
-                                      backgroundColor: AppColors.primary,
-                                    ),
-                                  );
-                                } else if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ctrl.error ??
-                                            'No pudimos iniciar la visita.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.location_on_rounded, size: 14),
-                        label: const Text(
-                          'Check-in',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return const SizedBox.shrink();
-                },
-              ),
               IconButton(
-                tooltip: 'Desfijar destino',
+                tooltip: context.l10n.unpinDestination,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 icon: const Icon(
                   Icons.close_rounded,
                   size: 17,
                   color: AppColors.textSecondary,
                 ),
-                onPressed: () => setState(() => _pinnedDestinationId = null),
+                onPressed: () {
+                  final visits = context.read<VisitController?>();
+                  if (visits?.latestStampedDestinationId ==
+                      pinnedPlace.destinationId) {
+                    visits?.dismissStampedStatus();
+                  }
+                  setState(() => _pinnedDestinationId = null);
+                },
               ),
             ],
           ),

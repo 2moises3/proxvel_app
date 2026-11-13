@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'proxvel_empty_state.dart';
@@ -15,9 +16,9 @@ class EmptyProfileForAiState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ProxvelEmptyState(
     icon: Icons.auto_awesome_rounded,
-    title: 'Cuéntanos cómo te gusta viajar',
+    title: context.l10n.uiCuentanosComoTeGustaViajar,
     subtitle: message,
-    actionLabel: showAction ? 'Elegir mis preferencias' : null,
+    actionLabel: showAction ? context.l10n.uiElegirMisPreferencias : null,
     onAction: showAction ? () => context.push('/profile/preferences') : null,
   );
 }

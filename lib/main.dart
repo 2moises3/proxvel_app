@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/localization/l10n.dart';
 import 'package:provider/provider.dart';
 import 'app.dart';
 import 'integration/local/local_storage_service.dart';
@@ -27,7 +28,7 @@ void main() async {
           context.go('/welcome');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Tu sesión expiró. Inicia sesión nuevamente.'),
+              content: Text(context.errorText('Tu sesión expiró. Inicia sesión nuevamente.')),
               backgroundColor: Colors.red.shade600,
             ),
           );
@@ -50,7 +51,7 @@ void main() async {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message),
+            content: Text(context.errorText(message)),
             backgroundColor: Colors.orange.shade800,
           ),
         );

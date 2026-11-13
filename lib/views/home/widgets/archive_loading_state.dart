@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../controllers/archive_controller.dart';
 import '../../../core/theme/app_colors.dart';
@@ -23,19 +24,19 @@ class ArchiveLoadingState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Preparando tus destinos…', textAlign: TextAlign.center),
+          Text(context.l10n.preparingDestinations, textAlign: TextAlign.center),
         ] else ...[
           const Icon(Icons.cloud_off_rounded, color: AppColors.discovery),
           const SizedBox(height: 12),
-          const Text(
-            'No pudimos recuperar tus destinos ocultos. Reintenta para mostrar tu selección.',
+          Text(
+            context.l10n.restoreHiddenError,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: controller.loadArchives,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Reintentar'),
+            label: Text(context.l10n.retry),
           ),
         ],
       ],

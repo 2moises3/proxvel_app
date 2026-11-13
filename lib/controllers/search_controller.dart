@@ -1,3 +1,5 @@
+import '../integration/api/api_client.dart';
+import '../core/localization/destination_names.dart';
 import 'package:flutter/material.dart';
 import '../models/destination_model.dart';
 import '../models/seasonality_model.dart';
@@ -118,14 +120,17 @@ class SearchResultItem {
 class SearchController extends ChangeNotifier {
   final DestinationService _destinationService;
   final LocalStorageService _storageService;
+  int _generation = 0;
   bool isLoading = false;
   List<SearchResultItem> results = [];
   SearchFilters filters = const SearchFilters();
   String? error;
+  bool connectionUnavailable = false;
 
   // Unique values for filter options (populated from data)
   List<String> availableRegions = [];
   List<String> availableCostLevels = [];
+
   /// Si falló la carga del clima/afluencia del mes, aquí queda el aviso para mostrar.
   String? contextError;
   List<String> availableCategories = [];
@@ -148,29 +153,38 @@ class SearchController extends ChangeNotifier {
     bool? aiSort,
     bool hasProfile = false,
   }) async {
+    final generation = ++_generation;
     if (newFilters != null) filters = newFilters;
     if (aiSort != null) aiSortEnabled = aiSort;
     isLoading = true;
     error = null;
+    connectionUnavailable = false;
     aiBlockedNoProfile = false;
     notifyListeners();
 
     try {
       final all = await _destinationService.getDestinations();
+      if (generation != _generation) return;
 
       // Opciones de filtro con los datos reales (se descartan los vacíos).
-      availableRegions = all
-          .map((d) => d.region)
-          .where((r) => r.trim().isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort((a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)));
-      availableCategories = all
-          .map((d) => d.category)
-          .where((c) => c.trim().isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort((a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)));
+      availableRegions =
+          all
+              .map((d) => d.region)
+              .where((r) => r.trim().isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort(
+              (a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)),
+            );
+      availableCategories =
+          all
+              .map((d) => d.category)
+              .where((c) => c.trim().isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort(
+              (a, b) => normalizeForSearch(a).compareTo(normalizeForSearch(b)),
+            );
 
       availableCostLevels = [
         for (final level in kCostOptions.keys)
@@ -182,13 +196,16 @@ class SearchController extends ChangeNotifier {
       contextError = null;
       if (filters.climate != null || filters.crowd != null) {
         try {
-          monthContext = await _destinationService
-              .getMonthContext(filters.month ?? DateTime.now().month);
+          monthContext = await _destinationService.getMonthContext(
+            filters.month ?? DateTime.now().month,
+          );
+          if (generation != _generation) return;
         } catch (e) {
+          if (generation != _generation) return;
+          connectionUnavailable = e is ApiException && e.statusCode == 0;
           contextError =
               'No pudimos cargar el clima y la afluencia de ese mes. Intenta de nuevo.';
           error = contextError;
-          results = [];
           isLoading = false;
           notifyListeners();
           return;
@@ -200,17 +217,18 @@ class SearchController extends ChangeNotifier {
       final tourismText = q.isEmpty
           ? <String, String>{}
           : await _destinationService.getTourismSearchIndex();
+      if (generation != _generation) return;
       if (q.isNotEmpty) _storageService.addRecentSearch(filters.query.trim());
       final filtered = all.where((d) {
         if (q.isNotEmpty) {
           final matches = [
             d.name,
+            englishDestinationNames[d.id] ?? '',
             d.city,
             d.region,
             d.category,
             tourismText[d.id] ?? '',
-          ]
-              .any((field) => normalizeForSearch(field).contains(q));
+          ].any((field) => normalizeForSearch(field).contains(q));
           if (!matches) return false;
         }
         if (filters.region != null && d.region != filters.region) return false;
@@ -219,8 +237,9 @@ class SearchController extends ChangeNotifier {
         }
         if (monthContext != null) {
           final c = monthContext[d.id];
-          if (c == null) return false; // sin datos del mes: no se puede afirmar nada
-          if (filters.climate != null && !c.climateFavorable(filters.climate!)) {
+          if (c == null) return false;
+          if (filters.climate != null &&
+              !c.climateFavorable(filters.climate!)) {
             return false;
           }
           if (filters.crowd != null && c.aforoNivel != filters.crowd) {
@@ -239,27 +258,38 @@ class SearchController extends ChangeNotifier {
         // porcentaje ni etiqueta y va al final: no se inventa un 0 %.
         final enriched = <SearchResultItem>[];
         for (final d in filtered) {
-          final info = await _destinationService.getRankingInfo(d.id, month: filters.month);
-          enriched.add(SearchResultItem(
-            destination: d,
-            compatibility: info?.percent,
-            contextualScore: info?.score,
-            rankingPosition: info?.rank,
-            label: info?.label,
-          ));
+          final info = await _destinationService.getRankingInfo(
+            d.id,
+            month: filters.month,
+          );
+          if (generation != _generation) return;
+          enriched.add(
+            SearchResultItem(
+              destination: d,
+              compatibility: info?.percent,
+              contextualScore: info?.score,
+              rankingPosition: info?.rank,
+              label: info?.label,
+            ),
+          );
         }
         final compatFiltered = filters.minCompatibility != null
             ? enriched
-                .where((r) =>
-                    r.compatibility != null &&
-                    r.compatibility! >= filters.minCompatibility!)
-                .toList()
+                  .where(
+                    (r) =>
+                        r.compatibility != null &&
+                        r.compatibility! >= filters.minCompatibility!,
+                  )
+                  .toList()
             : enriched;
-        compatFiltered.sort(
-            (a, b) {
-              if (a.rankingPosition != null && b.rankingPosition != null) return a.rankingPosition!.compareTo(b.rankingPosition!);
-              return (b.contextualScore ?? -double.infinity).compareTo(a.contextualScore ?? -double.infinity);
-            });
+        compatFiltered.sort((a, b) {
+          if (a.rankingPosition != null && b.rankingPosition != null) {
+            return a.rankingPosition!.compareTo(b.rankingPosition!);
+          }
+          return (b.contextualScore ?? -double.infinity).compareTo(
+            a.contextualScore ?? -double.infinity,
+          );
+        });
         results = compatFiltered;
       } else {
         // ── Orden normal: alfabético. Sin scores IA inventados. ──
@@ -267,18 +297,27 @@ class SearchController extends ChangeNotifier {
           aiBlockedNoProfile = true;
         }
         filtered.sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
         results = filtered
             .map((d) => SearchResultItem(destination: d))
             .toList();
       }
     } catch (e) {
-      error = 'No pudimos buscar destinos. Revisa tu conexión e intenta de nuevo.';
-      results = [];
+      if (generation != _generation) return;
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
+      error =
+          'No pudimos buscar destinos. Revisa tu conexión e intenta de nuevo.';
     }
 
     isLoading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    super.dispose();
   }
 
   void clearFilters() {

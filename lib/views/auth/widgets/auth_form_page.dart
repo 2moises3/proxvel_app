@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
@@ -181,7 +182,7 @@ class AuthSubmitButton extends StatelessWidget {
       ),
       child: isLoading
           ? Semantics(
-              label: 'Procesando',
+              label: context.l10n.processing,
               child: const SizedBox(
                 width: 22,
                 height: 22,

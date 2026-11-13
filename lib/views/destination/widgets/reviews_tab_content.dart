@@ -1,3 +1,5 @@
+import '../../../core/widgets/states/localized_review_text.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -47,10 +49,10 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Voces de viajeros', style: AppTextStyles.h2),
+        Text(context.l10n.travelVoices, style: AppTextStyles.h2),
         const SizedBox(height: 8),
-        const Text(
-          'Experiencias reales para preparar la tuya.',
+        Text(
+          context.l10n.uiExperienciasRealesParaPrepararLaTuya,
           style: AppTextStyles.bodySecondary,
         ),
         const SizedBox(height: 20),
@@ -66,6 +68,7 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
             onPressed: () async {
               await context.push<bool>(
                 '/feedback/${controller.destination!.id}',
+                extra: controller.destination,
               );
               if (mounted) await _refresh();
             },
@@ -74,7 +77,7 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
               size: 18,
               color: AppColors.textPrimary,
             ),
-            label: const Text('Escribir reseña'),
+            label: Text(context.l10n.writeReview),
           ),
         ),
         if (_refreshing)
@@ -84,13 +87,13 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
           ),
         const SizedBox(height: 24),
         if (controller.hasReviewsError) ...[
-          const Text(
-            'No pudimos cargar las reseñas. Tus datos del destino siguen disponibles.',
+          Text(
+            context.l10n.uiNoPudimosCargarLasResenasTus,
             style: AppTextStyles.bodySecondary,
           ),
           TextButton(
             onPressed: _refreshing ? null : _refresh,
-            child: const Text('Reintentar'),
+            child: Text(context.l10n.retry),
           ),
         ] else if (reviews.isEmpty)
           Container(
@@ -100,18 +103,18 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Column(
+            child: Column(
               children: [
                 AppIcon(AppIcons.star, color: AppColors.discovery, size: 32),
                 SizedBox(height: 12),
                 Text(
-                  'Cada viaje tiene algo que contar.',
+                  context.l10n.uiCadaViajeTieneAlgoQueContar,
                   style: AppTextStyles.cardTitle,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Si ya conoces este lugar, tu experiencia puede ayudar al próximo viajero.',
+                  context.l10n.uiSiYaConocesEsteLugarTu,
                   style: AppTextStyles.bodySecondary,
                   textAlign: TextAlign.center,
                 ),
@@ -143,7 +146,7 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${reviews.length} reseñas',
+                      context.l10n.reviewsCount(reviews.length),
                       style: AppTextStyles.bodySecondary,
                     ),
                   ],
@@ -213,7 +216,7 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
               for (final stars in <int?>[null, 5, 4, 3, 2, 1])
                 ChoiceChip(
                   label: stars == null
-                      ? const Text('Todas')
+                      ? Text(context.l10n.reviewFilterAll)
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -246,10 +249,10 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
           ),
           const SizedBox(height: 20),
           if (filtered.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text(
-                'Aún no hay reseñas con esta puntuación.',
+                context.l10n.uiAunNoHayResenasConEsta,
                 style: AppTextStyles.bodySecondary,
               ),
             ),
@@ -284,7 +287,11 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _authorLine(review.authorName, review.createdAt),
+                            _authorLine(
+                              context,
+                              review.authorName,
+                              review.createdAt,
+                            ),
                             style: AppTextStyles.label,
                           ),
                         ),
@@ -302,15 +309,20 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Text(review.reviewText, style: AppTextStyles.body1),
+                    LocalizedReviewText(
+                      key: ValueKey(review.reviewId),
+                      reviewId: review.reviewId,
+                      text: review.reviewText,
+                      style: AppTextStyles.body1,
+                    ),
                     if (review.reviewId != null && !review.isOwn)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () =>
                               _reportReview(context, review.reviewId!),
-                          child: const Text(
-                            'Reportar',
+                          child: Text(
+                            context.l10n.reportReview,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -326,7 +338,7 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
             Center(
               child: TextButton(
                 onPressed: () => setState(() => _visible += 10),
-                child: const Text('Ver más reseñas'),
+                child: Text(context.l10n.moreReviews),
               ),
             ),
         ],
@@ -335,29 +347,14 @@ class _ReviewsTabContentState extends State<ReviewsTabContent> {
   }
 }
 
-const _kMonths = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
-
 /// «Lucía P. · octubre 2026». Sin nombre: «Viajero PROXVEL».
-String _authorLine(String? author, String? createdAt) {
+String _authorLine(BuildContext context, String? author, String? createdAt) {
   final who = (author == null || author.trim().isEmpty)
-      ? 'Viajero PROXVEL'
+      ? context.l10n.proxvelTraveler
       : author;
   final date = DateTime.tryParse(createdAt ?? '');
   if (date != null) {
-    return '$who · ${_kMonths[date.month - 1]} ${date.year}';
+    return '$who · ${context.fullMonth(date.month)} ${date.year}';
   }
   return who;
 }
@@ -387,16 +384,28 @@ Future<void> _reportReview(BuildContext context, String reviewId) async {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(22, 20, 22, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 8),
             child: Text(
-              '¿Por qué reportas esta reseña?',
+              ctx.l10n.localeName == 'en'
+                  ? 'Why are you reporting this review?'
+                  : '¿Por qué reportas esta reseña?',
               style: AppTextStyles.sectionTitle,
             ),
           ),
           for (final e in _kReportReasons.entries)
             ListTile(
-              title: Text(e.value),
+              title: Text(
+                ctx.l10n.localeName == 'en'
+                    ? const {
+                        'ofensiva': 'Offensive or discriminatory',
+                        'falsa': 'Appears fake or misleading',
+                        'spam': 'Advertising or spam',
+                        'datos_personales': 'Contains personal information',
+                        'otro': 'Other reason',
+                      }[e.key]!
+                    : e.value,
+              ),
               onTap: () => Navigator.pop(ctx, e.key),
             ),
           const SizedBox(height: AppSpace.related),
@@ -407,13 +416,19 @@ Future<void> _reportReview(BuildContext context, String reviewId) async {
   if (reason == null) return;
   try {
     await service.reportReview(reviewId, reason);
+    if (!context.mounted) return;
     messenger.showSnackBar(
-      const SnackBar(content: Text('Gracias. Revisaremos la reseña.')),
+      SnackBar(content: Text(context.l10n.uiGraciasRevisaremosLaResena)),
     );
   } catch (_) {
+    if (!context.mounted) return;
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text('No pudimos enviar el reporte. Intenta de nuevo.'),
+      SnackBar(
+        content: Text(
+          context.l10n.localeName == 'en'
+              ? "Couldn't submit the report. Try again."
+              : 'No pudimos enviar el reporte. Intenta de nuevo.',
+        ),
       ),
     );
   }

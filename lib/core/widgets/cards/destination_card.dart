@@ -1,3 +1,5 @@
+import '../../localization/l10n.dart';
+import '../../../core/widgets/cards/favorite_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/destination_model.dart';
@@ -90,7 +92,7 @@ class DestinationCard extends StatelessWidget {
                 right: 10,
                 bottom: 12,
                 child: Text(
-                  destination.name,
+                  context.destinationTitle(destination.id, destination.name),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -111,7 +113,7 @@ class DestinationCard extends StatelessWidget {
                     builder: (context, favCtrl, child) {
                       final isFav = favCtrl.isFavorite(destination.id);
                       return GestureDetector(
-                        onTap: () => favCtrl.toggleFavorite(destination.id, destination),
+                        onTap: () => toggleFavoriteWithFeedback(context, favCtrl, destination.id, destination),
                         child: Container(
                           width: 32,
                           height: 32,

@@ -1,4 +1,6 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
+import '../../core/widgets/states/content_skeleton.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,11 +20,51 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  String? _language;
+
+  String _englishTitle(AppNotification n) => switch (n.kind) {
+    'perfil_listo' => 'Your profile is ready',
+    'mejor_mes' => n.title.replaceFirst(
+      'Es buen momento para ir a ',
+      'Now is a good time to visit ',
+    ),
+    'destino_nuevo' => n.title.replaceFirst(
+      'Nuevo destino: ',
+      'New destination: ',
+    ),
+    'seguridad' => switch (n.title) {
+      'Cambiaste tu contraseña' => 'You changed your password',
+      'Restableciste tu contraseña' => 'You reset your password',
+      _ => 'Your password was reset',
+    },
+    _ => n.title,
+  };
+
+  String _englishBody(AppNotification n) => switch (n.kind) {
+    'perfil_listo' =>
+      'See recommendations matched to your preferences in For you.',
+    'mejor_mes' =>
+      'This is your best month to visit. Open the destination for details.',
+    'destino_nuevo' =>
+      'Explore this destination and find details for your visit.',
+    'seguridad' => switch (n.title) {
+      'Cambiaste tu contraseña' =>
+        'We signed you out of your other sessions. Reset your password immediately if this was not you.',
+      'Restableciste tu contraseña' =>
+        'We signed you out of all sessions. Contact support immediately if this was not you.',
+      _ =>
+        'A PROXVEL administrator reset your password. Choose your own password under Profile → Change password.',
+    },
+    _ => n.body,
+  };
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = context.l10n.localeName;
+    if (_language == language) return;
+    _language = language;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<NotificationsController>().load();
+      if (mounted) context.read<NotificationsController>().load();
     });
   }
 
@@ -47,7 +89,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (route == null || route.isEmpty) return;
     if (route.startsWith('https://')) {
       final uri = Uri.tryParse(route);
-      if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
       return;
     }
     // Las pestañas principales se alcanzan con go; el resto se apila para poder volver.
@@ -69,70 +113,113 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Notificaciones',
+        title: Text(
+          context.l10n.notifications,
           style: AppTextStyles.sectionTitle,
         ),
         actions: [
           if (ctrl.hasUnread)
             TextButton(
               onPressed: ctrl.markAllRead,
-              child: const Text('Marcar todas'),
+              child: Text(context.l10n.markAllRead),
             ),
         ],
       ),
-      body: _body(ctrl),
+      body: Column(
+        children: [
+          if (ctrl.isLoading && ctrl.items.isNotEmpty)
+            const LinearProgressIndicator(minHeight: 2),
+          if (ctrl.error != null && ctrl.items.isNotEmpty)
+            ListTile(
+              title: Text(
+                ctrl.connectionUnavailable
+                    ? context.l10n.connectionUnavailable
+                    : context.errorText(ctrl.error!),
+              ),
+              trailing: TextButton(
+                onPressed: ctrl.load,
+                child: Text(context.l10n.retry),
+              ),
+            ),
+          Expanded(child: _body(ctrl)),
+        ],
+      ),
     );
   }
 
   Widget _body(NotificationsController ctrl) {
     if (ctrl.isLoading && ctrl.items.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent),
+      return const SingleChildScrollView(
+        child: ContentSkeleton(SkeletonLayout.notifications),
       );
     }
     if (ctrl.error != null && ctrl.items.isEmpty) {
       return ProxvelEmptyState(
         icon: Icons.wifi_off_rounded,
-        title: 'No pudimos cargar tus avisos',
-        subtitle: ctrl.error!,
-        actionLabel: 'Reintentar',
+        title: context.l10n.uiNoPudimosCargarTusAvisos,
+        subtitle: ctrl.connectionUnavailable
+            ? context.l10n.connectionUnavailable
+            : context.errorText(ctrl.error!),
+        actionLabel: context.l10n.retry,
         onAction: ctrl.load,
       );
     }
     if (ctrl.items.isEmpty) {
-      return const ProxvelEmptyState(
+      return ProxvelEmptyState(
         icon: Icons.notifications_none_rounded,
-        title: 'Todo al día',
-        subtitle:
-            'Aquí verás los anuncios de PROXVEL y avisos hechos para ti, como cuándo es el mejor mes para ir a tus favoritos.',
+        title: context.l10n.allCaughtUp,
+        subtitle: context.l10n.uiAquiVerasLosAnunciosDeProxvel,
       );
     }
 
+    final items = [...ctrl.items]
+      ..sort((a, b) {
+        final byPriority = _priority(a).compareTo(_priority(b));
+        return byPriority != 0
+            ? byPriority
+            : b.createdAt.compareTo(a.createdAt);
+      });
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: ctrl.load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: ctrl.items.length,
+        itemCount: items.length,
         separatorBuilder: (_, _) =>
             const Divider(height: 1, indent: 76, color: AppColors.divider),
-        itemBuilder: (context, i) => _tile(ctrl, ctrl.items[i]),
+        itemBuilder: (context, i) => _tile(ctrl, items[i]),
       ),
     );
   }
 
+  int _priority(AppNotification notification) {
+    if (!notification.isRead && notification.kind == 'seguridad') return 0;
+    if (!notification.isRead &&
+        notification.ctaText?.trim().isNotEmpty == true) {
+      return 1;
+    }
+    return 2;
+  }
+
   Widget _tile(NotificationsController ctrl, AppNotification n) {
+    final english = context.l10n.localeName == 'en';
+    final title = english ? _englishTitle(n) : n.title;
+    final body = english ? _englishBody(n) : n.body;
     final unread = !n.isRead;
     return InkWell(
       onTap: () => _open(ctrl, n),
       child: Container(
-        color: unread ? AppColors.accentSoft.withValues(alpha: 0.45) : Colors.transparent,
+        color: unread
+            ? AppColors.accentSoft.withValues(alpha: 0.45)
+            : Colors.transparent,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,8 +239,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (_priority(n) < 2)
+                    Text(
+                      context.l10n.actionRequired,
+                      style: AppTextStyles.caption,
+                    ),
                   Text(
-                    n.title,
+                    title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -162,19 +254,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  if (n.body.isNotEmpty) ...[
+                  if (body.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Text(
-                      n.body,
+                      body,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.body2,
                     ),
                   ],
                   const SizedBox(height: 6),
+                  if (english &&
+                      n.type == 'announcement' &&
+                      n.contentLanguage != 'en')
+                    Text(
+                      context.l10n.spanishOriginal,
+                      style: AppTextStyles.body2,
+                    ),
                   Text(
-                    n.timeAgo(),
-                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    n.timeAgo(english: english),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),

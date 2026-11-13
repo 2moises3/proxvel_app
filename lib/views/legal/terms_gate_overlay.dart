@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -33,7 +34,7 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
       setState(() {
         _busy = false;
         _error =
-            'No pudimos registrar tu aceptación. Revisa tu conexión e intenta de nuevo.';
+            context.l10n.uiNoPudimosRegistrarTuAceptacionRevisa;
       });
     }
   }
@@ -69,13 +70,13 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Actualizamos nuestros textos legales',
+                Text(
+                  context.l10n.uiActualizamosNuestrosTextosLegales,
                   style: AppTextStyles.sectionTitle,
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Para seguir usando PROXVEL necesitamos que leas y aceptes los Términos y Condiciones y la Política de Privacidad, y que confirmes que eres mayor de 18 años.',
+                Text(
+                  context.l10n.uiParaSeguirUsandoProxvelNecesitamosQue,
                   style: AppTextStyles.bodySecondary,
                 ),
                 const SizedBox(height: 14),
@@ -83,11 +84,11 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
                   spacing: 8,
                   children: [
                     ActionChip(
-                      label: const Text('Términos y Condiciones'),
+                      label: Text(context.l10n.terms),
                       onPressed: () => context.push('/legal/doc/terminos'),
                     ),
                     ActionChip(
-                      label: const Text('Política de Privacidad'),
+                      label: Text(context.l10n.privacyPolicy),
                       onPressed: () => context.push('/legal/doc/privacidad'),
                     ),
                   ],
@@ -117,11 +118,11 @@ class _TermsGateOverlayState extends State<TermsGateOverlay> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Soy mayor de 18 años y acepto'),
+                      : Text(context.l10n.uiSoyMayorDe18AnosY),
                 ),
                 TextButton(
                   onPressed: _busy ? null : _decline,
-                  child: const Text('No acepto (cerrar sesión)'),
+                  child: Text(context.l10n.uiNoAceptoCerrarSesion),
                 ),
               ],
             ),

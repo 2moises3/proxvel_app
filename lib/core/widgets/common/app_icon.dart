@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_colors.dart';
@@ -157,13 +158,13 @@ class _AnimatedNotificationBellState extends State<AnimatedNotificationBell>
     return Semantics(
       button: true,
       label: widget.unreadCount > 0
-          ? 'Notificaciones: ${widget.unreadCount} sin leer'
-          : 'Notificaciones',
+          ? context.l10n.unreadNotifications(widget.unreadCount)
+          : context.l10n.notifications,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           IconButton.filled(
-            tooltip: 'Notificaciones',
+            tooltip: context.l10n.notifications,
             onPressed: widget.onTap,
             style: IconButton.styleFrom(
               backgroundColor: widget.backgroundColor,

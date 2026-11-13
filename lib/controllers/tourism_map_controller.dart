@@ -18,6 +18,7 @@ class TourismMapController extends ChangeNotifier {
 
   List<MapMarkerModel> markers = [];
   Future<void>? _pending;
+  String? _loadedLanguage;
 
   String? _selectedCategory;
   String? get selectedCategory => _selectedCategory;
@@ -35,7 +36,11 @@ class TourismMapController extends ChangeNotifier {
   bool locationDeclined = false;
 
   List<String> get availableCategories {
-    final categories = markers.map((m) => m.category).whereType<String>().toSet().toList();
+    final categories = markers
+        .map((m) => m.category)
+        .whereType<String>()
+        .toSet()
+        .toList();
     categories.sort();
     return categories;
   }
@@ -52,24 +57,34 @@ class TourismMapController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMarkers({bool refresh = false}) {
-    if (_pending != null) return _pending!;
-    if (hasLoaded && !refresh) return Future.value();
-    final pending = _load();
-    _pending = pending;
-    return pending.whenComplete(() => _pending = null);
+  Future<void> loadMarkers({bool refresh = false}) async {
+    final pending = _pending;
+    if (pending != null) {
+      await pending;
+      if (_loadedLanguage != _mapService.catalogLanguage &&
+          errorMessage == null) {
+        await loadMarkers();
+      }
+      return;
+    }
+    final language = _mapService.catalogLanguage;
+    if (hasLoaded && !refresh && _loadedLanguage == language) return;
+    _pending = _load(language).whenComplete(() => _pending = null);
+    await _pending;
   }
 
-  Future<void> _load() async {
+  Future<void> _load(String language) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
       markers = await _mapService.getMapMarkers();
+      _loadedLanguage = language;
       hasLoaded = true;
     } catch (_) {
-      errorMessage = 'No pudimos cargar los destinos. Revisa tu conexión y vuelve a intentar.';
+      errorMessage =
+          'No pudimos cargar los destinos. Revisa tu conexión y vuelve a intentar.';
     } finally {
       isLoading = false;
       notifyListeners();
@@ -77,7 +92,10 @@ class TourismMapController extends ChangeNotifier {
   }
 
   /// [useLocation]=false selecciona el destino sin pedir permiso ni calcular distancia.
-  Future<void> selectDestination(MapMarkerModel marker, {bool useLocation = true}) async {
+  Future<void> selectDestination(
+    MapMarkerModel marker, {
+    bool useLocation = true,
+  }) async {
     _selectedMarker = marker;
     errorMessage = null;
     _userLocation = null;
@@ -105,7 +123,8 @@ class TourismMapController extends ChangeNotifier {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        errorMessage = 'Los permisos de ubicación están denegados permanentemente.';
+        errorMessage =
+            'Los permisos de ubicación están denegados permanentemente.';
         notifyListeners();
         return;
       }
@@ -120,7 +139,8 @@ class TourismMapController extends ChangeNotifier {
       );
       _distanceKm = meter / 1000;
     } catch (_) {
-      errorMessage = 'No pudimos obtener tu ubicación. Puedes ver el destino sin compartirla.';
+      errorMessage =
+          'No pudimos obtener tu ubicación. Puedes ver el destino sin compartirla.';
     }
 
     notifyListeners();

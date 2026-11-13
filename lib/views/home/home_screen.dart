@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'dart:ui';
 import '../../core/widgets/maps/destination_location.dart';
 import 'package:go_router/go_router.dart';
@@ -129,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     final authController = context.watch<AuthController>();
-    final userName = authController.currentUser?.fullName ?? 'Viajero';
+    final userName = authController.currentUser?.fullName ?? context.l10n.traveler;
     final avatarUrl = authController.currentUser?.avatarUrl;
 
     return Scaffold(
@@ -214,15 +215,15 @@ class _HomeScreenState extends State<HomeScreen>
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
-                            tabs: const [
-                              Tab(text: 'Explorar'),
+                            tabs: [
+                              Tab(text: context.l10n.explore),
                               Tab(
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     AppIcon(AppIcons.sparkles, size: 16),
                                     SizedBox(width: 7),
-                                    Text('Para ti'),
+                                    Text(context.l10n.forYou),
                                   ],
                                 ),
                               ),

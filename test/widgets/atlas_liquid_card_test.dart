@@ -32,7 +32,7 @@ void main() {
     // Debe mostrar el porcentaje calculado: 6/20 = 30%
     expect(find.text('30%'), findsOneWidget);
     // Debe mostrar el texto de minutos restantes
-    expect(find.text('Faltan 14 min de permanencia para sellar.'), findsOneWidget);
+    expect(find.text('Faltan 14 minutos'), findsOneWidget);
     // Aún no debe mostrar el botón "Sellar Visita"
     expect(find.text('Sellar Visita'), findsNothing);
   });

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -117,7 +118,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
                         hintText:
                             widget.hintText ??
                             (widget.isPassword
-                                ? 'Ingresa tu contraseña'
+                                ? context.l10n.enterPassword
                                 : null),
                         hintStyle: AppTypography.style(
                           color: Colors.white.withValues(alpha: 0.7),
@@ -137,8 +138,8 @@ class _GlassTextFieldState extends State<GlassTextField> {
                   if (widget.isPassword)
                     IconButton(
                       tooltip: _obscureText
-                          ? 'Mostrar contraseña'
-                          : 'Ocultar contraseña',
+                          ? context.l10n.uiMostrarContrasena
+                          : context.l10n.uiOcultarContrasena,
                       icon: Icon(
                         _obscureText ? Icons.visibility_off : Icons.visibility,
                         color: Colors.white.withValues(alpha: 0.6),

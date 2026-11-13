@@ -22,8 +22,8 @@ class AnnouncementController extends ChangeNotifier {
   final Set<int> _viewedThisSession = <int>{};
   bool _startShownThisSession = false;
 
-  static String _key(String placement, String? destinationId) =>
-      destinationId == null ? placement : '$placement|$destinationId';
+  String _key(String placement, String? destinationId) =>
+      '${_service.languageCode?.call() ?? "es"}|$placement|${destinationId ?? ""}';
 
   /// Anuncios visibles (no cerrados) de una ubicación, en orden de prioridad.
   List<AnnouncementModel> visibleFor(String placement, {String? destinationId}) {

@@ -1,4 +1,6 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/states/content_skeleton.dart';
 import '../../../core/navigation/destination_opening.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -43,7 +45,9 @@ class _HomeExploreContentState extends State<HomeExploreContent>
         .watch<import_archive_controller.ArchiveController>();
     if (!archiveCtrl.hasLoaded) {
       return SingleChildScrollView(
-        child: ArchiveLoadingState(controller: archiveCtrl),
+        child: archiveCtrl.error == null || archiveCtrl.isLoading
+            ? const ContentSkeleton(SkeletonLayout.explore)
+            : ArchiveLoadingState(controller: archiveCtrl),
       );
     }
     final personalizeOrder =
@@ -72,6 +76,11 @@ class _HomeExploreContentState extends State<HomeExploreContent>
         return aScore.compareTo(bScore);
       });
     }
+    if (all.isEmpty && controller.isLoading) {
+      return const SingleChildScrollView(
+        child: ContentSkeleton(SkeletonLayout.explore),
+      );
+    }
     final featured = all.take(5).toList();
     final recent = controller.recentSearches;
 
@@ -89,7 +98,7 @@ class _HomeExploreContentState extends State<HomeExploreContent>
       child: SingleChildScrollView(
         key: const PageStorageKey('explore-scroll'),
         padding: EdgeInsets.only(
-          bottom: MediaQuery.viewPaddingOf(context).bottom + 102,
+          bottom: AppSizing.navigationClearance(context),
         ),
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -101,8 +110,15 @@ class _HomeExploreContentState extends State<HomeExploreContent>
             const AnnouncementBanner(),
 
             // ═══ ERROR (si el backend falló) ═══
-            if (controller.error != null && all.isEmpty) ...[
-              _buildError(controller.error!),
+            if (controller.isLoading && all.isNotEmpty)
+              const LinearProgressIndicator(minHeight: 2),
+            if (controller.error != null) ...[
+              _buildError(
+                context,
+                controller.connectionUnavailable
+                    ? context.l10n.connectionUnavailable
+                    : context.errorText(controller.error!),
+              ),
               const SizedBox(height: AppSpace.section),
             ],
 
@@ -120,7 +136,7 @@ class _HomeExploreContentState extends State<HomeExploreContent>
 
             // ═══ BÚSQUEDAS RECIENTES ═══
             if (recent.isNotEmpty) ...[
-              _sectionHeader('Búsquedas recientes'),
+              _sectionHeader(context.l10n.recentSearches),
               const SizedBox(height: AppSpace.content),
               SizedBox(
                 height: 70,
@@ -181,7 +197,7 @@ class _HomeExploreContentState extends State<HomeExploreContent>
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
               child: Text(
-                'Ver más',
+                context.l10n.seeMore,
                 style: AppTypography.style(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -195,7 +211,7 @@ class _HomeExploreContentState extends State<HomeExploreContent>
   }
 
   // ── Error state ──
-  Widget _buildError(String message) {
+  Widget _buildError(BuildContext context, String message) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.screen),
       child: Container(
@@ -211,9 +227,13 @@ class _HomeExploreContentState extends State<HomeExploreContent>
             const SizedBox(width: AppSpace.content),
             Expanded(
               child: Text(
-                'No se pudieron cargar los destinos.\n$message',
+                '${context.l10n.placesLoadError}\n$message',
                 style: AppTextStyles.body2,
               ),
+            ),
+            TextButton(
+              onPressed: context.read<HomeController>().refreshDestinations,
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -233,14 +253,14 @@ class _HomeExploreContentState extends State<HomeExploreContent>
             color: AppColors.textMuted.withValues(alpha: 0.5),
           ),
           const SizedBox(height: AppSpace.field),
-          const Text(
-            'Aún no hay destinos disponibles',
+          Text(
+            context.l10n.uiAunNoHayDestinosDisponibles,
             textAlign: TextAlign.center,
             style: AppTextStyles.cardTitle,
           ),
           const SizedBox(height: AppSpace.related),
-          const Text(
-            'El catálogo se mostrará aquí cuando haya destinos publicados.',
+          Text(
+            context.l10n.uiElCatalogoSeMostraraAquiCuando,
             textAlign: TextAlign.center,
             style: AppTextStyles.body2,
           ),

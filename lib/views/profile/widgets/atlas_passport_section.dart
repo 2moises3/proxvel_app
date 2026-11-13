@@ -1,3 +1,5 @@
+import '../../../core/widgets/maps/visit_progress.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/visit_controller.dart';
@@ -30,30 +32,34 @@ class AtlasPassportSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.menu_book_rounded,
-                      size: 18,
-                      color: AppColors.primary,
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        context.l10n.uiAtlasDeVisitas,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Atlas de Visitas',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -73,7 +79,7 @@ class AtlasPassportSection extends StatelessWidget {
                           color: AppColors.primary.withValues(alpha: 0.3),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -83,7 +89,7 @@ class AtlasPassportSection extends StatelessWidget {
                           ),
                           SizedBox(width: 4),
                           Text(
-                            'Radar GPS',
+                            context.l10n.uiRadarGps,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -106,7 +112,7 @@ class AtlasPassportSection extends StatelessWidget {
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
-                      '$totalStamps sellos • $regionsCount regiones',
+                      context.l10n.atlasTotals(totalStamps, regionsCount),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -126,46 +132,12 @@ class AtlasPassportSection extends StatelessWidget {
           LiquidProgressVisitCard(
             visit: activeVisit,
             isVerifying: visitCtrl.isActionLoading,
-            onVerify: () async {
-              final loc = DestinationLocation.shared;
-              await loc.locate(requestPermission: true);
-              final position = loc.position;
-              if (position == null) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        loc.error ??
-                            'Activa tu ubicación para sellar la visita.',
-                      ),
-                    ),
-                  );
-                }
-                return;
-              }
-              final ok = await visitCtrl.verifyActiveVisit(
-                latitude: position.latitude,
-                longitude: position.longitude,
-              );
-              if (context.mounted && ok) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      '🎉 ¡Tu visita ha sido sellada con éxito en tu Atlas!',
-                    ),
-                    backgroundColor: AppColors.accent,
-                  ),
-                );
-              } else if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      visitCtrl.error ?? 'No pudimos sellar la visita.',
-                    ),
-                  ),
-                );
-              }
-            },
+            onVerify: () => finishVisit(
+              context,
+              visitCtrl,
+              DestinationLocation.shared,
+              activeVisit,
+            ),
           ),
           const SizedBox(height: 12),
         ]
@@ -250,8 +222,8 @@ class AtlasPassportSection extends StatelessWidget {
                   children: [
                     Text(
                       isInside
-                          ? '🎯 ¡LLEGASTE AL DESTINO!'
-                          : '🎯 OBJETIVO EN ESPERA DE SELLADO',
+                          ? context.l10n.uiLlegasteAlDestino
+                          : context.l10n.uiObjetivoEnEsperaDeSellado,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -261,7 +233,10 @@ class AtlasPassportSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      pending.destinationName,
+                      context.destinationTitle(
+                        pending.destinationId,
+                        pending.destinationName,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -275,138 +250,19 @@ class AtlasPassportSection extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 18),
-                tooltip: 'Desfijar objetivo',
+                tooltip: context.l10n.uiDesfijarObjetivo,
                 onPressed: () => visitCtrl.clearPendingDestination(),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isInside
-                  ? AppColors.accent.withValues(alpha: 0.08)
-                  : AppColors.background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.near_me_rounded,
-                  size: 15,
-                  color: isInside ? AppColors.accent : AppColors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    dist != null
-                        ? isInside
-                              ? 'Estás a ${dist.round()} m (radio permitido: $radius m)'
-                              : 'Estás a ${dist.round()} m. Acércate a menos de $radius m para iniciar el conteo.'
-                        : 'Activa tu ubicación para calcular la distancia.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isInside
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isInside
-                          ? AppColors.accent
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: isInside
-                ? ElevatedButton.icon(
-                    onPressed: visitCtrl.isActionLoading
-                        ? null
-                        : () async {
-                            await location.locate(requestPermission: true);
-                            final position = location.position;
-                            if (position == null) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      location.error ??
-                                          'Activa tu ubicación para iniciar la visita.',
-                                    ),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                            final ok = await visitCtrl.startCheckIn(
-                              destinationId: pending.destinationId,
-                              latitude: position.latitude,
-                              longitude: position.longitude,
-                            );
-                            if (context.mounted && ok) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    '⏱️ ¡Conteo iniciado! La card de agua se irá llenando.',
-                                  ),
-                                  backgroundColor: AppColors.accent,
-                                ),
-                              );
-                            } else if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    visitCtrl.error ??
-                                        'No pudimos iniciar la visita.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.textPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    icon: visitCtrl.isActionLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.play_arrow_rounded, size: 20),
-                    label: const Text(
-                      'Iniciar conteo de estancia',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: () => DestinationRadarSheet.show(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: BorderSide(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    icon: const Icon(Icons.radar_rounded, size: 18),
-                    label: const Text(
-                      'Abrir Radar GPS',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
+          VisitProgress(
+            controller: visitCtrl,
+            location: location,
+            destinationId: pending.destinationId,
+            latitude: pending.latitude,
+            longitude: pending.longitude,
+            radius: radius,
           ),
         ],
       ),
@@ -442,12 +298,12 @@ class AtlasPassportSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Comienza tu pasaporte de viajes',
+                      context.l10n.uiComienzaTuPasaporteDeViajes,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -456,7 +312,7 @@ class AtlasPassportSection extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Visita destinos turísticos con tu app abierta para desbloquear sellos oficiales en tu Atlas.',
+                      context.l10n.uiVisitaDestinosTuristicosConTuApp,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -483,8 +339,8 @@ class AtlasPassportSection extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.radar_rounded, size: 18),
-              label: const Text(
-                'Escanear destinos cercanos con Radar GPS',
+              label: Text(
+                context.l10n.uiEscanearDestinosCercanosConRadarGps,
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
@@ -505,13 +361,13 @@ class AtlasPassportSection extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final stamp = stamps[index];
-          return _buildStampCard(stamp);
+          return _buildStampCard(context, stamp);
         },
       ),
     );
   }
 
-  Widget _buildStampCard(AtlasItemModel stamp) {
+  Widget _buildStampCard(BuildContext context, AtlasItemModel stamp) {
     return Container(
       width: 160,
       decoration: BoxDecoration(
@@ -569,7 +425,10 @@ class AtlasPassportSection extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              stamp.destinationName,
+              context.destinationTitle(
+                stamp.destinationId,
+                stamp.destinationName,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

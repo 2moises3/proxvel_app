@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../localization/l10n.dart';
 import '../../theme/app_colors.dart';
 
 /// Loader contextual para la sección "Para Ti" mientras el motor de IA
@@ -16,11 +17,7 @@ class _AiRankingLoaderState extends State<AiRankingLoader>
   late final AnimationController _pulseCtrl;
   int _textIndex = 0;
 
-  static const _messages = [
-    'Recopilando tus aspectos...',
-    'Proporcionando tus mejores destinos...',
-    'Analizando perfil viajero...',
-  ];
+  static const _messageCount = 3;
 
   @override
   void initState() {
@@ -37,7 +34,7 @@ class _AiRankingLoaderState extends State<AiRankingLoader>
   void _startTextRotation() {
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (!mounted) return;
-      setState(() => _textIndex = (_textIndex + 1) % _messages.length);
+      setState(() => _textIndex = (_textIndex + 1) % _messageCount);
       _startTextRotation();
     });
   }
@@ -90,7 +87,11 @@ class _AiRankingLoaderState extends State<AiRankingLoader>
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
               child: Text(
-                _messages[_textIndex],
+                [
+                  context.l10n.uiRecopilandoTusAspectos,
+                  context.l10n.uiProporcionandoTusMejoresDestinos,
+                  context.l10n.uiAnalizandoPerfilViajero,
+                ][_textIndex],
                 key: ValueKey<int>(_textIndex),
                 textAlign: TextAlign.center,
                 style: const TextStyle(

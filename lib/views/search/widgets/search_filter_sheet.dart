@@ -1,10 +1,10 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart' hide SearchController;
 import '../../../core/theme/app_typography.dart';
 import '../../auth/widgets/auth_form_page.dart';
 import '../../../controllers/search_controller.dart'
     show SearchController, SearchFilters;
 import '../../../core/theme/app_colors.dart';
-import '../../../models/seasonality_model.dart';
 
 /// Bottom sheet with visual filter chips for search refinement.
 class SearchFilterSheet extends StatefulWidget {
@@ -41,6 +41,15 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   @override
   Widget build(BuildContext context) {
     final ctrl = widget.controller;
+    final l10n = context.l10n;
+    final climates = {
+      'frio': l10n.cold,
+      'templado': l10n.mild,
+      'calido': l10n.warm,
+      'seco': l10n.dry,
+    };
+    final crowds = {'Bajo': l10n.quiet, 'Medio': l10n.moderateCrowds, 'Alto': l10n.busy};
+    final costs = {'bajo': l10n.low, 'medio': l10n.medium, 'alto': l10n.high};
     return Material(
       color: const Color(0xFFFAFAF8),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -64,7 +73,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Afina tu búsqueda',
+                      context.l10n.refineSearch,
                       style: AppTypography.style(
                         fontSize: 24,
                         fontWeight: FontWeight.w500,
@@ -73,7 +82,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Cerrar filtros',
+                    tooltip: context.l10n.closeFilters,
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -85,7 +94,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   _group(
-                    'Lugar',
+                    context.l10n.place,
                     Icons.place_outlined,
                     [_region, _category].whereType<String>().join(' · '),
                     [
@@ -96,15 +105,15 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                               : null,
                           key: ValueKey(_region),
                           isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Región',
+                          decoration: InputDecoration(
+                            labelText: context.l10n.region,
                             filled: true,
                             fillColor: Colors.white,
                           ),
                           items: [
-                            const DropdownMenuItem<String>(
+                            DropdownMenuItem<String>(
                               value: null,
-                              child: Text('Todas las regiones'),
+                              child: Text(context.l10n.allRegions),
                             ),
                             ...ctrl.availableRegions.map(
                               (r) => DropdownMenuItem(value: r, child: Text(r)),
@@ -114,7 +123,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                         ),
                       const SizedBox(height: 12),
                       _options(
-                        {for (final c in ctrl.availableCategories) c: c},
+                        {for (final c in ctrl.availableCategories) c: context.categoryLabel(c)},
                         _category,
                         (v) => setState(() => _category = v),
                       ),
@@ -122,18 +131,18 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     initiallyExpanded: true,
                   ),
                   _group(
-                    'Cuándo viajar',
+                    context.l10n.whenToTravel,
                     Icons.calendar_month_outlined,
                     [
-                      _climate == null ? null : kClimateOptions[_climate],
-                      _crowd == null ? null : kCrowdOptions[_crowd],
+                      climates[_climate],
+                      crowds[_crowd],
                     ].whereType<String>().join(' · '),
                     [
                       DropdownButtonFormField<int>(
                         initialValue: _month ?? DateTime.now().month,
                         key: ValueKey(_month),
-                        decoration: const InputDecoration(
-                          labelText: 'Mes de viaje',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.travelMonth,
                           filled: true,
                           fillColor: Colors.white,
                         ),
@@ -141,28 +150,28 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                           for (var m = 1; m <= 12; m++)
                             DropdownMenuItem(
                               value: m,
-                              child: Text(kMonthShort[m - 1]),
+                              child: Text(context.shortMonth(m)),
                             ),
                         ],
                         onChanged: (v) => setState(() => _month = v),
                       ),
                       const SizedBox(height: 14),
-                      _label('Clima que prefieres'),
+                      _label(context.l10n.preferredWeather),
                       _options(
-                        kClimateOptions,
+                        climates,
                         _climate,
                         (v) => setState(() => _climate = v),
                       ),
                       const SizedBox(height: 14),
-                      _label('Cantidad de visitantes'),
+                      _label(context.l10n.visitorCount),
                       _options(
-                        kCrowdOptions,
+                        crowds,
                         _crowd,
                         (v) => setState(() => _crowd = v),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        'Clima y afluencia se evalúan para ese mes con datos históricos; no son un pronóstico.',
+                      Text(
+                        context.l10n.weatherFilterNote,
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -172,21 +181,21 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                   ),
                   if (ctrl.availableCostLevels.isNotEmpty)
                     _group(
-                      'Presupuesto',
+                      context.l10n.budget,
                       Icons.account_balance_wallet_outlined,
-                      kCostOptions[_cost] ?? '',
+                      costs[_cost] ?? '',
                       [
                         _options(
                           {
                             for (final c in ctrl.availableCostLevels)
-                              c: kCostOptions[c] ?? c,
+                              c: costs[c] ?? c,
                           },
                           _cost,
                           (v) => setState(() => _cost = v),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'Nivel de gasto orientativo, no un precio de entrada.',
+                        Text(
+                          context.l10n.estimatedSpending,
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -196,13 +205,13 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     ),
                   if (ctrl.aiSortEnabled)
                     _group(
-                      'Afinidad contigo',
+                      context.l10n.yourMatch,
                       Icons.auto_awesome_rounded,
-                      _minCompat == null ? '' : 'Desde $_minCompat%',
+                      _minCompat == null ? '' : context.l10n.fromPercent(_minCompat!),
                       [
                         _options(
                           {
-                            for (final v in [60, 70, 80, 90]) '$v': 'Desde $v%',
+                            for (final v in [60, 70, 80, 90]) '$v': context.l10n.fromPercent(v),
                           },
                           _minCompat?.toString(),
                           (v) => setState(
@@ -210,8 +219,8 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'Disponible cuando el motor puede usar tu perfil viajero.',
+                        Text(
+                          context.l10n.matchAvailable,
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -240,12 +249,12 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.discovery,
                     ),
-                    child: const Text('Limpiar'),
+                    child: Text(context.l10n.clear),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: AuthSubmitButton(
-                      text: 'Aplicar',
+                      text: context.l10n.apply,
                       onPressed: () => Navigator.pop(
                         context,
                         SearchFilters(
@@ -316,7 +325,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
         ),
       ),
       subtitle: Text(
-        summary.isEmpty ? 'Sin restricciones' : summary,
+        summary.isEmpty ? context.l10n.uiSinRestricciones : summary,
         style: AppTypography.style(
           fontSize: 12,
           color: AppColors.textSecondary,

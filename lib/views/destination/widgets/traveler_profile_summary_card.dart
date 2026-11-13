@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +18,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
       return _buildEmptyState(context);
     }
 
-    final prefs = _extractPreferences(profile!);
+    final prefs = _extractPreferences(context, profile!);
 
     return Container(
       width: double.infinity,
@@ -38,8 +39,8 @@ class TravelerProfileSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header (sin acción de editar — la edición vive en el perfil)
-          const Text(
-            'Tu perfil de viajero (resumen)',
+          Text(
+            context.l10n.uiTuPerfilDeViajeroResumen,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -96,9 +97,9 @@ class TravelerProfileSummaryCard extends StatelessWidget {
                 color: AppColors.primary,
               ),
               const SizedBox(width: AppSpace.related),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Perfil de viajero',
+                  context.l10n.uiPerfilDeViajero,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -109,8 +110,8 @@ class TravelerProfileSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpace.content),
-          const Text(
-            'Completa tu perfil viajero para recibir explicaciones personalizadas.',
+          Text(
+            context.l10n.uiCompletaTuPerfilViajeroParaRecibir,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -133,7 +134,7 @@ class TravelerProfileSummaryCard extends StatelessWidget {
                   Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
                   const SizedBox(width: AppSpace.related),
                   Text(
-                    'Completar perfil',
+                    context.l10n.uiCompletarPerfil,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -188,21 +189,21 @@ class TravelerProfileSummaryCard extends StatelessWidget {
     );
   }
 
-  List<Map<String, dynamic>> _extractPreferences(TravelerProfileModel profile) {
+  List<Map<String, dynamic>> _extractPreferences(BuildContext context, TravelerProfileModel profile) {
     return [
       {
         'icon': Icons.wb_sunny_outlined,
-        'label': 'Prefiere clima',
+        'label': context.l10n.uiPrefiereClima,
         'value': profile.climaPreferido,
       },
       {
         'icon': Icons.groups_outlined,
-        'label': 'Tolerancia a multitudes',
+        'label': context.l10n.crowdPreference,
         'value': profile.toleranciaMultitudes,
       },
       {
         'icon': Icons.explore_outlined,
-        'label': 'Tipo de interés',
+        'label': context.l10n.uiTipoDeInteres,
         'value': profile.tipoInteres,
       },
     ];

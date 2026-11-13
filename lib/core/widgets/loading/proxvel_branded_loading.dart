@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'dart:math' as math;
 import '../../theme/app_layout.dart';
 import 'package:flutter/material.dart';
@@ -294,7 +295,7 @@ class _ProxvelBrandedLoadingState extends State<ProxvelBrandedLoading>
                         Container(width: 20, height: 1, color: Colors.white.withValues(alpha: 0.5)),
                         const SizedBox(width: AppSpace.related),
                         Text(
-                          'Powered by',
+                          context.l10n.uiPoweredBy,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 10,

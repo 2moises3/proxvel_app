@@ -45,6 +45,7 @@ class DestinationController extends ChangeNotifier {
   String? recommendationLabel;
   List<String> recommendationTopAspects = [];
   String? error;
+  bool connectionUnavailable = false;
 
   // Contexto REAL del mes (clima + aforo), NO de reseñas. score 0-1, alto = mejor.
   double? climaContextScore;
@@ -100,6 +101,7 @@ class DestinationController extends ChangeNotifier {
     isTourismLoading = true;
     isReviewsLoading = true;
     error = null;
+    connectionUnavailable = false;
     destination = null;
     tourismInfo = null;
     reviews = [];
@@ -239,6 +241,7 @@ class DestinationController extends ChangeNotifier {
       ]);
     } catch (e) {
       if (generation != _loadGeneration) return;
+      connectionUnavailable = e is ApiException && e.statusCode == 0;
       error = e is ApiException && e.statusCode == 404
           ? 'No encontramos este destino.'
           : 'No pudimos cargar el destino. Revisa tu conexión e intenta de nuevo.';

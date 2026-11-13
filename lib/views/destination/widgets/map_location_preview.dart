@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -49,8 +50,8 @@ class MapLocationPreview extends StatelessWidget {
     } catch (_) {}
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No pudimos abrir Google Maps. Inténtalo otra vez.'),
+        SnackBar(
+          content: Text(context.l10n.uiNoPudimosAbrirGoogleMapsIntentalo),
         ),
       );
     }
@@ -60,16 +61,16 @@ class MapLocationPreview extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        'Encuentra tu próxima parada',
+      Text(
+        context.l10n.uiEncuentraTuProximaParada,
         style: TextStyle(fontSize: 21, fontWeight: FontWeight.w500),
       ),
       const SizedBox(height: 8),
       if (!_hasCoordinates)
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
           child: Text(
-            'Este destino aún no tiene coordenadas publicadas.',
+            context.l10n.uiEsteDestinoAunNoTieneCoordenadas2,
             style: TextStyle(color: AppColors.textSecondary),
           ),
         )
@@ -108,7 +109,7 @@ class MapLocationPreview extends StatelessWidget {
                           alignment: Alignment.topCenter,
                           child: MapPhotoPin(
                             imageUrl: imageUrl ?? '',
-                            label: destinationName ?? 'Ver ubicación',
+                            label: destinationName ?? context.l10n.viewLocation,
                             selected: true,
                             onTap: () => _open(context),
                           ),
@@ -121,7 +122,7 @@ class MapLocationPreview extends StatelessWidget {
                   right: 12,
                   top: 12,
                   child: IconButton.filled(
-                    tooltip: 'Ampliar mapa del destino',
+                    tooltip: context.l10n.uiAmpliarMapaDelDestino,
                     onPressed: () => _open(context),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -171,8 +172,8 @@ class MapLocationPreview extends StatelessWidget {
                         Expanded(
                           child: Text(
                             distance == null
-                                ? '¿Qué tan cerca estás?'
-                                : '${mapDistanceLabel(distance)} en línea recta',
+                                ? context.l10n.uiQueTanCercaEstas
+                                : context.l10n.distanceStraightLine(mapDistanceLabel(distance)),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -185,14 +186,14 @@ class MapLocationPreview extends StatelessWidget {
                                 ? null
                                 : () => location.locate(),
                             child: Text(
-                              location.busy ? 'Ubicando…' : 'Activar ubicación',
+                              location.busy ? 'Ubicando…' : context.l10n.uiActivarUbicacion,
                             ),
                           ),
                       ],
                     ),
                     if (location.error != null)
                       Text(
-                        location.error!,
+                        context.errorText(location.error!),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -203,7 +204,7 @@ class MapLocationPreview extends StatelessWidget {
                       children: [
                         TextButton(
                           onPressed: () => _open(context),
-                          child: const Text('Explorar mapa'),
+                          child: Text(context.l10n.uiExplorarMapa),
                         ),
                         TextButton.icon(
                           onPressed: () => _external(context),

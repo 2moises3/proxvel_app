@@ -7,7 +7,8 @@ import '../api/api_client.dart';
 /// Nunca usa mock: si el backend falla devuelve lista vacía (no crashea).
 class AnnouncementService {
   final ApiClient? _api;
-  AnnouncementService({ApiClient? apiClient}) : _api = apiClient;
+  AnnouncementService({ApiClient? apiClient, this.languageCode}) : _api = apiClient;
+  final String Function()? languageCode;
 
   /// Obtiene anuncios activos para una ubicación (placement) dada.
   /// El backend ya filtra por activos, rango de fechas y ordena por prioridad.
@@ -22,6 +23,7 @@ class AnnouncementService {
         '/announcements/active',
         queryParams: {
           'placement': placement,
+          if (languageCode?.call() == 'en') 'lang': 'en',
           'destination_id': ?destinationId,
         },
       );

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_colors.dart';
@@ -47,7 +48,7 @@ class RatingSelector extends StatelessWidget {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: Text(
-            idx > 0 ? _labels[idx] : 'Selecciona una calificación',
+            idx > 0 ? _labels[idx] : context.l10n.uiSeleccionaUnaCalificacion,
             key: ValueKey(idx),
             style: TextStyle(
               fontSize: 14,

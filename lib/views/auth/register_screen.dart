@@ -1,3 +1,5 @@
+import '../../integration/api/api_client.dart';
+import '../../core/localization/l10n.dart';
 import 'widgets/auth_progress_indicator.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
@@ -34,6 +36,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _acceptTerms = false;
   bool _isLoading = false;
+  bool _checkedIdentity = false;
+  bool _checkedPassword = false;
+  String? _emailTaken;
+  String? _submitError;
 
   bool _isStep1Valid = false;
   static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
@@ -57,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text.trim().isNotEmpty &&
         _lastnameController.text.trim().isNotEmpty &&
         _emailRegex.hasMatch(_emailController.text.trim());
-    if (_isStep1Valid != isValid) {
+    if (_isStep1Valid != isValid || _checkedIdentity) {
       setState(() => _isStep1Valid = isValid);
     }
   }
@@ -92,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         .trim();
 
     if (rawError.isEmpty) {
-      return 'No pudimos completar la acción. Intenta nuevamente.';
+      return context.l10n.uiNoPudimosCompletarLaAccionIntenta;
     }
 
     final lower = rawError.toLowerCase();
@@ -104,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lower.contains('clientexception') ||
         lower.contains('timeout') ||
         lower.contains('handshake')) {
-      return 'No hay conexión con el servidor. Verifica tu internet e intenta nuevamente.';
+      return context.l10n.uiNoHayConexionConElServidor;
     }
 
     if (lower.contains('typeerror') ||
@@ -116,11 +122,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         lower.contains('sql') ||
         lower.contains('database') ||
         lower.contains('internal server error')) {
-      return 'Ocurrió un problema inesperado. Intenta nuevamente.';
+      return context.l10n.uiOcurrioUnProblemaInesperadoIntentaNuevamente;
     }
 
     if (rawError.length > 150) {
-      return 'No pudimos completar la acción. Intenta nuevamente.';
+      return context.l10n.uiNoPudimosCompletarLaAccionIntenta;
     }
 
     return rawError;
@@ -142,14 +148,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
         final message = _sanitizeAuthError(e);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+          if (e is ApiException && e.statusCode == 409) {
+            _currentStep = 0;
+            _emailTaken = context.l10n.registrationEmailTaken;
+          } else {
+            _submitError = context.errorText(message);
+          }
+        });
       }
     }
   }
@@ -187,13 +195,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => AuthFormPage(
-    background: _background,
-    onBack: _prevStep,
-    progress: AuthProgressIndicator(step: _currentStep, count: 3),
-    title: _currentStep == 0 ? 'Crea tu cuenta' : 'Crea tu contraseña',
-    subtitle: _currentStep == 0 ? null : 'Usa al menos 8 caracteres.',
-    child: _buildSteps(),
+  Widget build(BuildContext context) => PopScope(
+    canPop: _currentStep == 0 && !_isLoading,
+    onPopInvokedWithResult: (popped, _) {
+      if (!popped && !_isLoading && _currentStep == 1) _prevStep();
+    },
+    child: AuthFormPage(
+      background: _background,
+      onBack: _isLoading ? null : _prevStep,
+      progress: AuthProgressIndicator(step: _currentStep, count: 3),
+      title: _currentStep == 0
+          ? context.l10n.registerTitle
+          : context.l10n.createPassword,
+      subtitle: _currentStep == 0 ? null : context.l10n.atLeastEight,
+      child: _buildSteps(),
+    ),
   );
 
   Widget _buildSteps() {
@@ -215,25 +231,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         children: [
           GlassTextField(
-            label: 'Nombre',
-            hintText: 'Ej. María',
+            label: context.l10n.firstName,
+            hintText: context.l10n.uiEjMaria,
             controller: _nameController,
+            errorText: _checkedIdentity && _nameController.text.trim().isEmpty
+                ? context.l10n.registrationFirstName
+                : null,
             textCapitalization: TextCapitalization.words,
             inputFormatters: [TitleCaseTextInputFormatter()],
           ),
           const SizedBox(height: AppSpace.card),
           GlassTextField(
-            label: 'Apellidos',
-            hintText: 'Ej. García López',
+            label: context.l10n.lastName,
+            hintText: context.l10n.uiEjGarciaLopez,
             controller: _lastnameController,
+            errorText:
+                _checkedIdentity && _lastnameController.text.trim().isEmpty
+                ? context.l10n.registrationLastName
+                : null,
             textCapitalization: TextCapitalization.words,
             inputFormatters: [TitleCaseTextInputFormatter()],
           ),
           const SizedBox(height: AppSpace.card),
           GlassTextField(
-            label: 'Correo electrónico',
+            label: context.l10n.email,
             hintText: 'nombre@correo.com',
             controller: _emailController,
+            onChanged: (_) {
+              if (_emailTaken != null) setState(() => _emailTaken = null);
+            },
+            errorText:
+                _emailTaken ??
+                (_checkedIdentity &&
+                        !_emailRegex.hasMatch(_emailController.text.trim())
+                    ? context.l10n.uiIngresaUnCorreoValido
+                    : null),
             keyboardType: TextInputType.emailAddress,
           ),
 
@@ -241,22 +273,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           // Next Button
           AuthSubmitButton(
-            text: 'Continuar',
+            text: context.l10n.continueAction,
             onPressed: () {
-              if (_isStep1Valid) {
-                _nextStep();
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Completa tus datos e ingresa un correo válido.',
-                      style: AppTypography.style(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.black87,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
+              setState(() => _checkedIdentity = true);
+              if (_isStep1Valid) _nextStep();
             },
           ),
 
@@ -267,21 +287,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                '¿Ya tienes una cuenta? ',
+                context.l10n.alreadyHaveAccount,
                 style: AppTypography.style(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
               ),
               TextButton(
-                onPressed: () => context.go('/login'),
+                onPressed: () => context.push('/login'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                 ),
                 child: Text(
-                  'Inicia sesión',
+                  context.l10n.signInPrompt,
                   style: AppTypography.style(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -305,40 +325,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         children: [
           GlassTextField(
-            label: 'Contraseña',
-            hintText: 'Al menos 8 caracteres',
+            label: context.l10n.password,
+            hintText: context.l10n.eightCharacters,
             controller: _passwordController,
+            errorText: _checkedPassword && _passwordController.text.length < 8
+                ? context.l10n.uiUsaAlMenos8Caracteres
+                : null,
             isPassword: true,
           ),
 
           const SizedBox(height: AppSpace.field),
           GlassTextField(
-            label: 'Confirmar contraseña',
-            hintText: 'Repite tu contraseña',
+            label: context.l10n.confirmPassword,
+            hintText: context.l10n.repeatPassword,
             controller: _confirmPasswordController,
+            errorText:
+                (_checkedPassword ||
+                        _confirmPasswordController.text.isNotEmpty) &&
+                    !_passwordsMatch
+                ? context.l10n.uiLasContrasenasNoCoinciden
+                : null,
             isPassword: true,
           ),
 
           const SizedBox(height: AppSpace.content),
 
-          // Password match indicator
-          if (_confirmPasswordController.text.isNotEmpty && !_passwordsMatch)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Las contraseñas no coinciden',
-                  style: AppTypography.style(
-                    color: const Color(0xFFEF4444),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpace.card),
 
           // Términos, Privacidad y declaración de mayoría de edad (casilla sin marcar de forma predeterminada)
           Row(
@@ -370,16 +382,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 1.45,
                     ),
                     children: [
-                      const TextSpan(
-                        text: 'Declaro ser mayor de 18 años y acepto los ',
-                      ),
+                      TextSpan(text: context.l10n.declareAge),
+                      _legalLink(context.l10n.terms, '/legal/doc/terminos'),
+                      TextSpan(text: context.l10n.legalAnd),
                       _legalLink(
-                        'Términos y Condiciones',
-                        '/legal/doc/terminos',
-                      ),
-                      const TextSpan(text: ' y la '),
-                      _legalLink(
-                        'Política de Privacidad',
+                        context.l10n.privacyPolicy,
                         '/legal/doc/privacidad',
                       ),
                       const TextSpan(text: '.'),
@@ -391,32 +398,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: AppSpace.group),
 
-          // Submit Button
+          if (_submitError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.field),
+              child: Text(
+                _submitError!,
+                style: const TextStyle(color: Color(0xFFFFADAD)),
+              ),
+            ),
           AuthSubmitButton(
             isLoading: _isLoading,
-            text: 'Crear mi cuenta',
+            text: context.l10n.createMyAccount,
             onPressed: () {
+              setState(() {
+                _checkedPassword = true;
+                _submitError = null;
+              });
               if (isReadyToSubmit) {
                 _handleRegister();
-              } else {
-                String msg = 'Completa los datos de contraseña';
-                if (!_acceptTerms) {
-                  msg =
-                      'Debes aceptar los Términos y la Política de Privacidad';
-                } else if (_passwordController.text.length < 8) {
-                  msg = 'Usa al menos 8 caracteres';
-                } else if (!_passwordsMatch) {
-                  msg = 'Las contraseñas no coinciden';
-                }
-
+              } else if (!_acceptTerms) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      msg,
-                      style: AppTypography.style(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.black87,
-                    behavior: SnackBarBehavior.floating,
+                    content: Text(context.l10n.uiDebesAceptarLosTerminosYLa),
                   ),
                 );
               }

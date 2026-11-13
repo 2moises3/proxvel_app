@@ -1,5 +1,7 @@
+import '../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
+import '../../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _rememberSession = false;
 
   String? _loginError;
   String? _emailError;
@@ -37,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         .trim();
 
     if (rawError.isEmpty) {
-      return 'No pudimos completar la acción. Intenta nuevamente.';
+      return context.l10n.uiNoPudimosCompletarLaAccionIntenta;
     }
 
     final lower = rawError.toLowerCase();
@@ -49,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
         lower.contains('clientexception') ||
         lower.contains('timeout') ||
         lower.contains('handshake')) {
-      return 'No hay conexión con el servidor. Verifica tu internet e intenta nuevamente.';
+      return context.l10n.uiNoHayConexionConElServidor;
     }
 
     if (lower.contains('typeerror') ||
@@ -61,11 +64,11 @@ class _LoginScreenState extends State<LoginScreen> {
         lower.contains('sql') ||
         lower.contains('database') ||
         lower.contains('internal server error')) {
-      return 'Ocurrió un problema inesperado. Intenta nuevamente.';
+      return context.l10n.uiOcurrioUnProblemaInesperadoIntentaNuevamente;
     }
 
     if (rawError.length > 150) {
-      return 'No pudimos completar la acción. Intenta nuevamente.';
+      return context.l10n.uiNoPudimosCompletarLaAccionIntenta;
     }
 
     return rawError;
@@ -74,10 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() {
       _emailError = _emailController.text.isEmpty
-          ? 'El correo es requerido'
+          ? context.l10n.uiElCorreoEsRequerido
           : null;
       _passwordError = _passwordController.text.isEmpty
-          ? 'La contraseña es requerida'
+          ? context.l10n.uiLaContrasenaEsRequerida
           : null;
       _loginError = null;
     });
@@ -89,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final error = await context.read<AuthController>().login(
       _emailController.text.trim(),
       _passwordController.text,
+      rememberSession: _rememberSession,
     );
 
     if (mounted) {
@@ -115,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final info = await context.read<AuthService>().supportContact();
     if (!mounted) return;
     if (info.resetByEmail) {
-      context.push('/forgot-password');
+      context.push('/forgot-password', extra: _emailController.text.trim());
       return;
     }
     final email = info.supportEmail ?? 'soporte@m3biznovatech.com';
@@ -140,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '¿Olvidaste tu contraseña?',
+                context.l10n.forgotPassword,
                 style: AppTypography.style(
                   fontSize: 18,
                   color: Colors.white,
@@ -149,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Escríbenos a $email desde el correo de tu cuenta para recibir ayuda con tu acceso.',
+                context.l10n.supportAccess(email),
                 style: AppTypography.style(
                   fontSize: 14,
                   color: Colors.white,
@@ -168,19 +172,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         Clipboard.setData(ClipboardData(text: email));
                         Navigator.of(sheetContext).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Correo de soporte copiado'),
+                          SnackBar(
+                            content: Text(
+                              context.l10n.uiCorreoDeSoporteCopiado,
+                            ),
                           ),
                         );
                       },
                       icon: const Icon(Icons.copy_rounded, size: 18),
-                      label: const Text('Copiar correo'),
+                      label: Text(context.l10n.uiCopiarCorreo),
                     ),
                   ),
                   const SizedBox(width: AppSpace.content),
                   Expanded(
                     child: AuthSubmitButton(
-                      text: 'Entendido',
+                      text: context.l10n.uiEntendido,
                       onPressed: () => Navigator.of(sheetContext).pop(),
                     ),
                   ),
@@ -197,13 +203,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) => AuthFormPage(
     background: _background,
     onBack: () => context.pop(),
-    title: 'Qué bueno\nverte de nuevo.',
+    title: context.l10n.welcomeBack,
     child: AutofillGroup(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GlassTextField(
-            label: 'Correo electrónico',
+            label: context.l10n.email,
             hintText: 'nombre@correo.com',
             controller: _emailController,
             errorText: _emailError,
@@ -215,8 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 18),
           GlassTextField(
-            label: 'Contraseña',
-            hintText: 'Ingresa tu contraseña',
+            label: context.l10n.password,
+            hintText: context.l10n.enterPassword,
             controller: _passwordController,
             isPassword: true,
             errorText: _passwordError,
@@ -230,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Semantics(
               liveRegion: true,
               child: Text(
-                _loginError!,
+                context.errorText(_loginError!),
                 style: AppTypography.style(
                   color: const Color(0xFFFFADAD),
                   fontSize: 13,
@@ -246,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _isLoading ? null : _onForgotPassword,
               style: TextButton.styleFrom(foregroundColor: Colors.white),
               child: Text(
-                '¿Olvidaste tu contraseña?',
+                context.l10n.forgotPassword,
                 style: AppTypography.style(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
@@ -256,8 +262,38 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          MergeSemantics(
+            child: InkWell(
+              onTap: _isLoading
+                  ? null
+                  : () => setState(() => _rememberSession = !_rememberSession),
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _rememberSession,
+                    onChanged: _isLoading
+                        ? null
+                        : (value) => setState(() => _rememberSession = value!),
+                    checkColor: AppColors.textPrimary,
+                    activeColor: AppColors.accent,
+                    side: const BorderSide(color: Colors.white),
+                  ),
+                  Expanded(
+                    child: Text(
+                      context.l10n.rememberSession,
+                      style: AppTypography.style(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           AuthSubmitButton(
-            text: 'Iniciar sesión',
+            text: context.l10n.signIn,
             onPressed: _handleLogin,
             isLoading: _isLoading,
           ),
@@ -267,14 +303,14 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                '¿Primera vez aquí?',
+                context.l10n.firstVisit,
                 style: AppTypography.style(color: Colors.white, fontSize: 14),
               ),
               TextButton(
                 onPressed: _isLoading ? null : () => context.push('/register'),
                 style: TextButton.styleFrom(foregroundColor: Colors.white),
                 child: Text(
-                  'Regístrate',
+                  context.l10n.registerAction,
                   style: AppTypography.style(
                     color: Colors.white,
                     fontSize: 14,

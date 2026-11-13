@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/auth_progress_indicator.dart';
 import 'widgets/auth_form_page.dart';
 import 'package:flutter/material.dart';
@@ -63,9 +64,9 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No pudimos guardar tu residencia. Intenta nuevamente.',
+              context.l10n.uiNoPudimosGuardarTuResidenciaIntenta,
             ),
             backgroundColor: Colors.red,
           ),
@@ -87,12 +88,12 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> {
     progress: widget.mode == ResidenceGateMode.registration
         ? const AuthProgressIndicator(step: 2, count: 3)
         : null,
-    title: '¿Dónde vives?',
-    subtitle: 'Selecciona tu departamento, provincia y distrito.',
+    title: context.l10n.whereYouLive,
+    subtitle: context.l10n.chooseResidence,
     topAction: widget.mode == ResidenceGateMode.fallback
         ? IconButton.filledTonal(
             onPressed: _isLoading ? null : _handleLogout,
-            tooltip: 'Cerrar sesión',
+            tooltip: context.l10n.signOut,
             style: IconButton.styleFrom(
               backgroundColor: const Color(0x73202020),
               foregroundColor: Colors.white,
@@ -114,7 +115,7 @@ class _ResidenceGateScreenState extends State<ResidenceGateScreen> {
         ),
         const SizedBox(height: 28),
         AuthSubmitButton(
-          text: 'Guardar y continuar',
+          text: context.l10n.saveContinue,
           onPressed: _canSave ? _handleSave : null,
           isLoading: _isLoading,
         ),

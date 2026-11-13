@@ -5,7 +5,11 @@ import '../api/api_client.dart';
 class TourismMapService {
   final ApiClient? _api;
 
-  TourismMapService({ApiClient? apiClient}) : _api = apiClient;
+  TourismMapService({ApiClient? apiClient, this.languageCode})
+    : _api = apiClient;
+  final String Function()? languageCode;
+
+  String get catalogLanguage => languageCode?.call() == 'en' ? 'en' : 'es';
   bool detailsUnavailable = false;
 
   Future<List<MapMarkerModel>> getMapMarkers() async {
@@ -20,10 +24,17 @@ class TourismMapService {
       detailsUnavailable = false;
       final responses = await Future.wait([
         _api.get('/tourism/map-markers'),
-        _api.get('/tourism/catalog').catchError((Object _) {
-          detailsUnavailable = true;
-          return <String, dynamic>{'data': <dynamic>[]};
-        }),
+        _api
+            .get(
+              '/tourism/catalog',
+              queryParams: catalogLanguage == 'en'
+                  ? const {'lang': 'en'}
+                  : null,
+            )
+            .catchError((Object _) {
+              detailsUnavailable = true;
+              return <String, dynamic>{'data': <dynamic>[]};
+            }),
       ]);
       final response = responses[0];
       final catalog = <String, Map<String, dynamic>>{

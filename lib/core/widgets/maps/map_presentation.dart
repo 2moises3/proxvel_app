@@ -1,3 +1,4 @@
+import '../../localization/destination_names.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../models/map_marker_model.dart';
@@ -20,7 +21,7 @@ List<MapMarkerModel> filterMapPlaces(
   final words = normalizeMapSearch(query).split(RegExp(r'\s+'));
   return places.where((m) {
     final text = normalizeMapSearch(
-      '${m.destination} ${m.city ?? ''} ${m.region ?? ''} ${m.category ?? ''}',
+      '${m.destination} ${englishDestinationNames[m.destinationId] ?? ''} ${m.city ?? ''} ${m.region ?? ''} ${m.category ?? ''}',
     );
     return (category == null || category == m.category) &&
         words.every(text.contains);

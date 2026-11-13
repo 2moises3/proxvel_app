@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -25,12 +26,15 @@ class RankingHeaderCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            AppIcon(AppIcons.sparkles, color: AppColors.discovery),
-            SizedBox(width: 8),
+            const AppIcon(AppIcons.sparkles, color: AppColors.discovery),
+            const SizedBox(width: 8),
             Expanded(
-              child: Text('Este lugar y tú', style: AppTextStyles.cardTitle),
+              child: Text(
+                context.l10n.thisPlaceAndYou,
+                style: AppTextStyles.cardTitle,
+              ),
             ),
           ],
         ),
@@ -75,9 +79,9 @@ class RankingHeaderCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 20),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'de afinidad con tu perfil',
+                  context.l10n.profileMatch,
                   style: AppTextStyles.cardTitle,
                 ),
               ),
@@ -85,16 +89,19 @@ class RankingHeaderCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text(label, style: AppTextStyles.cardTitle),
+        Text(switch (label.trim().toLowerCase()) {
+          'recomendado' => context.l10n.recommended,
+          'parcialmente recomendado' ||
+          'parcialmente_recomendado' => context.l10n.partlyRecommended,
+          'no recomendado' || 'no_recomendado' => context.l10n.notRecommended,
+          _ => label,
+        }, style: AppTextStyles.cardTitle),
         const SizedBox(height: 8),
-        const Text(
-          'Es una afinidad relativa calculada por el motor, no una probabilidad de satisfacción.',
-          style: AppTextStyles.body2,
-        ),
+        Text(context.l10n.matchNotProbability, style: AppTextStyles.body2),
         if (rankPosition != null) ...[
           const SizedBox(height: 12),
           Text(
-            'Posición $rankPosition en el contexto del mes',
+            context.l10n.rankForMonth(rankPosition!),
             style: AppTextStyles.bodySecondary,
           ),
         ],
@@ -108,15 +115,15 @@ class RankingHeaderCard extends StatelessWidget {
               shape: Border(),
               collapsedShape: Border(),
               tilePadding: EdgeInsets.zero,
-              title: const Text(
-                'Cómo interpretar este resultado',
+              title: Text(
+                context.l10n.interpretResult,
                 style: AppTextStyles.label,
               ),
-              children: const [
+              children: [
                 Padding(
-                  padding: EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'La afinidad combina tus intereses y las valoraciones del modelo. El orden también considera el clima y la afluencia del mes; por eso puede diferir del porcentaje.',
+                    context.l10n.rankExplanation,
                     style: AppTextStyles.bodySecondary,
                   ),
                 ),

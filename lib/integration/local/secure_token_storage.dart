@@ -7,9 +7,21 @@ class SecureTokenStorage {
   final _storage = const FlutterSecureStorage();
   
   static const _tokenKey = 'jwt_access_token';
+  String? _memoryToken;
+  bool _memoryOnly = false;
+
+  Future<void> setPersistence(bool persist) async {
+    if (!persist) await _storage.delete(key: _tokenKey);
+    _memoryOnly = !persist;
+    _memoryToken = null;
+  }
 
   /// Guarda el Access Token.
   Future<void> saveAccessToken(String token) async {
+    if (_memoryOnly) {
+      _memoryToken = token;
+      return;
+    }
     try {
       await _storage.write(key: _tokenKey, value: token);
     } catch (e) {
@@ -19,6 +31,7 @@ class SecureTokenStorage {
 
   /// Recupera el Access Token. Retorna null si no existe.
   Future<String?> getAccessToken() async {
+    if (_memoryOnly) return _memoryToken;
     try {
       return await _storage.read(key: _tokenKey);
     } catch (e) {
@@ -32,6 +45,7 @@ class SecureTokenStorage {
 
   /// Elimina el Access Token, cerrando la sesión de forma efectiva a nivel de auth.
   Future<void> deleteAccessToken() async {
+    _memoryToken = null;
     try {
       await _storage.delete(key: _tokenKey);
     } catch (e) {

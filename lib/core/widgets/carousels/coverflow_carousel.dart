@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../../models/destination_model.dart';
@@ -162,7 +163,7 @@ class _CoverflowCarouselState extends State<CoverflowCarousel>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        tooltip: 'Destino anterior',
+                        tooltip: context.l10n.uiDestinoAnterior,
                         onPressed: () => _go((center - 1).toDouble()),
                         icon: const Icon(Icons.chevron_left_rounded, size: 20),
                       ),
@@ -197,7 +198,7 @@ class _CoverflowCarouselState extends State<CoverflowCarousel>
                           ),
                         ),
                       IconButton(
-                        tooltip: 'Destino siguiente',
+                        tooltip: context.l10n.uiDestinoSiguiente,
                         onPressed: () => _go((center + 1).toDouble()),
                         icon: const Icon(Icons.chevron_right_rounded, size: 20),
                       ),

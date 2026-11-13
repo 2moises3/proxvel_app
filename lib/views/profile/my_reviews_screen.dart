@@ -1,3 +1,4 @@
+import '../../core/localization/l10n.dart';
 import 'widgets/profile_page_bar.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_layout.dart';
@@ -32,7 +33,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: profilePageBar(context, 'Mis reseñas'),
+      appBar: profilePageBar(context, context.l10n.myReviews),
       body: _buildBody(controller),
     );
   }
@@ -46,7 +47,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
             const CircularProgressIndicator(color: AppColors.accent),
             const SizedBox(height: AppSpace.field),
             Text(
-              'Cargando tus reseñas...',
+              context.l10n.uiCargandoTusResenas,
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary.withValues(alpha: 0.8),
@@ -71,7 +72,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
               ),
               const SizedBox(height: AppSpace.field),
               Text(
-                controller.error!,
+                context.errorText(controller.error!),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
@@ -87,7 +88,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                     auth.currentUser,
                   );
                 },
-                child: const Text('Reintentar', style: AppTextStyles.button),
+                child: Text(context.l10n.retry, style: AppTextStyles.button),
               ),
             ],
           ),
@@ -108,8 +109,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 size: 56,
               ),
               const SizedBox(height: AppSpace.field),
-              const Text(
-                'Aún no has enviado reseñas.\nCuando comentes un destino, aparecerá aquí.',
+              Text(
+                context.l10n.uiAunNoHasEnviadoResenasCuando,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,

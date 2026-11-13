@@ -13,13 +13,20 @@ import 'package:proxvell_app/views/map/tourism_map_view.dart';
 
 class _FakeTiles extends TileProvider {
   @override
-  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
-      MemoryImage(base64Decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-      ));
+  ImageProvider getImage(
+    TileCoordinates coordinates,
+    TileLayer options,
+  ) => MemoryImage(
+    base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    ),
+  );
 }
 
 class _FakeLocation extends DestinationLocation {
+  @override
+  Future<void> locate({bool requestPermission = true}) async {}
+
   @override
   double? distance(double? lat, double? lon) => 5200.0;
 }
@@ -51,63 +58,66 @@ class _FakeMapService extends TourismMapService {
 }
 
 void main() {
-  testWidgets('Fijar y desfijar destino en el mapa muestra pin y cápsula informativa', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'Fijar y desfijar destino en el mapa muestra pin y cápsula informativa',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final service = _FakeMapService();
-    final location = _FakeLocation();
-    final controller = TourismMapController(service);
-    addTearDown(controller.dispose);
+      final service = _FakeMapService();
+      final location = _FakeLocation();
+      final controller = TourismMapController(service);
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider.value(
-        value: controller,
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: Scaffold(
-            body: TourismMapView(
-              tileProvider: _FakeTiles(),
-              location: location,
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: controller,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: TourismMapView(
+                tileProvider: _FakeTiles(),
+                location: location,
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    // Esperar carga inicial
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+      // Esperar carga inicial
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
 
-    // Tocar el pin en el mapa
-    final pinFinder = find.byType(MapPhotoPin).first;
-    expect(pinFinder, findsOneWidget);
-    await tester.tap(pinFinder);
-    await tester.pump(const Duration(milliseconds: 600));
+      // Tocar el pin en el mapa
+      final pinFinder = find.byType(MapPhotoPin).first;
+      expect(pinFinder, findsOneWidget);
+      await tester.tap(pinFinder);
+      await tester.pump(const Duration(milliseconds: 600));
 
-    // Debe existir el botón "Fijar en mapa"
-    final fixButtonFinder = find.text('Fijar en mapa');
-    expect(fixButtonFinder, findsOneWidget);
+      // Debe existir el botón "Fijar en mapa"
+      final fixButtonFinder = find.text('Fijar en mapa');
+      expect(fixButtonFinder, findsOneWidget);
 
-    // Tocar "Fijar en mapa"
-    await tester.tap(fixButtonFinder);
-    await tester.pump(const Duration(milliseconds: 600));
+      // Tocar "Fijar en mapa"
+      await tester.tap(fixButtonFinder);
+      await tester.pump(const Duration(milliseconds: 600));
 
-    // El botón debe actualizarse a "Fijado"
-    expect(find.text('Fijado'), findsWidgets);
+      // El botón debe actualizarse a "Fijado"
+      expect(find.text('Fijado'), findsWidgets);
 
-    // Debe mostrar la cápsula superior flotante
-    expect(find.byIcon(Icons.push_pin_rounded), findsWidgets);
+      // Debe mostrar la cápsula superior flotante
+      expect(find.byIcon(Icons.push_pin_rounded), findsWidgets);
 
-    // Desfijar tocando el botón de cerrar en la cápsula
-    final closePinFinder = find.byTooltip('Desfijar destino');
-    expect(closePinFinder, findsOneWidget);
-    await tester.tap(closePinFinder);
-    await tester.pump(const Duration(milliseconds: 600));
+      // Desfijar tocando el botón de cerrar en la cápsula
+      final closePinFinder = find.byTooltip('Desfijar destino');
+      expect(closePinFinder, findsOneWidget);
+      await tester.tap(closePinFinder);
+      await tester.pump(const Duration(milliseconds: 600));
 
-    // La cápsula debe desaparecer
-    expect(closePinFinder, findsNothing);
-  });
+      // La cápsula debe desaparecer
+      expect(closePinFinder, findsNothing);
+    },
+  );
 }

@@ -1,3 +1,4 @@
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_layout.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -29,7 +30,7 @@ class DestinationGalleryPreview extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Galería', style: AppTextStyles.sectionTitle),
+          Text(context.l10n.uiGaleria, style: AppTextStyles.sectionTitle),
           const SizedBox(height: AppSpace.content),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -52,13 +53,13 @@ class DestinationGalleryPreview extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Galería', style: AppTextStyles.sectionTitle),
+            Text(context.l10n.uiGaleria, style: AppTextStyles.sectionTitle),
             GestureDetector(
               onTap: () {
                 // Navigate to full gallery
               },
-              child: const Text(
-                'Ver todas',
+              child: Text(
+                context.l10n.uiVerTodas,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,

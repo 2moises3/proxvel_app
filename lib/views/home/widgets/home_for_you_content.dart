@@ -1,3 +1,5 @@
+import '../../../core/theme/app_layout.dart';
+import '../../../core/localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,7 @@ import '../../../core/widgets/states/empty_profile_for_ai_state.dart';
 import 'month_fan_picker.dart';
 import 'archive_loading_state.dart';
 import 'recommendation_motion.dart';
+import '../../../core/widgets/states/content_skeleton.dart';
 
 class HomeForYouContent extends StatefulWidget {
   const HomeForYouContent({super.key});
@@ -73,7 +76,7 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                             ),
                           ),
                           icon: const Icon(Icons.tune_rounded, size: 19),
-                          label: const Text('Editar preferencias'),
+                          label: Text(context.l10n.editPreferences),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -85,7 +88,7 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Destinos para ti',
+                    context.l10n.placesForYou,
                     style: AppTypography.style(
                       fontSize: 24,
                       fontWeight: FontWeight.w500,
@@ -96,22 +99,33 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                   const SizedBox(height: 8),
                   Text(
                     !archives.hasLoaded
-                        ? 'Recuperando tu selección…'
+                        ? context.l10n.restoringSelection
                         : controller.isLoading
-                        ? 'Buscando coincidencias con tus preferencias…'
-                        : '${items.length} ${items.length == 1 ? 'destino para explorar' : 'destinos para explorar'}',
+                        ? context.l10n.matchingPreferences
+                        : context.l10n.placeCount(items.length),
                     style: AppTypography.style(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (controller.isLoading) const RecommendationWorkingState(),
+                  if (controller.isLoading && items.isNotEmpty)
+                    const LinearProgressIndicator(minHeight: 2),
+                  if (items.isNotEmpty &&
+                      controller.resultsMonth !=
+                          (controller.selectedMonth ?? DateTime.now().month))
+                    Text(
+                      context.l10n.previousMonthResults(
+                        context.fullMonth(
+                          controller.resultsMonth ?? DateTime.now().month,
+                        ),
+                      ),
+                    ),
                   if (archives.hasLoaded && archives.error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Text(
-                        archives.error!,
+                        context.errorText(archives.error!),
                         style: const TextStyle(color: AppColors.error),
                       ),
                     ),
@@ -121,18 +135,20 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                     const EmptyProfileForAiState()
                   else if (controller.error != null)
                     _message(
-                      controller.error!,
-                      'Reintentar',
+                      controller.connectionUnavailable
+                          ? context.l10n.connectionUnavailable
+                          : context.errorText(controller.error!),
+                      context.l10n.retry,
                       () => controller.loadRecommendations(forceRefresh: true),
                     )
                   else if (!controller.isLoading && items.isEmpty)
                     _message(
                       eligible.isNotEmpty
-                          ? 'Has ocultado estos destinos. Puedes recuperarlos desde Archivados.'
-                          : 'No encontramos destinos recomendados con estas preferencias. Puedes probar otro mes o ajustar tus intereses.',
+                          ? context.l10n.allMatchesHidden
+                          : context.l10n.noMatchesForPreferences,
                       eligible.isNotEmpty
-                          ? 'Ver archivados'
-                          : 'Editar preferencias',
+                          ? context.l10n.viewArchived
+                          : context.l10n.editPreferences,
                       () => context.push(
                         eligible.isNotEmpty
                             ? '/archived'
@@ -143,7 +159,13 @@ class _HomeForYouContentState extends State<HomeForYouContent>
               ),
             ),
           ),
-          if (archives.hasLoaded && !controller.isLoading)
+          if (controller.isLoading && items.isEmpty && archives.error == null)
+            const SliverToBoxAdapter(
+              child: ContentSkeleton(SkeletonLayout.recommendations),
+            ),
+          if (archives.hasLoaded &&
+              items.isNotEmpty &&
+              !controller.profileIncomplete)
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               sliver: SliverList.builder(
@@ -160,7 +182,8 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                     child: DestinationRecommendationCard(
                       recommendation: rec,
                       onTap: () {
-                        final month = controller.selectedMonth;
+                        final month =
+                            controller.resultsMonth ?? controller.selectedMonth;
                         context.push(
                           '/destination/${Uri.encodeComponent(rec.destination.id)}?source=ai_recommendation${month == null ? '' : '&month=$month'}',
                           extra: DestinationOpening(
@@ -179,14 +202,14 @@ class _HomeForYouContentState extends State<HomeForYouContent>
               24,
               0,
               24,
-              MediaQuery.viewPaddingOf(context).bottom + 120,
+              AppSizing.navigationClearance(context),
             ),
             sliver: SliverToBoxAdapter(
               child: Column(
                 children: [
                   if (archives.hasLoaded && items.isNotEmpty) ...[
-                    const Text(
-                      'El clima y la afluencia se basan en datos históricos, no en un pronóstico. La recomendación orienta tu elección.',
+                    Text(
+                      context.l10n.historicalConditions,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -195,7 +218,7 @@ class _HomeForYouContentState extends State<HomeForYouContent>
                     TextButton.icon(
                       onPressed: () => context.push('/archived'),
                       icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                      label: const Text('Gestionar destinos ocultos'),
+                      label: Text(context.l10n.hiddenPlaces),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.discovery,
                       ),
