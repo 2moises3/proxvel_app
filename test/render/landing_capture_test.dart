@@ -118,8 +118,9 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
       expect(find.byIcon(Icons.broken_image_rounded), findsNothing);
-      if (name == 'explore')
+      if (name == 'explore') {
         expect(find.byIcon(Icons.landscape_outlined), findsNothing);
+      }
       expect(tester.takeException(), isNull);
       final boundary =
           key.currentContext!.findRenderObject() as RenderRepaintBoundary;

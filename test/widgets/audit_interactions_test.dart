@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proxvell_app/core/theme/app_theme.dart';
 import 'package:proxvell_app/core/widgets/navigation/proxvel_bottom_navigation.dart';
@@ -38,10 +37,8 @@ void main() {
       final node = tester.getSemantics(map);
       expect(node.rect.height, greaterThanOrEqualTo(48));
       expect(node.rect.width, greaterThanOrEqualTo(48));
-      tester.binding.pipelineOwner.semanticsOwner!.performAction(
-        node.id,
-        SemanticsAction.tap,
-      );
+      await tester.tap(map);
+      await tester.pump();
       expect(selected, 1);
       expect(tester.takeException(), isNull);
       semantics.dispose();

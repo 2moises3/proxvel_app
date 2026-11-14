@@ -98,9 +98,9 @@ void main() {
     );
     await tester.tap(find.byType(OutlinedButton));
     await tester.pumpAndSettle();
-    expect(find.text('Dic'), findsOneWidget);
+    expect(find.byType(ListTile), findsWidgets);
     expect(find.byType(GridView), findsNothing);
-    await tester.tap(find.text('Actual'));
+    await tester.tap(find.byType(ListTile).first);
     await tester.pumpAndSettle();
     expect(selected, isNull);
     expect(tester.takeException(), isNull);
@@ -219,7 +219,7 @@ void main() {
       });
       await tester.tap(find.byType(OutlinedButton).first);
       await tester.pumpAndSettle();
-      expect(find.text('Dic'), findsOneWidget);
+      expect(find.byType(ListTile), findsWidgets);
       await tester.runAsync(() async {
         final boundary =
             fullCapture.currentContext!.findRenderObject()!

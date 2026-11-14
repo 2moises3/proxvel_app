@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../integration/services/visit_service.dart';
 import '../integration/api/api_client.dart';
 import '../models/visit_model.dart';
+import '../integration/local/local_storage_service.dart';
 
 class VisitController extends ChangeNotifier {
   final VisitService _visitService;
+  final LocalStorageService? _storage;
 
   VisitModel? activeVisit;
   AtlasSummaryModel? atlasSummary;
@@ -21,8 +23,14 @@ class VisitController extends ChangeNotifier {
   int _sessionRevision = 0;
   int _activeRevision = 0;
 
-  VisitController([VisitService? visitService])
-    : _visitService = visitService ?? VisitService();
+  VisitController([VisitService? visitService, LocalStorageService? storage])
+    : _visitService = visitService ?? VisitService(),
+      _storage = storage;
+
+  String? get _draftKey {
+    final userId = _storage?.getUser()?.id;
+    return userId == null ? null : 'atlas_target_$userId';
+  }
 
   @override
   void dispose() {
@@ -33,6 +41,8 @@ class VisitController extends ChangeNotifier {
 
   void setPendingDestination(PendingSealDestination dest) {
     pendingDestination = dest;
+    final key = _draftKey;
+    if (key != null) unawaited(_storage!.writeDraft(key, dest.toJson()));
     notifyListeners();
   }
 
@@ -43,6 +53,8 @@ class VisitController extends ChangeNotifier {
 
   void clearPendingDestination() {
     pendingDestination = null;
+    final key = _draftKey;
+    if (key != null) unawaited(_storage!.clearDraft(key));
     notifyListeners();
   }
 
@@ -62,6 +74,18 @@ class VisitController extends ChangeNotifier {
 
   /// Carga el Atlas y consulta si hay visita activa
   Future<void> initVisitState() async {
+    final key = _draftKey;
+    if (key != null && pendingDestination == null) {
+      final saved = _storage!.readDraft(key);
+      if (saved != null) {
+        try {
+          pendingDestination = PendingSealDestination.fromJson(saved);
+        } catch (_) {
+          unawaited(_storage.clearDraft(key));
+        }
+        notifyListeners();
+      }
+    }
     await Future.wait([loadAtlas(), checkActiveVisit()]);
   }
 
@@ -94,6 +118,9 @@ class VisitController extends ChangeNotifier {
       final active = await _visitService.getActiveVisit();
       if (session != _sessionRevision || revision != _activeRevision) return;
       activeVisit = active;
+      if (active != null && pendingDestination != null) {
+        clearPendingDestination();
+      }
       _setupTickerIfNeeded();
       notifyListeners();
     } catch (_) {
@@ -124,7 +151,7 @@ class VisitController extends ChangeNotifier {
       latestStampedDestinationId = null;
       activeVisit = visit;
       if (pendingDestination?.destinationId == destinationId) {
-        pendingDestination = null;
+        clearPendingDestination();
       }
       actionMessage = '¡Check-in iniciado! Disfruta tu recorrido turístico.';
       _setupTickerIfNeeded();

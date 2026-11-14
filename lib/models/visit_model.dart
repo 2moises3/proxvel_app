@@ -47,8 +47,12 @@ class VisitModel {
       destinationName: json['destination_name'],
       visitStatus: json['visit_status'] ?? 'in_progress',
       validationMethod: json['validation_method'] ?? 'gps_geofence',
-      startedAt: json['started_at'] != null ? DateTime.tryParse(json['started_at']) : null,
-      completedAt: json['completed_at'] != null ? DateTime.tryParse(json['completed_at']) : null,
+      startedAt: json['started_at'] != null
+          ? DateTime.tryParse(json['started_at'])
+          : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.tryParse(json['completed_at'])
+          : null,
       dwellMinutes: (json['dwell_minutes'] as num?)?.toInt() ?? 0,
       minDwellMinutes: (json['min_dwell_minutes'] as num?)?.toInt() ?? 20,
       remainingMinutes: (json['remaining_minutes'] as num?)?.toInt() ?? 0,
@@ -87,7 +91,8 @@ class AtlasItemModel {
     return AtlasItemModel(
       visitId: json['visit_id'] ?? '',
       destinationId: json['destination_id'] ?? '',
-      destinationName: json['destination_name'] ?? json['destination_id'] ?? 'Destino',
+      destinationName:
+          json['destination_name'] ?? json['destination_id'] ?? 'Destino',
       region: json['region'],
       city: json['city'],
       category: json['category'],
@@ -113,12 +118,14 @@ class AtlasSummaryModel {
   });
 
   factory AtlasSummaryModel.fromJson(Map<String, dynamic> json) {
-    final list = (json['visits'] as List<dynamic>?)
+    final list =
+        (json['visits'] as List<dynamic>?)
             ?.map((e) => AtlasItemModel.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
     return AtlasSummaryModel(
-      totalVerifiedVisits: (json['total_verified_visits'] as num?)?.toInt() ?? list.length,
+      totalVerifiedVisits:
+          (json['total_verified_visits'] as num?)?.toInt() ?? list.length,
       regionsVisited: (json['regions_visited'] as num?)?.toInt() ?? 0,
       visits: list,
     );
@@ -147,6 +154,30 @@ class PendingSealDestination {
     this.geofenceRadiusMeters = 250,
     this.minDwellMinutes = 20,
   });
+
+  Map<String, dynamic> toJson() => {
+    'destination_id': destinationId,
+    'destination_name': destinationName,
+    'latitude': latitude,
+    'longitude': longitude,
+    'region': region,
+    'cover_image_url': coverImageUrl,
+    'geofence_radius_meters': geofenceRadiusMeters,
+    'min_dwell_minutes': minDwellMinutes,
+  };
+
+  factory PendingSealDestination.fromJson(Map<String, dynamic> json) =>
+      PendingSealDestination(
+        destinationId: json['destination_id'] as String,
+        destinationName: json['destination_name'] as String,
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        region: json['region'] as String?,
+        coverImageUrl: json['cover_image_url'] as String?,
+        geofenceRadiusMeters:
+            (json['geofence_radius_meters'] as num?)?.toInt() ?? 250,
+        minDwellMinutes: (json['min_dwell_minutes'] as num?)?.toInt() ?? 20,
+      );
 
   PendingSealDestination copyWith({double? distanceMeters}) {
     return PendingSealDestination(

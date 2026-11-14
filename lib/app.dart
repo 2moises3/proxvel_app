@@ -1,4 +1,5 @@
 import 'core/widgets/navigation/navigation_island_transition.dart';
+import 'core/widgets/updates/app_update_prompt.dart';
 import 'core/localization/app_language.dart';
 import 'l10n/app_localizations.dart';
 import 'controllers/notifications_controller.dart';
@@ -229,8 +230,13 @@ class ProxvelApp extends StatelessWidget {
               ctl ?? AnnouncementController(annSvc),
         ),
         ChangeNotifierProxyProvider<VisitService, VisitController>(
-          create: (context) => VisitController(context.read<VisitService>()),
-          update: (context, visitSvc, ctl) => ctl ?? VisitController(visitSvc),
+          create: (context) => VisitController(
+            context.read<VisitService>(),
+            context.read<LocalStorageService>(),
+          ),
+          update: (context, visitSvc, ctl) =>
+              ctl ??
+              VisitController(visitSvc, context.read<LocalStorageService>()),
         ),
       ],
       child: const _SessionManager(child: _ProxvelMaterialApp()),
@@ -252,8 +258,12 @@ class _ProxvelMaterialApp extends StatelessWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
-      builder: (context, child) =>
-          NavigationIslandHost(controller: navigationIsland, child: child!),
+      builder: (context, child) => AppUpdatePrompt(
+        child: NavigationIslandHost(
+          controller: navigationIsland,
+          child: child!,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -5,10 +5,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:proxvell_app/controllers/auth_controller.dart';
+import 'package:proxvell_app/controllers/onboarding_controller.dart';
+import 'package:proxvell_app/controllers/recommendation_controller.dart';
+import 'package:proxvell_app/integration/local/local_storage_service.dart';
+import 'package:proxvell_app/integration/local/secure_token_storage.dart';
+import 'package:proxvell_app/integration/services/profile_service.dart';
+import 'package:proxvell_app/integration/services/recommendation_service.dart';
 import 'package:proxvell_app/views/onboarding/onboarding_profile_screen.dart';
 import 'package:proxvell_app/views/onboarding/widgets/illustrated_preference_option.dart';
 
 void main() {
+  Widget withProviders(Widget child) {
+    final storage = LocalStorageService();
+    return MultiProvider(
+      providers: [
+        Provider<LocalStorageService>.value(value: storage),
+        ChangeNotifierProvider(
+          create: (_) => AuthController(storage, SecureTokenStorage()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => OnboardingController(ProfileService(storage)),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RecommendationController(RecommendationService()),
+        ),
+      ],
+      child: child,
+    );
+  }
+
   testWidgets('keeps the intro and first step usable on a compact phone', (
     tester,
   ) async {
@@ -18,15 +45,17 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            disableAnimations: true,
-            textScaler: const TextScaler.linear(1.2),
+      withProviders(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              disableAnimations: true,
+              textScaler: const TextScaler.linear(1.2),
+            ),
+            child: child!,
           ),
-          child: child!,
+          home: const OnboardingProfileScreen(),
         ),
-        home: const OnboardingProfileScreen(),
       ),
     );
     await tester.pumpAndSettle();
@@ -58,15 +87,17 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final key = GlobalKey();
       await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(disableAnimations: true),
-            child: child!,
-          ),
-          home: RepaintBoundary(
-            key: key,
-            child: const OnboardingProfileScreen(),
+        withProviders(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: RepaintBoundary(
+              key: key,
+              child: const OnboardingProfileScreen(),
+            ),
           ),
         ),
       );

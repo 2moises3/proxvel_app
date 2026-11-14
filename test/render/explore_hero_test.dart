@@ -63,7 +63,7 @@ void main() {
           key.currentContext!,
         );
       });
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       expect(tester.takeException(), isNull);
       // The current three-line headline still fits in a compact shared hero.
       expect(tester.getSize(find.byType(ExploreHero)).height, lessThan(320));
@@ -96,7 +96,7 @@ void main() {
           .value;
       expect(opacity, greaterThan(0));
       expect(opacity, lessThan(1));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       expect(find.text('¿A dónde quieres ir?').hitTestable(), findsNothing);
       expect(tester.getRect(find.byType(Image).first), imageRect);
       expect(
@@ -108,16 +108,16 @@ void main() {
       final reversingHeight = tester.getSize(find.byType(ExploreHero)).height;
       await tester.pumpWidget(app(showSearch: false));
       expect(tester.getSize(find.byType(ExploreHero)).height, reversingHeight);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       await tester.pumpWidget(app());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       await tester.tap(find.text('Marck Morales'));
       await tester.tap(find.text('¿A dónde quieres ir?'));
       await tester.tap(find.byTooltip('Notificaciones'));
       expect(profile, 1);
       expect(search, 1);
       expect(notifications, 1);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       await tester.runAsync(() async {
         final boundary =
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -132,7 +132,7 @@ void main() {
       await tester.pumpWidget(
         app(scale: 1.8, name: 'Marck Alejandro Morales Fernández', unread: 0),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 800));
       expect(tester.takeException(), isNull);
       await tester.tap(find.byTooltip('Buscar y filtrar destinos'));
       expect(search, 2);

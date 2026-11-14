@@ -30,6 +30,9 @@ import '../../views/auth/forgot_password_screen.dart';
 import '../../views/auth/reset_password_screen.dart';
 import '../../views/profile/profile_screen.dart';
 import '../../views/profile/atlas_screen.dart';
+import '../../views/profile/atlas_nearby_screen.dart';
+import '../../views/profile/atlas_visit_screen.dart';
+import '../../views/profile/atlas_stamps_screen.dart';
 import '../../views/profile/app_update_screen.dart';
 import '../../views/profile/edit_profile_screen.dart';
 import '../../views/profile/preferences_screen.dart';
@@ -191,6 +194,18 @@ final GoRouter appRouter = GoRouter(
       path: '/profile/atlas',
       pageBuilder: (context, state) =>
           profileTransition(context, state.pageKey, const AtlasScreen()),
+    ),
+    GoRoute(
+      path: '/profile/atlas/nearby',
+      builder: (context, state) => const AtlasNearbyScreen(),
+    ),
+    GoRoute(
+      path: '/profile/atlas/visit',
+      builder: (context, state) => const AtlasVisitScreen(),
+    ),
+    GoRoute(
+      path: '/profile/atlas/stamps',
+      builder: (context, state) => const AtlasStampsScreen(),
     ),
     GoRoute(
       path: '/profile/updates',

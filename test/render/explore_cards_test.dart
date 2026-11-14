@@ -14,9 +14,10 @@ import 'package:proxvell_app/views/home/widgets/home_discovery_sections.dart';
 class _Favorites extends FavoritesController {
   _Favorites() : super(FavoritesService());
   @override
-  Future<void> toggleFavorite(String id, [DestinationModel? model]) async {
+  Future<bool?> toggleFavorite(String id, [DestinationModel? model]) async {
     if (!favoriteDestinationIds.remove(id)) favoriteDestinationIds.add(id);
     notifyListeners();
+    return favoriteDestinationIds.contains(id);
   }
 }
 
